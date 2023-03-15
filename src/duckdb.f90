@@ -15,8 +15,10 @@ module duckdb
   public :: duckdb_state, duckdbsuccess, duckdberror
   public :: duckdb_open, duckdb_close
   public :: duckdb_connect, duckdb_disconnect
-  public :: duckdb_query, duckdb_destroy_result
+  public :: duckdb_query
+  ! public :: duckdb_destroy_result
   public :: duckdb_column_count, duckdb_row_count
+  public :: duckdb_library_version
 
   enum, bind(c)
     enumerator :: duckdb_state  = 0
@@ -141,6 +143,14 @@ module duckdb
       integer(kind=c_int64_t) :: cc
     end function duckdb_row_count_
 
+    ! DUCKDB_API const char *duckdb_library_version();
+    function duckdb_library_version_()&
+    bind(c, name='duckdb_library_version')&
+    result(res)
+      import :: c_ptr
+      type(c_ptr) :: res
+    end function duckdb_library_version_
+
   end interface
 
   contains
@@ -176,6 +186,12 @@ module duckdb
       cc = int(duckdb_row_count_(tmp))
     end function duckdb_row_count
 
-
+    function duckdb_library_version()&
+    result(res)
+      character(len=:), allocatable :: res
+      type(c_ptr) :: tmp
+      tmp = duckdb_library_version_()
+      call c_f_str_ptr(tmp, res)
+    end function duckdb_library_version
 
 end module duckdb

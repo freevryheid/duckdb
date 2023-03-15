@@ -8,6 +8,8 @@ program main
   integer(kind(duckdb_state)) :: state
   type(duckdb_result), pointer :: res => null()
 
+  print *, "clib version: ", duckdb_library_version()
+
   if (duckdb_open(c_null_ptr, db).eq.duckdberror) error stop "cannot open database"
   if (duckdb_connect(db, conn).eq.duckdberror) error stop "cannot connect database"
 
