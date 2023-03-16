@@ -34,3 +34,5 @@ RUN cd /tmp && \
     unzip $(basename ${DUCKDB_DISTR}) && \
     mv *.h *.hpp /usr/local/include/ && \ 
     mv *.so /usr/local/lib/
+
+ENV LD_LIBRARY_PATH=/usr/local/lib
