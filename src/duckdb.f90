@@ -17,7 +17,7 @@ module duckdb
   public :: duckdb_connect, duckdb_disconnect
   public :: duckdb_query
   public :: duckdb_destroy_result
-  public :: duckdb_column_count, duckdb_row_count
+  public :: duckdb_column_count, duckdb_row_count, duckdb_rows_changed
   public :: duckdb_library_version
   public :: duckdb_column_name
   public :: duckdb_column_type
@@ -118,6 +118,7 @@ module duckdb
     end function duckdb_query_
 
     ! DUCKDB_API void duckdb_destroy_result(duckdb_result *result);
+    ! FIXME
     subroutine duckdb_destroy_result_(result1)&
     bind(c, name='duckdb_destroy_result')
       import :: c_ptr
@@ -140,6 +141,14 @@ module duckdb
       integer(kind=c_int64_t) :: cc
     end function duckdb_row_count_
 
+    ! DUCKDB_API idx_t duckdb_rows_changed(duckdb_result *result);
+    function duckdb_rows_changed_(res) result(cc)&
+    bind(c, name='duckdb_rows_changed')
+      import :: c_ptr, c_int64_t
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t) :: cc
+    end function duckdb_rows_changed_
+
     ! DUCKDB_API const char *duckdb_library_version();
     function duckdb_library_version_()&
     bind(c, name='duckdb_library_version')&
@@ -149,26 +158,24 @@ module duckdb
     end function duckdb_library_version_
 
     ! DUCKDB_API const char *duckdb_column_name(duckdb_result *result, idx_t col);
-    ! TODO: check if col is zero-based - do we want this to be one based for fortran?.
-    ! FIXME
+    ! TODO: col is zero-based - do we want this to be one based for fortran?.
     function duckdb_column_name_(res, col)&
     bind(c, name='duckdb_column_name')&
     result(name)
       import :: c_ptr, c_int64_t
       type(c_ptr) :: name
       type(c_ptr), value :: res
-      integer(kind=c_int64_t) :: col
+      integer(kind=c_int64_t), value :: col
     end function duckdb_column_name_
 
     ! DUCKDB_API duckdb_type duckdb_column_type(duckdb_result *result, idx_t col);
-    ! FIXME
     function duckdb_column_type_(res, col)&
     bind(c, name='duckdb_column_type')&
     result(col_type)
       import :: c_ptr, c_int64_t
       integer(kind(duckdb_type)) :: col_type
       type(c_ptr), value :: res
-      integer(kind=c_int64_t) :: col
+      integer(kind=c_int64_t), value :: col
     end function duckdb_column_type_
 
   end interface
@@ -206,6 +213,14 @@ module duckdb
       cc = int(duckdb_row_count_(tmp))
     end function duckdb_row_count
 
+    function duckdb_rows_changed(res) result(cc)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      integer :: cc
+      tmp = c_loc(res)
+      cc = int(duckdb_rows_changed_(tmp))
+    end function duckdb_rows_changed
+
     function duckdb_library_version() result(res)
       character(len=:), allocatable :: res
       type(c_ptr) :: tmp
@@ -217,7 +232,7 @@ module duckdb
       character(len=:), allocatable :: name
       type(c_ptr) :: tmp1, tmp2
       type(duckdb_result), pointer :: res
-      integer :: col
+      integer, value :: col
       tmp2 = c_loc(res)
       tmp1 = duckdb_column_name_(tmp2, int(col, kind=c_int64_t))
       if (c_associated(tmp1)) then
@@ -231,7 +246,7 @@ module duckdb
       integer(kind(duckdb_type)) :: col_type
       type(c_ptr) :: tmp1, tmp2
       type(duckdb_result), pointer :: res
-      integer :: col
+      integer, value :: col
       tmp2 = c_loc(res)
       col_type= duckdb_column_type_(tmp2, int(col, kind=c_int64_t))
     end function duckdb_column_type
