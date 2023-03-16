@@ -37,6 +37,14 @@ program main
   print*, "Column 1 name: ", duckdb_column_name(res, 0)
   print*, "Column 1 type: ", duckdb_column_type(res, 0)
 
+  ! force an error
+  state = duckdb_query(conn, &
+    "select four from integers;", &
+    res)
+  if (state.eq.duckdberror) print*, duckdb_result_error(res)
+
+
+
   print*, "here"
 
   call duckdb_destroy_result(res)

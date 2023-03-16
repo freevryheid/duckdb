@@ -21,6 +21,7 @@ module duckdb
   public :: duckdb_library_version
   public :: duckdb_column_name
   public :: duckdb_column_type
+  public :: duckdb_result_error
 
   enum, bind(c)
     enumerator :: duckdb_state  = 0
@@ -157,6 +158,14 @@ module duckdb
       type(c_ptr) :: res
     end function duckdb_library_version_
 
+    ! DUCKDB_API const char *duckdb_result_error(duckdb_result *result);
+    function duckdb_result_error_(res) result(err)&
+    bind(c, name='duckdb_result_error')
+      import :: c_ptr
+      type(c_ptr) :: err
+      type(c_ptr), value :: res
+    end function duckdb_result_error_
+
     ! DUCKDB_API const char *duckdb_column_name(duckdb_result *result, idx_t col);
     ! TODO: col is zero-based - do we want this to be one based for fortran?.
     function duckdb_column_name_(res, col)&
@@ -257,6 +266,19 @@ module duckdb
       tmp = c_loc(res)
       call duckdb_destroy_result_(tmp)
     end subroutine duckdb_destroy_result
+
+    function duckdb_result_error(res) result(err)
+      character(len=:), allocatable :: err
+      type(c_ptr) :: tmp1, tmp2
+      type(duckdb_result), pointer :: res
+      tmp2 = c_loc(res)
+      tmp1 = duckdb_result_error_(tmp2)
+      if (c_associated(tmp1)) then
+        call c_f_str_ptr(tmp1, err)
+      else
+        err= "NULL"
+      end if
+    end function duckdb_result_error
 
 
 end module duckdb
