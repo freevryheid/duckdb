@@ -222,14 +222,54 @@ module duckdb
     end function duckdb_result_chunk_count_
 
     ! DUCKDB_API bool duckdb_value_boolean(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_boolean_(res, col, row)&
+    bind(c, name='duckdb_value_boolean')&
+    result(r)
+      import :: c_ptr, c_bool, c_int64_t
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t), value :: col, row
+      logical(kind=c_bool) :: r
+    end function duckdb_value_boolean_
 
     ! DUCKDB_API int8_t duckdb_value_int8(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_int8_(res, col, row)&
+    bind(c, name='duckdb_value_int8')&
+    result(r)
+      import :: c_ptr, c_int8_t, c_int64_t
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t), value :: col, row
+      integer(kind=c_int8_t) :: r
+    end function duckdb_value_int8_
 
     ! DUCKDB_API int16_t duckdb_value_int16(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_int16_(res, col, row)&
+    bind(c, name='duckdb_value_int16')&
+    result(r)
+      import :: c_ptr, c_int16_t, c_int64_t
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t), value :: col, row
+      integer(kind=c_int16_t) :: r
+    end function duckdb_value_int16_
 
     ! DUCKDB_API int32_t duckdb_value_int32(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_int32_(res, col, row)&
+    bind(c, name='duckdb_value_int32')&
+    result(r)
+      import :: c_ptr, c_int32_t, c_int64_t
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t), value :: col, row
+      integer(kind=c_int32_t) :: r
+    end function duckdb_value_int32_
 
     ! DUCKDB_API int64_t duckdb_value_int64(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_int64_(res, col, row)&
+    bind(c, name='duckdb_value_int64')&
+    result(r)
+      import :: c_ptr, c_int64_t
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t), value :: col, row
+      integer(kind=c_int64_t) :: r
+    end function duckdb_value_int64_
 
     ! DUCKDB_API duckdb_hugeint duckdb_value_hugeint(duckdb_result *result, idx_t col, idx_t row);
 
