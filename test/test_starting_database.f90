@@ -35,7 +35,7 @@ contains
   subroutine test_multiple_startup(error)
     type(error_type), allocatable, intent(out) :: error
 
-    type(c_ptr) :: database(10), connection(10)
+    type(c_ptr) :: database(10), connection(100)
     integer :: i, j
 
     do i = 1, 10
