@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM --platform=linux/amd64 ubuntu:latest
 
 ARG FPM_BIN="https://github.com/fortran-lang/fpm/releases/download/v0.7.0/fpm-0.7.0-linux-x86_64"
 ARG DUCKDB_DISTR="https://github.com/duckdb/duckdb/releases/download/v0.7.1/libduckdb-linux-amd64.zip"
