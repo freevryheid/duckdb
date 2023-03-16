@@ -7,6 +7,8 @@ program main
   type(c_ptr) :: db, conn
   integer(kind(duckdb_state)) :: state
   type(duckdb_result), pointer :: res => null()
+  character(len=:), allocatable :: col_name
+  integer(kind(duckdb_type)) :: col_type
 
   print *, "clib version: ", duckdb_library_version()
 
@@ -31,11 +33,16 @@ program main
 
   print*, "Number of columns: ", duckdb_column_count(res)
   print*, "Number of rows: ", duckdb_row_count(res)
-  print*, "Column 1 name: ", duckdb_column_name(res, 1)
+
+  col_name = duckdb_column_name(res, 1)
+  col_type = duckdb_column_type(res, 1)
+
+  print*, "Column 1 name: ", col_name
+  print*, "Column 1 type: ", col_type
 
   print*, "here"
 
-  ! call duckdb_destroy_result(c_loc(res))
+  call duckdb_destroy_result(res)
   call duckdb_disconnect(conn)
   call duckdb_close(db)
 

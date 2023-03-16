@@ -16,10 +16,11 @@ module duckdb
   public :: duckdb_open, duckdb_close
   public :: duckdb_connect, duckdb_disconnect
   public :: duckdb_query
-  ! public :: duckdb_destroy_result
+  public :: duckdb_destroy_result
   public :: duckdb_column_count, duckdb_row_count
   public :: duckdb_library_version
   public :: duckdb_column_name
+  public :: duckdb_column_type
 
   enum, bind(c)
     enumerator :: duckdb_state  = 0
@@ -62,10 +63,6 @@ module duckdb
   end enum
 
   type, bind(c) :: duckdb_column
-    type(c_ptr) :: data
-    logical :: nullmask
-    integer(kind(duckdb_type)) :: type
-    character(kind=c_char) :: name
     type(c_ptr) :: internal_data
   end type
 
@@ -121,12 +118,11 @@ module duckdb
     end function duckdb_query_
 
     ! DUCKDB_API void duckdb_destroy_result(duckdb_result *result);
-    ! TODO : needed? - if defined in fortran then destroy it in fortran
-    ! subroutine duckdb_destroy_result(result1)&
-    ! bind(c, name='duckdb_destroy_result')
-    !   import :: c_ptr
-    !   type(c_ptr) :: result1
-    ! end subroutine duckdb_destroy_result
+    subroutine duckdb_destroy_result_(result1)&
+    bind(c, name='duckdb_destroy_result')
+      import :: c_ptr
+      type(c_ptr), value :: result1
+    end subroutine duckdb_destroy_result_
 
     ! DUCKDB_API idx_t duckdb_column_count(duckdb_result *result);
     function duckdb_column_count_(res) result(cc)&
@@ -154,6 +150,7 @@ module duckdb
 
     ! DUCKDB_API const char *duckdb_column_name(duckdb_result *result, idx_t col);
     ! TODO: check if col is zero-based - do we want this to be one based for fortran?.
+    ! FIXME
     function duckdb_column_name_(res, col)&
     bind(c, name='duckdb_column_name')&
     result(name)
@@ -162,6 +159,17 @@ module duckdb
       type(c_ptr), value :: res
       integer(kind=c_int64_t) :: col
     end function duckdb_column_name_
+
+    ! DUCKDB_API duckdb_type duckdb_column_type(duckdb_result *result, idx_t col);
+    ! FIXME
+    function duckdb_column_type_(res, col)&
+    bind(c, name='duckdb_column_type')&
+    result(col_type)
+      import :: c_ptr, c_int64_t
+      integer(kind(duckdb_type)) :: col_type
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t) :: col
+    end function duckdb_column_type_
 
   end interface
 
@@ -198,16 +206,14 @@ module duckdb
       cc = int(duckdb_row_count_(tmp))
     end function duckdb_row_count
 
-    function duckdb_library_version()&
-    result(res)
+    function duckdb_library_version() result(res)
       character(len=:), allocatable :: res
       type(c_ptr) :: tmp
       tmp = duckdb_library_version_()
       call c_f_str_ptr(tmp, res)
     end function duckdb_library_version
 
-    function duckdb_column_name(res, col)&
-    result(name)
+    function duckdb_column_name(res, col) result(name)
       character(len=:), allocatable :: name
       type(c_ptr) :: tmp1, tmp2
       type(duckdb_result), pointer :: res
@@ -220,5 +226,22 @@ module duckdb
         name = "NULL"
       end if
     end function duckdb_column_name
+
+    function duckdb_column_type(res, col) result(col_type)
+      integer(kind(duckdb_type)) :: col_type
+      type(c_ptr) :: tmp1, tmp2
+      type(duckdb_result), pointer :: res
+      integer :: col
+      tmp2 = c_loc(res)
+      col_type= duckdb_column_type_(tmp2, int(col, kind=c_int64_t))
+    end function duckdb_column_type
+
+    subroutine duckdb_destroy_result(res)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      tmp = c_loc(res)
+      call duckdb_destroy_result_(tmp)
+    end subroutine duckdb_destroy_result
+
 
 end module duckdb
