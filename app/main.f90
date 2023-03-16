@@ -7,6 +7,8 @@ program main
   type(c_ptr) :: db, conn
   integer(kind(duckdb_state)) :: state
   type(duckdb_result), pointer :: res => null()
+  ! character(len=:), allocatable :: col_name
+  ! integer(kind(duckdb_type)) :: col_type
 
   print *, "clib version: ", duckdb_library_version()
 
@@ -14,7 +16,7 @@ program main
   if (duckdb_connect(db, conn).eq.duckdberror) error stop "cannot connect database"
 
   state = duckdb_query(conn, &
-    "create table integers(i integer, j integer, k integer);", &
+    "create table integers(one integer, two integer, three integer);", &
     res)
   if (state.eq.duckdberror) error stop "cannot create table"
 
@@ -29,23 +31,23 @@ program main
     "select * from integers;", &
     res)
 
-  print*, duckdb_column_count(res)
-  print*, duckdb_row_count(res)
+  print*, "Number of columns: ", duckdb_column_count(res)
+  print*, "Number of rows: ", duckdb_row_count(res)
 
-  ! if(c_associated(result1)) print*, "ASS"
+  print*, "Column 1 name: ", duckdb_column_name(res, 0)
+  print*, "Column 1 type: ", duckdb_column_type(res, 0)
 
-  ! ! print *, "result: ", result1
-  ! allocate(result2)
-  ! call c_f_pointer(result1, result2)
+  ! force an error
+  state = duckdb_query(conn, &
+    "select four from integers;", &
+    res)
+  if (state.eq.duckdberror) print*, duckdb_result_error(res)
 
-  ! ! print*, result2%column_count
-  ! ! print*, result2
 
-  ! ! if (state.eq.duckdberror) error stop "cannot select table"
 
   print*, "here"
 
-  ! call duckdb_destroy_result(c_loc(res))
+  call duckdb_destroy_result(res)
   call duckdb_disconnect(conn)
   call duckdb_close(db)
 
