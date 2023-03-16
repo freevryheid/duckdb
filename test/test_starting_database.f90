@@ -9,7 +9,6 @@ module test_starting_database
 contains
 
   subroutine collect_starting_database(testsuite)
-    !> Collection of tests
     type(unittest_type), allocatable, intent(out) :: testsuite(:)
 
     testsuite = [ &
