@@ -22,6 +22,19 @@ module duckdb
   public :: duckdb_column_name
   public :: duckdb_column_type
   public :: duckdb_result_error
+  public :: duckdb_result_get_chunk
+  public :: duckdb_result_chunk_count
+
+
+
+
+
+
+
+
+
+
+
 
   enum, bind(c)
     enumerator :: duckdb_state  = 0
@@ -187,6 +200,73 @@ module duckdb
       integer(kind=c_int64_t), value :: col
     end function duckdb_column_type_
 
+    ! DUCKDB_API duckdb_data_chunk duckdb_result_get_chunk(duckdb_result result, idx_t chunk_index);
+    ! FIXME
+    function duckdb_result_get_chunk_(res, idx)&
+    bind(c, name='duckdb_result_get_chunk')&
+    result(chunk)
+      import :: c_ptr, c_int64_t
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t), value :: idx
+      type(c_ptr) :: chunk
+    end function duckdb_result_get_chunk_
+
+    ! DUCKDB_API idx_t duckdb_result_chunk_count(duckdb_result result);
+    ! FIXME
+    function duckdb_result_chunk_count_(res)&
+    bind(c, name='duckdb_result_chunk_count')&
+    result(cc)
+      import :: c_ptr, c_int64_t
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t) :: cc
+    end function duckdb_result_chunk_count_
+
+    ! DUCKDB_API bool duckdb_value_boolean(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API int8_t duckdb_value_int8(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API int16_t duckdb_value_int16(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API int32_t duckdb_value_int32(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API int64_t duckdb_value_int64(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API duckdb_hugeint duckdb_value_hugeint(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API duckdb_decimal duckdb_value_decimal(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API uint8_t duckdb_value_uint8(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API uint16_t duckdb_value_uint16(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API uint32_t duckdb_value_uint32(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API uint64_t duckdb_value_uint64(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API float duckdb_value_float(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API double duckdb_value_double(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API duckdb_date duckdb_value_date(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API duckdb_time duckdb_value_time(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API duckdb_timestamp duckdb_value_timestamp(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API duckdb_interval duckdb_value_interval(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API duckdb_string duckdb_value_string(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API duckdb_blob duckdb_value_blob(duckdb_result *result, idx_t col, idx_t row);
+
+    ! DUCKDB_API bool duckdb_value_is_null(duckdb_result *result, idx_t col, idx_t row);
+
+
+
+
+
+
+
   end interface
 
   contains
@@ -279,6 +359,35 @@ module duckdb
         err= "NULL"
       end if
     end function duckdb_result_error
+
+    ! FIXME
+    function duckdb_result_get_chunk(res, idx) result(chunk)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      integer :: idx
+      type(c_ptr) :: chunk
+      tmp = c_loc(res)
+      chunk = duckdb_result_get_chunk_(tmp, int(idx, kind=c_int64_t))
+    end function duckdb_result_get_chunk
+
+    ! FIXME
+    function duckdb_result_chunk_count(res) result(cc)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      integer :: cc
+      tmp = c_loc(res)
+      cc = int(duckdb_result_chunk_count_(tmp))
+    end function duckdb_result_chunk_count
+
+
+
+
+
+
+
+
+
+
 
 
 end module duckdb
