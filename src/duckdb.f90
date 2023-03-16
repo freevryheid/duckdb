@@ -19,6 +19,7 @@ module duckdb
   ! public :: duckdb_destroy_result
   public :: duckdb_column_count, duckdb_row_count
   public :: duckdb_library_version
+  public :: duckdb_column_name
 
   enum, bind(c)
     enumerator :: duckdb_state  = 0
@@ -151,6 +152,17 @@ module duckdb
       type(c_ptr) :: res
     end function duckdb_library_version_
 
+    ! DUCKDB_API const char *duckdb_column_name(duckdb_result *result, idx_t col);
+    ! TODO: check if col is zero-based - do we want this to be one based for fortran?.
+    function duckdb_column_name_(res, col)&
+    bind(c, name='duckdb_column_name')&
+    result(name)
+      import :: c_ptr, c_int64_t
+      type(c_ptr) :: name
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t) :: col
+    end function duckdb_column_name_
+
   end interface
 
   contains
@@ -193,5 +205,20 @@ module duckdb
       tmp = duckdb_library_version_()
       call c_f_str_ptr(tmp, res)
     end function duckdb_library_version
+
+    function duckdb_column_name(res, col)&
+    result(name)
+      character(len=:), allocatable :: name
+      type(c_ptr) :: tmp1, tmp2
+      type(duckdb_result), pointer :: res
+      integer :: col
+      tmp2 = c_loc(res)
+      tmp1 = duckdb_column_name_(tmp2, int(col, kind=c_int64_t))
+      if (c_associated(tmp1)) then
+        call c_f_str_ptr(tmp1, name)
+      else
+        name = "NULL"
+      end if
+    end function duckdb_column_name
 
 end module duckdb
