@@ -7,7 +7,9 @@ you'll need the c library that can be downloaded from https://duckdb.org/docs/in
 
 
 fpm build
+
 fpm test
+
 fpm run main
 
 dev notes:
