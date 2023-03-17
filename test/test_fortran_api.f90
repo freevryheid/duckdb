@@ -67,7 +67,6 @@ contains
 
     type(c_ptr) :: db, con, chunk
     type(duckdb_result), pointer :: result
-    integer :: i, j 
 
     ! Open data in in-memory mode
     call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
@@ -83,6 +82,22 @@ contains
         result) == duckdbsuccess)
     if (allocated(error)) return
 
+    ! create a table from reading a parquet file
+    call check(error, duckdb_query(                                           &
+        con,                                                                  &
+        "SELECT * FROM 'test.parquet';",                 &
+        result) == duckdbsuccess)
+    if (allocated(error)) return
+
+    call check(error, duckdb_column_count(result)==2)
+    if (allocated(error)) return
+
+    call check(error, duckdb_column_type(result, 0)==duckdb_type_bigint)
+    if (allocated(error)) return
+
+    call check(error, duckdb_column_type(result, 1)==duckdb_type_varchar)
+    if (allocated(error)) return
+    
     ! Retrieving the table doesn't work yet.
     ! print*, duckdb_result_chunk_count(result)
     ! duckdb_result_get_chunk(result, )

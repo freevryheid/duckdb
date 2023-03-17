@@ -26,6 +26,8 @@ module duckdb
   public :: duckdb_library_version
   public :: duckdb_column_name
   public :: duckdb_column_type
+  public :: duckdb_column_data
+  public :: duckdb_nullmask_data
   public :: duckdb_result_error
   public :: duckdb_result_get_chunk
   public :: duckdb_result_chunk_count
@@ -282,6 +284,26 @@ module duckdb
       type(c_ptr), value :: res
       integer(kind=c_int64_t), value :: col
     end function duckdb_column_type_
+
+    ! DUCKDB_API void *duckdb_column_data(duckdb_result *result, idx_t col);
+    function duckdb_column_data_(res, col)&
+    bind(c, name='duckdb_column_data')&
+    result(data)
+      import :: c_ptr, c_int64_t
+      type(c_ptr), value :: res 
+      integer(kind=c_int64_t), value :: col
+      type(c_ptr) :: data
+    end function duckdb_column_data_
+
+    ! DUCKDB_API bool *duckdb_nullmask_data(duckdb_result *result, idx_t col);
+    function duckdb_nullmask_data_(res, col)&
+    bind(c, name='duckdb_nullmask_data')&
+    result(mask)
+      import :: c_ptr, c_int64_t
+      type(c_ptr), value :: res 
+      integer(kind=c_int64_t), value :: col
+      type(c_ptr) :: mask
+    end function duckdb_nullmask_data_
 
     ! DUCKDB_API duckdb_data_chunk duckdb_result_get_chunk(duckdb_result result, idx_t chunk_index);
     ! FIXME
@@ -674,6 +696,24 @@ module duckdb
         err= "NULL"
       end if
     end function duckdb_result_error
+
+    function duckdb_column_data(res, col) result(data)
+      type(duckdb_result), pointer :: res
+      integer :: col
+      type(c_ptr) :: tmp
+      type(c_ptr) :: data
+      tmp = c_loc(res)
+      data = duckdb_column_data_(tmp, int(col, kind=c_int64_t))
+    end function duckdb_column_data
+
+    function duckdb_nullmask_data(res, col) result(mask)
+      type(duckdb_result), pointer :: res
+      integer :: col
+      type(c_ptr) :: tmp
+      type(c_ptr) :: mask
+      tmp = c_loc(res)
+      mask = duckdb_nullmask_data_(tmp, int(col, kind=c_int64_t))
+    end function duckdb_nullmask_data
 
     ! FIXME
     function duckdb_result_get_chunk(res, idx) result(chunk)
