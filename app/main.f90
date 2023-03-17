@@ -1,16 +1,15 @@
 program main
 
   use,intrinsic :: iso_c_binding
+  use, intrinsic :: iso_fortran_env, only : int8, int16, int32, int64, real32, real64, real128
   use duckdb
   implicit none
 
   type(c_ptr) :: db, conn
   integer(kind(duckdb_state)) :: state
   type(duckdb_result), pointer :: res => null()
-  ! character(len=:), allocatable :: col_name
-  ! integer(kind(duckdb_type)) :: col_type
 
-  print *, "clib version: ", duckdb_library_version()
+  print*, "clib version: ", duckdb_library_version()
 
   if (duckdb_open(c_null_ptr, db).eq.duckdberror) error stop "cannot open database"
   if (duckdb_connect(db, conn).eq.duckdberror) error stop "cannot connect database"
@@ -37,17 +36,18 @@ program main
   print*, "Column 1 name: ", duckdb_column_name(res, 0)
   print*, "Column 1 type: ", duckdb_column_type(res, 0)
 
+  call duckdb_destroy_result(res)
+  deallocate(res)
+
+  allocate(res)
   ! force an error
   state = duckdb_query(conn, &
     "select four from integers;", &
     res)
   if (state.eq.duckdberror) print*, duckdb_result_error(res)
 
-
-
-  ! print*, "here"
-
   call duckdb_destroy_result(res)
+  deallocate(res)
   call duckdb_disconnect(conn)
   call duckdb_close(db)
 

@@ -4,6 +4,9 @@ module duckdb
   use util
   implicit none
   private
+  public :: duckdb_date, duckdb_date_struct, duckdb_time, duckdb_time_struct, duckdb_timestamp
+  public :: duckdb_timestamp_struct, duckdb_interval, duckdb_hugeint, duckdb_decimal, duckdb_string
+  public :: duckdb_blob, duckdb_list_entry, duckdb_column, duckdb_result
   public :: duckdb_type, duckdb_type_invalid, duckdb_type_boolean, duckdb_type_tinyint
   public :: duckdb_type_smallint, duckdb_type_integer, duckdb_type_bigint, duckdb_type_utinyint
   public :: duckdb_type_usmallint, duckdb_type_uinteger, duckdb_type_ubigint, duckdb_type_float
@@ -12,7 +15,6 @@ module duckdb
   public :: duckdb_type_decimal, duckdb_type_timestamp_s, duckdb_type_timestamp_ms
   public :: duckdb_type_timestamp_ns, duckdb_type_enum, duckdb_type_list, duckdb_type_struct
   public :: duckdb_type_map, duckdb_type_uuid, duckdb_type_union, duckdb_type_bit
-  public :: duckdb_column, duckdb_result
   public :: duckdb_state, duckdbsuccess, duckdberror
   public :: duckdb_open, duckdb_close
   public :: duckdb_connect, duckdb_disconnect
@@ -25,13 +27,13 @@ module duckdb
   public :: duckdb_result_error
   public :: duckdb_result_get_chunk
   public :: duckdb_result_chunk_count
-
-
-
-
-
-
-
+  public :: duckdb_value_boolean
+  public :: duckdb_value_int8
+  public :: duckdb_value_int16
+  public :: duckdb_value_int32
+  public :: duckdb_value_int64
+  public :: duckdb_value_float
+  public :: duckdb_value_double
 
 
 
@@ -76,6 +78,68 @@ module duckdb
     enumerator :: duckdb_type_union        = 28 ! union type, only useful as logical type
     enumerator :: duckdb_type_bit          = 29 ! duckdb_bit
   end enum
+
+  type, bind(c) :: duckdb_date
+    integer(kind=c_int32_t) :: days
+  end type
+
+  type, bind(c) :: duckdb_date_struct
+    integer(kind=c_int32_t) :: year
+    integer(kind=c_int8_t) :: month
+    integer(kind=c_int8_t) :: day
+  end type
+
+  type, bind(c) :: duckdb_time
+   integer(kind=c_int64_t) :: micros
+  end type
+
+  type, bind(c) :: duckdb_time_struct
+    integer(kind=c_int8_t) :: hour
+    integer(kind=c_int8_t) :: min
+    integer(kind=c_int8_t) :: sec
+    integer(kind=c_int32_t) :: micros
+  end type
+
+  type, bind(c) :: duckdb_timestamp
+   integer(kind=c_int64_t) :: micros
+  end type
+
+  type, bind(c) :: duckdb_timestamp_struct
+    type(duckdb_date_struct) :: date
+    type(duckdb_time_struct) :: time
+  end type
+
+  type, bind(c) :: duckdb_interval
+    integer(kind=c_int32_t) :: months
+    integer(kind=c_int32_t) :: days
+    integer(kind=c_int64_t) :: micros
+  end type
+
+  type, bind(c) :: duckdb_hugeint
+    integer(kind=c_int64_t) :: lower
+    integer(kind=c_int64_t) :: upper
+  end type
+
+  type, bind(c) :: duckdb_decimal
+    integer(kind=c_int8_t) :: width
+    integer(kind=c_int8_t) :: scale
+    type(duckdb_hugeint) :: value
+  end type
+
+  type, bind(c) :: duckdb_string
+    type(c_ptr) :: data
+    integer(kind=c_int64_t) :: size
+  end type
+
+  type, bind(c) :: duckdb_blob
+    type(c_ptr) :: data
+    integer(kind=c_int64_t) :: size
+  end type
+
+  type, bind(c) :: duckdb_list_entry
+    integer(kind=c_int64_t) :: offset
+    integer(kind=c_int64_t) :: length
+  end type
 
   type, bind(c) :: duckdb_column
     type(c_ptr) :: internal_data
@@ -134,10 +198,10 @@ module duckdb
 
     ! DUCKDB_API void duckdb_destroy_result(duckdb_result *result);
     ! FIXME
-    subroutine duckdb_destroy_result_(result1)&
+    subroutine duckdb_destroy_result_(res)&
     bind(c, name='duckdb_destroy_result')
       import :: c_ptr
-      type(c_ptr), value :: result1
+      type(c_ptr), value :: res
     end subroutine duckdb_destroy_result_
 
     ! DUCKDB_API idx_t duckdb_column_count(duckdb_result *result);
@@ -276,13 +340,10 @@ module duckdb
 
     ! DUCKDB_API duckdb_decimal duckdb_value_decimal(duckdb_result *result, idx_t col, idx_t row);
 
-    ! DUCKDB_API uint8_t duckdb_value_uint8(duckdb_result *result, idx_t col, idx_t row);
     ! TODO - not sure if we should be bothered with these unsigned versions
-
+    ! DUCKDB_API uint8_t duckdb_value_uint8(duckdb_result *result, idx_t col, idx_t row);
     ! DUCKDB_API uint16_t duckdb_value_uint16(duckdb_result *result, idx_t col, idx_t row);
-
     ! DUCKDB_API uint32_t duckdb_value_uint32(duckdb_result *result, idx_t col, idx_t row);
-
     ! DUCKDB_API uint64_t duckdb_value_uint64(duckdb_result *result, idx_t col, idx_t row);
 
     ! DUCKDB_API float duckdb_value_float(duckdb_result *result, idx_t col, idx_t row);
@@ -294,7 +355,6 @@ module duckdb
       integer(kind=c_int64_t), value :: col, row
       integer(kind=c_float) :: r
     end function duckdb_value_float_
-
 
     ! DUCKDB_API double duckdb_value_double(duckdb_result *result, idx_t col, idx_t row);
     function duckdb_value_double_(res, col, row)&
@@ -319,6 +379,15 @@ module duckdb
     ! DUCKDB_API duckdb_blob duckdb_value_blob(duckdb_result *result, idx_t col, idx_t row);
 
     ! DUCKDB_API bool duckdb_value_is_null(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_is_null_(res, col, row)&
+    bind(c, name='duckdb_value_is_null')&
+    result(r)
+      import :: c_ptr, c_bool, c_int64_t
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t), value :: col, row
+      logical(kind=c_bool) :: r
+    end function duckdb_value_is_null_
+
 
 
 
@@ -338,11 +407,9 @@ module duckdb
       type(duckdb_result), pointer :: out_result
       type(c_ptr) :: tmp
       sql = query // c_null_char ! convert to c string
-      print*, "here_in"
       tmp = c_loc(out_result)
       res = duckdb_query_(connection, sql, tmp)
       call c_f_pointer(tmp, out_result)
-      print*, "here_out"
     end function duckdb_query
 
     function duckdb_column_count(res) result(cc)
@@ -500,6 +567,15 @@ module duckdb
       tmp = c_loc(res)
       r = real(duckdb_value_double_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=real64)
     end function duckdb_value_double
+
+    function duckdb_value_is_null(res, col, row) result(r)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      integer :: col, row
+      logical :: r
+      tmp = c_loc(res)
+      r = duckdb_value_is_null_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
+    end function duckdb_value_is_null
 
 
 
