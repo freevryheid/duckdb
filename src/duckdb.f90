@@ -15,6 +15,8 @@ module duckdb
   public :: duckdb_type_decimal, duckdb_type_timestamp_s, duckdb_type_timestamp_ms
   public :: duckdb_type_timestamp_ns, duckdb_type_enum, duckdb_type_list, duckdb_type_struct
   public :: duckdb_type_map, duckdb_type_uuid, duckdb_type_union, duckdb_type_bit
+  public :: duckdb_pending_state, duckdb_pending_result_ready
+  public :: duckdb_pending_result_not_ready, duckdb_pending_error
   public :: duckdb_state, duckdbsuccess, duckdberror
   public :: duckdb_open, duckdb_close
   public :: duckdb_connect, duckdb_disconnect
@@ -41,6 +43,12 @@ module duckdb
   public :: duckdb_value_string
   public :: duckdb_value_blob
   public :: duckdb_value_is_null
+  public :: duckdb_malloc, duckdb_free, duckdb_vector_size
+  public :: duckdb_from_date, duckdb_to_date
+  public :: duckdb_from_time, duckdb_to_time
+  public :: duckdb_from_timestamp, duckdb_to_timestamp
+  public :: duckdb_hugeint_to_double, duckdb_double_to_hugeint
+  public :: duckdb_decimal_to_double, duckdb_double_to_decimal
 
   enum, bind(c)
     enumerator :: duckdb_state  = 0
@@ -80,6 +88,13 @@ module duckdb
     enumerator :: duckdb_type_uuid         = 27 ! duckdb_hugeint
     enumerator :: duckdb_type_union        = 28 ! union type, only useful as logical type
     enumerator :: duckdb_type_bit          = 29 ! duckdb_bit
+  end enum
+
+  enum, bind(c)
+    enumerator :: duckdb_pending_state = 0
+    enumerator :: duckdb_pending_result_ready = 0
+    enumerator :: duckdb_pending_result_not_ready = 1
+    enumerator :: duckdb_pending_error = 2
   end enum
 
   type, bind(c) :: duckdb_date
@@ -372,7 +387,7 @@ module duckdb
       import :: c_ptr, c_float, c_int64_t
       type(c_ptr), value :: res
       integer(kind=c_int64_t), value :: col, row
-      integer(kind=c_float) :: r
+      real(kind=c_float) :: r
     end function duckdb_value_float_
 
     ! DUCKDB_API double duckdb_value_double(duckdb_result *result, idx_t col, idx_t row);
@@ -382,7 +397,7 @@ module duckdb
       import :: c_ptr, c_double, c_int64_t
       type(c_ptr), value :: res
       integer(kind=c_int64_t), value :: col, row
-      integer(kind=c_double) :: r
+      real(kind=c_double) :: r
     end function duckdb_value_double_
 
     ! DUCKDB_API duckdb_date duckdb_value_date(duckdb_result *result, idx_t col, idx_t row);
@@ -454,6 +469,120 @@ module duckdb
       integer(kind=c_int64_t), value :: col, row
       logical(kind=c_bool) :: r
     end function duckdb_value_is_null_
+
+    ! DUCKDB_API void *duckdb_malloc(size_t size);
+    function duckdb_malloc(size)&
+    bind(c, name='duckdb_malloc')&
+    result(res)
+      import :: c_ptr, c_size_t
+      integer(kind=c_size_t) :: size
+      type(c_ptr) :: res
+    end function duckdb_malloc
+
+    ! DUCKDB_API void duckdb_free(void *ptr);
+    subroutine duckdb_free(ptr)&
+    bind(c, name='duckdb_free')
+      import :: c_ptr
+      type(c_ptr) :: ptr
+    end subroutine duckdb_free
+
+    ! DUCKDB_API idx_t duckdb_vector_size();
+    function duckdb_vector_size()&
+    bind(c, name='duckdb_vector_size')&
+    result(res)
+      import :: c_int64_t
+      integer(kind=c_int64_t) :: res
+    end function duckdb_vector_size
+
+    ! DUCKDB_API duckdb_date_struct duckdb_from_date(duckdb_date date);
+    function duckdb_from_date(date)&
+    bind(c, name='duckdb_from_date')&
+    result(res)
+      import :: duckdb_date, duckdb_date_struct
+      type(duckdb_date) :: date
+      type(duckdb_date_struct) :: res
+    end function duckdb_from_date
+
+    ! DUCKDB_API duckdb_date duckdb_to_date(duckdb_date_struct date);
+    function duckdb_to_date(date)&
+    bind(c, name='duckdb_to_date')&
+    result(res)
+      import :: duckdb_date, duckdb_date_struct
+      type(duckdb_date) :: res
+      type(duckdb_date_struct) :: date
+    end function duckdb_to_date
+
+    ! DUCKDB_API duckdb_time_struct duckdb_from_time(duckdb_time time);
+    function duckdb_from_time(time)&
+    bind(c, name='duckdb_from_time')&
+    result(res)
+      import :: duckdb_time, duckdb_time_struct
+      type(duckdb_time) :: time
+      type(duckdb_time_struct) :: res
+    end function duckdb_from_time
+
+    ! DUCKDB_API duckdb_time duckdb_to_time(duckdb_time_struct time);
+    function duckdb_to_time(time)&
+    bind(c, name='duckdb_to_time')&
+    result(res)
+      import :: duckdb_time, duckdb_time_struct
+      type(duckdb_time) :: res
+      type(duckdb_time_struct) :: time
+    end function duckdb_to_time
+
+    ! DUCKDB_API duckdb_timestamp_struct duckdb_from_timestamp(duckdb_timestamp ts);
+    function duckdb_from_timestamp(timestamp)&
+    bind(c, name='duckdb_from_timestamp')&
+    result(res)
+      import :: duckdb_timestamp, duckdb_timestamp_struct
+      type(duckdb_timestamp) :: timestamp
+      type(duckdb_timestamp_struct) :: res
+    end function duckdb_from_timestamp
+
+    ! DUCKDB_API duckdb_timestamp duckdb_to_timestamp(duckdb_timestamp_struct ts);
+    function duckdb_to_timestamp(timestamp)&
+    bind(c, name='duckdb_to_timestamp')&
+    result(res)
+      import :: duckdb_timestamp, duckdb_timestamp_struct
+      type(duckdb_timestamp) :: res
+      type(duckdb_timestamp_struct) :: timestamp
+    end function duckdb_to_timestamp
+
+    ! DUCKDB_API double duckdb_hugeint_to_double(duckdb_hugeint val);
+    function duckdb_hugeint_to_double(val)&
+    bind(c, name='duckdb_hugeint_to_double')&
+    result(res)
+      import :: c_double, duckdb_hugeint
+      type(duckdb_hugeint) :: val
+      real(kind=c_double) :: res
+    end function duckdb_hugeint_to_double
+
+    ! DUCKDB_API duckdb_hugeint duckdb_double_to_hugeint(double val);
+    function duckdb_double_to_hugeint(val)&
+    bind(c, name='duckdb_double_to_hugeint')&
+    result(res)
+      import :: c_double, duckdb_hugeint
+      type(duckdb_hugeint) :: res
+      real(kind=c_double) :: val
+    end function duckdb_double_to_hugeint
+
+    ! DUCKDB_API duckdb_decimal duckdb_double_to_decimal(double val, uint8_t width, uint8_t scale);
+    function duckdb_double_to_decimal(val)&
+    bind(c, name='duckdb_double_to_decimal')&
+    result(res)
+      import :: c_double, duckdb_decimal
+      type(duckdb_decimal) :: res
+      real(kind=c_double) :: val
+    end function duckdb_double_to_decimal
+
+    ! DUCKDB_API double duckdb_decimal_to_double(duckdb_decimal val);
+    function duckdb_decimal_to_double(val)&
+    bind(c, name='duckdb_decimal_to_double')&
+    result(res)
+      import :: c_double, duckdb_decimal
+      type(duckdb_decimal) :: val
+      real(kind=c_double) :: res
+    end function duckdb_decimal_to_double
 
   end interface
 
