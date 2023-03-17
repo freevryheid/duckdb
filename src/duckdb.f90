@@ -1,5 +1,6 @@
 module duckdb
-  use, intrinsic :: iso_c_binding
+  use, intrinsic :: iso_c_binding,
+  use, intrinsic :: iso_fortran_env, only : int8, int16, int32, int64, real32, real64, real128
   use util
   implicit none
   private
@@ -276,6 +277,7 @@ module duckdb
     ! DUCKDB_API duckdb_decimal duckdb_value_decimal(duckdb_result *result, idx_t col, idx_t row);
 
     ! DUCKDB_API uint8_t duckdb_value_uint8(duckdb_result *result, idx_t col, idx_t row);
+    ! TODO - not sure if we should be bothered with these unsigned versions
 
     ! DUCKDB_API uint16_t duckdb_value_uint16(duckdb_result *result, idx_t col, idx_t row);
 
@@ -284,8 +286,25 @@ module duckdb
     ! DUCKDB_API uint64_t duckdb_value_uint64(duckdb_result *result, idx_t col, idx_t row);
 
     ! DUCKDB_API float duckdb_value_float(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_float_(res, col, row)&
+    bind(c, name='duckdb_value_float')&
+    result(r)
+      import :: c_ptr, c_float, c_int64_t
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t), value :: col, row
+      integer(kind=c_float) :: r
+    end function duckdb_value_float_
+
 
     ! DUCKDB_API double duckdb_value_double(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_double_(res, col, row)&
+    bind(c, name='duckdb_value_double')&
+    result(r)
+      import :: c_ptr, c_double, c_int64_t
+      type(c_ptr), value :: res
+      integer(kind=c_int64_t), value :: col, row
+      integer(kind=c_double) :: r
+    end function duckdb_value_double_
 
     ! DUCKDB_API duckdb_date duckdb_value_date(duckdb_result *result, idx_t col, idx_t row);
 
@@ -418,6 +437,69 @@ module duckdb
       tmp = c_loc(res)
       cc = int(duckdb_result_chunk_count_(tmp))
     end function duckdb_result_chunk_count
+
+    function duckdb_value_boolean(res, col, row) result(r)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      integer :: col, row
+      logical :: r
+      tmp = c_loc(res)
+      r = duckdb_value_boolean_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
+    end function duckdb_value_boolean
+
+    function duckdb_value_int8(res, col, row) result(r)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      integer :: col, row
+      integer(kind=int8) :: r
+      tmp = c_loc(res)
+      r = int(duckdb_value_int8_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int8)
+    end function duckdb_value_int8
+
+    function duckdb_value_int16(res, col, row) result(r)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      integer :: col, row
+      integer(kind=int16) :: r
+      tmp = c_loc(res)
+      r = int(duckdb_value_int16_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int16)
+    end function duckdb_value_int16
+
+    function duckdb_value_int32(res, col, row) result(r)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      integer :: col, row
+      integer(kind=int32) :: r
+      tmp = c_loc(res)
+      r = int(duckdb_value_int32_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int32)
+    end function duckdb_value_int32
+
+    function duckdb_value_int64(res, col, row) result(r)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      integer :: col, row
+      integer(kind=int64) :: r
+      tmp = c_loc(res)
+      r = int(duckdb_value_int64_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int64)
+    end function duckdb_value_int64
+
+    function duckdb_value_float(res, col, row) result(r)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      integer :: col, row
+      real(kind=real32) :: r
+      tmp = c_loc(res)
+      r = real(duckdb_value_float_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=real32)
+    end function duckdb_value_float
+
+    function duckdb_value_double(res, col, row) result(r)
+      type(duckdb_result), pointer :: res
+      type(c_ptr) :: tmp
+      integer :: col, row
+      real(kind=real64) :: r
+      tmp = c_loc(res)
+      r = real(duckdb_value_double_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=real64)
+    end function duckdb_value_double
 
 
 

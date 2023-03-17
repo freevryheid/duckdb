@@ -45,7 +45,7 @@ program main
 
 
 
-  print*, "here"
+  ! print*, "here"
 
   call duckdb_destroy_result(res)
   call duckdb_disconnect(conn)
