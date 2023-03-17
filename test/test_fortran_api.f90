@@ -41,8 +41,8 @@ contains
     call check(error, duckdb_column_type(result, 0) == duckdb_type_bigint)
     if (allocated(error)) return
 
-    call check(error, duckdb_value_int64(result, 0, 0) == 42)
-    if (allocated(error)) return
+    ! call check(error, duckdb_column_data(result, 0) == 42)
+    ! if (allocated(error)) return
 
     call check(error, duckdb_column_count(result) == 1)
     if (allocated(error)) return
@@ -50,6 +50,16 @@ contains
     call check(error, duckdb_row_count(result) == 1)
     if (allocated(error)) return
 
+    call check(error, duckdb_value_int64(result, 0, 0) == 42)
+    if (allocated(error)) return
+
+    ! Out of range 
+    call check(error, duckdb_value_int64(result, 1, 0) == 0)
+    if (allocated(error)) return
+
+    call check(error, duckdb_value_int64(result, 0, 1) == 0)
+    if (allocated(error)) return
+    
     ! ERROR: duckdb_result_get_chunk gives a "Segmentation fault - invalid memory reference.
     ! chunk = duckdb_result_get_chunk(result, 0)
     ! call check(error, .not. c_associated(chunk))
