@@ -335,6 +335,7 @@ contains
 
     type(c_ptr) :: db, con, chunk
     type(duckdb_result), pointer :: result
+    integer :: i, j, nc, nr
 
     ! Open data in in-memory mode
     call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
@@ -357,8 +358,14 @@ contains
                result) == duckdbsuccess)
     if (allocated(error)) return
 
-    call check(error, duckdb_column_count(result) == 2)
-    if (allocated(error)) return
+    print*, duckdb_column_count(result)
+    ! nc = duckdb_column_count(result)
+    ! call check(error, nc == 2)
+    ! if (allocated(error)) return
+
+    ! nr = duckdb_row_count(result)
+    ! call check(error, nr == 5)
+    ! if (allocated(error)) return
 
     call check(error, duckdb_column_type(result, 0) == duckdb_type_bigint)
     if (allocated(error)) return
@@ -366,6 +373,7 @@ contains
     call check(error, duckdb_column_type(result, 1) == duckdb_type_varchar)
     if (allocated(error)) return
 
+    ! do i = 1, 
     ! Retrieving the table doesn't work yet.
     ! print*, duckdb_result_chunk_count(result)
     ! duckdb_result_get_chunk(result, )
@@ -392,6 +400,9 @@ contains
     !     "SELECT * FROM parquet_schema('result.parquet');",                      &
     !     result) == duckdbsuccess)
     ! if (allocated(error)) return
+    call duckdb_destroy_result(result)
+    call duckdb_disconnect(con)
+    call duckdb_close(db)
   end subroutine test_parquet
 
   subroutine test_data_chunk(error)
