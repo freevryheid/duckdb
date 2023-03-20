@@ -28,19 +28,19 @@ contains
   subroutine test_basic(error)
     type(error_type), allocatable, intent(out) :: error
 
-    type(c_ptr) :: database, connection, chunk
-    type(duckdb_result), pointer :: result
+    type(c_ptr) :: db, conn
+    type(duckdb_result), pointer :: result => null()
 
     ! Open data in in-memory mode
-    call check(error, duckdb_open(c_null_ptr, database) == duckdbsuccess)
+    call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
     if (allocated(error)) return
 
-    call check(error, duckdb_connect(database, connection) == duckdbsuccess)
+    call check(error, duckdb_connect(db, conn) == duckdbsuccess)
     if (allocated(error)) return
 
-    ! select scalar value
+    allocate(result)
     call check(error, &
-               duckdb_query(connection, "SELECT CAST(42 AS BIGINT)", result) == duckdbsuccess)
+               duckdb_query(conn, "SELECT CAST(42 AS BIGINT);", result) == duckdbsuccess)
     if (allocated(error)) return
 
     call check(error, duckdb_column_type(result, 0) == duckdb_type_bigint)
@@ -66,8 +66,9 @@ contains
     if (allocated(error)) return
 
     call duckdb_destroy_result(result)
-    call duckdb_disconnect(connection)
-    call duckdb_close(database)
+    deallocate(result)
+    call duckdb_disconnect(conn)
+    call duckdb_close(db)
   end subroutine test_basic
 
   subroutine test_scalar_null(error)
@@ -83,6 +84,7 @@ contains
     call check(error, duckdb_connect(database, connection) == duckdbsuccess)
     if (allocated(error)) return
 
+    allocate(result)
     ! select scalar value
     call check(error, &
                duckdb_query(connection, "SELECT NULL", result) == duckdbsuccess)
@@ -101,6 +103,7 @@ contains
     if (allocated(error)) return
 
     call duckdb_destroy_result(result)
+    deallocate(result)
     call duckdb_disconnect(connection)
     call duckdb_close(database)
   end subroutine test_scalar_null
@@ -118,6 +121,7 @@ contains
     call check(error, duckdb_connect(database, connection) == duckdbsuccess)
     if (allocated(error)) return
 
+    allocate(result)
     ! select scalar value
     call check(error, &
                duckdb_query(connection, "SELECT 'hello'", result) == duckdbsuccess)
@@ -136,6 +140,7 @@ contains
     if (allocated(error)) return
 
     call duckdb_destroy_result(result)
+    deallocate(result)
     call duckdb_disconnect(connection)
     call duckdb_close(database)
   end subroutine test_scalar_string
@@ -153,6 +158,7 @@ contains
     call check(error, duckdb_connect(database, connection) == duckdbsuccess)
     if (allocated(error)) return
 
+    allocate(result)
     ! select true
     call check(error, &
                duckdb_query(connection, "SELECT 1=1", result) == duckdbsuccess)
@@ -210,6 +216,7 @@ contains
     if (allocated(error)) return
 
     call duckdb_destroy_result(result)
+    deallocate(result)
     call duckdb_disconnect(connection)
     call duckdb_close(database)
   end subroutine test_boolean
@@ -227,6 +234,7 @@ contains
     call check(error, duckdb_connect(database, connection) == duckdbsuccess)
     if (allocated(error)) return
 
+    allocate(result)
     call check(error, &
                duckdb_query(connection, "CREATE TABLE test (a INTEGER, b INTEGER);",&
                result) == duckdbsuccess, "Table creation error.")
@@ -294,6 +302,7 @@ contains
     if (allocated(error)) return
 
     call duckdb_destroy_result(result)
+    deallocate(result)
     call duckdb_disconnect(connection)
     call duckdb_close(database)
   end subroutine test_multiple_insert
@@ -344,6 +353,7 @@ contains
     call check(error, duckdb_connect(db, con) == duckdbsuccess)
     if (allocated(error)) return
 
+    allocate(result)
     ! create a table from reading a parquet file
     call check(error, duckdb_query( &
                con, &
@@ -401,6 +411,7 @@ contains
     !     result) == duckdbsuccess)
     ! if (allocated(error)) return
     call duckdb_destroy_result(result)
+    deallocate(result)
     call duckdb_disconnect(con)
     call duckdb_close(db)
   end subroutine test_parquet
