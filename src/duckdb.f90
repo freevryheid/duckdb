@@ -78,9 +78,9 @@ module duckdb
   public :: duckdb_destroy_result
   public :: duckdb_column_count
   public :: duckdb_row_count
-  ! public :: duckdb_rows_changed
+  public :: duckdb_rows_changed
   ! public :: duckdb_library_version
-  ! public :: duckdb_column_name
+  public :: duckdb_column_name
   public :: duckdb_column_type
   ! public :: duckdb_column_data
   ! public :: duckdb_nullmask_data
@@ -88,9 +88,9 @@ module duckdb
   ! public :: duckdb_result_get_chunk
   ! public :: duckdb_result_chunk_count
   public :: duckdb_value_boolean
-  ! public :: duckdb_value_int8
-  ! public :: duckdb_value_int16
-  ! public :: duckdb_value_int32
+  public :: duckdb_value_int8
+  public :: duckdb_value_int16
+  public :: duckdb_value_int32
   public :: duckdb_value_int64
   ! public :: duckdb_value_float
   ! public :: duckdb_value_double
@@ -399,7 +399,7 @@ module duckdb
     end function duckdb_row_count_
 
     ! DUCKDB_API idx_t duckdb_rows_changed(duckdb_result *result);
-    function duckdb_rows_changed_(res) result(cc) bind(c, name='duckdb_rows_changed')
+    function duckdb_rows_changed_(res) bind(c, name='duckdb_rows_changed') result(rc)
       import :: duckdb_result, c_int64_t
       type(duckdb_result) :: res
       integer(kind=c_int64_t) :: rc
@@ -1249,32 +1249,26 @@ module duckdb
       r = duckdb_value_boolean_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
     end function duckdb_value_boolean
 
-    ! function duckdb_value_int8(res, col, row) result(r)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: col, row
-    !   integer(kind=int8) :: r
-    !   tmp = c_loc(res)
-    !   r = int(duckdb_value_int8_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int8)
-    ! end function duckdb_value_int8
+    function duckdb_value_int8(res, col, row) result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      integer(kind=int8) :: r
+      r = int(duckdb_value_int8_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int8)
+    end function duckdb_value_int8
 
-    ! function duckdb_value_int16(res, col, row) result(r)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: col, row
-    !   integer(kind=int16) :: r
-    !   tmp = c_loc(res)
-    !   r = int(duckdb_value_int16_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int16)
-    ! end function duckdb_value_int16
+    function duckdb_value_int16(res, col, row) result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      integer(kind=int16) :: r
+      r = int(duckdb_value_int16_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int16)
+    end function duckdb_value_int16
 
-    ! function duckdb_value_int32(res, col, row) result(r)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: col, row
-    !   integer(kind=int32) :: r
-    !   tmp = c_loc(res)
-    !   r = int(duckdb_value_int32_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int32)
-    ! end function duckdb_value_int32
+    function duckdb_value_int32(res, col, row) result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      integer(kind=int32) :: r
+      r = int(duckdb_value_int32_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int32)
+    end function duckdb_value_int32
 
     function duckdb_value_int64(res, col, row) result(r)
       type(duckdb_result) :: res

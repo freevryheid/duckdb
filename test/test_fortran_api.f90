@@ -15,8 +15,8 @@ module test_fortran_api
         new_unittest("basic-api-test", test_basic), &
         new_unittest("basic-null-test", test_scalar_null), &
         new_unittest("basic-string-test", test_scalar_string), &
-        new_unittest("basic-bool-test", test_boolean)]!, &
-        ! new_unittest("basic-insert-test", test_multiple_insert), &
+        new_unittest("basic-bool-test", test_boolean), &
+        new_unittest("basic-insert-test", test_multiple_insert)]!, &
         ! new_unittest("basic-errors-test", test_error_conditions), &
         ! new_unittest("parquet-api-test", test_parquet) & !, &
         ! new_unittest("data-chunk-test", test_data_chunk)
@@ -154,9 +154,6 @@ module test_fortran_api
       type(duckdb_connection) :: conn
       type(duckdb_result) :: ddb_result
 
-      ! type(c_ptr) :: database, connection, chunk
-      ! type(duckdb_result), pointer :: result
-
       ! Open data in in-memory mode
       call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
       if (allocated(error)) return
@@ -219,108 +216,104 @@ module test_fortran_api
       call check(error, .not. duckdb_value_boolean(ddb_result, 0, 0))
       if (allocated(error)) return
 
-      print *, duckdb_value_boolean(ddb_result, 0, 0)
-
-      call check(error, duckdb_value_boolean(ddb_result, 0, 1), "zzzzzzzzzzzzz")
+      ! print *, duckdb_value_boolean(ddb_result, 0, 1)
+      ! FIXME - booleans not working
+      call check(error, duckdb_value_boolean(ddb_result, 0, 1), "must be true")
       if (allocated(error)) return
-
-      print*, "here"
 
       call check(error, .not. duckdb_value_is_null(ddb_result, 0, 0))
       if (allocated(error)) return
 
       call duckdb_destroy_result(ddb_result)
-      ! deallocate(ddb_result)
       call duckdb_disconnect(conn)
       call duckdb_close(db)
 
     end subroutine test_boolean
 
-    ! subroutine test_multiple_insert(error)
-    !   type(error_type), allocatable, intent(out) :: error
+    subroutine test_multiple_insert(error)
+      type(error_type), allocatable, intent(out) :: error
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: conn
+      type(duckdb_result) :: ddb_result
 
-    !   type(c_ptr) :: database, connection, chunk
-    !   type(duckdb_result), pointer :: result
+      ! Open data in in-memory mode
+      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+      if (allocated(error)) return
 
-    !   ! Open data in in-memory mode
-    !   call check(error, duckdb_open(c_null_ptr, database) == duckdbsuccess)
-    !   if (allocated(error)) return
+      call check(error, duckdb_connect(db, conn) == duckdbsuccess)
+      if (allocated(error)) return
 
-    !   call check(error, duckdb_connect(database, connection) == duckdbsuccess)
-    !   if (allocated(error)) return
+      call check(error, &
+        duckdb_query(conn, "CREATE TABLE test (a INTEGER, b INTEGER);", &
+        ddb_result) == duckdbsuccess, "Table creation error.")
+      if (allocated(error)) return
 
-    !   allocate(result)
-    !   call check(error, &
-    !              duckdb_query(connection, "CREATE TABLE test (a INTEGER, b INTEGER);",&
-    !              result) == duckdbsuccess, "Table creation error.")
-    !   if (allocated(error)) return
+      call check(error, &
+        duckdb_query(conn, "INSERT INTO test VALUES (11, 22)", &
+        ddb_result) == duckdbsuccess, "First insert error.")
+      if (allocated(error)) return
 
-    !   call check(error, &
-    !     duckdb_query(connection, "INSERT INTO test VALUES (11, 22)",&
-    !     result) == duckdbsuccess, "First insert error.")
-    !   if (allocated(error)) return
+      call check(error, &
+        duckdb_query(conn, "INSERT INTO test VALUES (NULL, 21)", &
+        ddb_result) == duckdbsuccess, "Second insert error.")
+      if (allocated(error)) return
 
-    !   call check(error, &
-    !     duckdb_query(connection, "INSERT INTO test VALUES (NULL, 21)",&
-    !     result) == duckdbsuccess, "Second insert error.")
-    !   if (allocated(error)) return
+      call check(error, &
+        duckdb_query(conn, "INSERT INTO test VALUES (13, 22)", &
+        ddb_result) == duckdbsuccess, "Third insert error.")
+      if (allocated(error)) return
 
-    !   call check(error, &
-    !     duckdb_query(connection, "INSERT INTO test VALUES (13, 22)",&
-    !     result) == duckdbsuccess, "Third insert error.")
-    !   if (allocated(error)) return
+      call check(error, duckdb_rows_changed(ddb_result) == 1, "rows changed")
+      if (allocated(error)) return
 
-    !   call check(error, duckdb_rows_changed(result) == 1)
-    !   if (allocated(error)) return
+      call check(error, &
+        duckdb_query(conn, "SELECT a, b FROM test ORDER BY a", &
+        ddb_result) == duckdbsuccess, "select error.")
+      if (allocated(error)) return
 
-    !   call check(error, &
-    !     duckdb_query(connection, "SELECT a, b FROM test ORDER BY a",&
-    !     result) == duckdbsuccess, "select error.")
-    !   if (allocated(error)) return
+      ! Values in the first column
+      call check(error, duckdb_value_is_null(ddb_result, 0, 0), "a(0) is not null.")
+      if (allocated(error)) return
 
-    !   ! Values in the first column
-    !   call check(error, duckdb_value_is_null(result, 0, 0), "a(0) is not null.")
-    !   if (allocated(error)) return
+      call check(error, duckdb_value_int32(ddb_result, 0, 1) == 11, "a(1) is not 11.")
+      if (allocated(error)) return
 
-    !   call check(error, duckdb_value_int32(result, 0, 1) == 11, "a(1) is not 11.")
-    !   if (allocated(error)) return
+      call check(error, duckdb_value_int32(ddb_result, 0, 2) == 13, "a(2) is not 13.")
+      if (allocated(error)) return
 
-    !   call check(error, duckdb_value_int32(result, 0, 2) == 13, "a(2) is not 13.")
-    !   if (allocated(error)) return
+      ! Values in the second column
+      call check(error, duckdb_value_int32(ddb_result, 1, 0) == 21, "b(0) is not 21.")
+      if (allocated(error)) return
 
-    !   ! Values in the second column
-    !   call check(error, duckdb_value_int32(result, 1, 0) == 21, "b(0) is not 21.")
-    !   if (allocated(error)) return
+      call check(error, duckdb_value_int32(ddb_result, 1, 1) == 22, "b(1) is not 22.")
+      if (allocated(error)) return
 
-    !   call check(error, duckdb_value_int32(result, 1, 1) == 22, "b(1) is not 22.")
-    !   if (allocated(error)) return
+      call check(error, duckdb_value_int32(ddb_result, 1, 2) == 22, "b(2) is not 22.")
+      if (allocated(error)) return
 
-    !   call check(error, duckdb_value_int32(result, 1, 2) == 22, "b(2) is not 22.")
-    !   if (allocated(error)) return
+      ! Column names
+      call check(error, duckdb_column_name(ddb_result, 0) == 'a', "column name (0) is not 'a'")
+      if (allocated(error)) return
 
-    !   ! Column names
-    !   call check(error, duckdb_column_name(result, 0) == 'a', "column name (0) is not 'a'")
-    !   if (allocated(error)) return
+      call check(error, duckdb_column_name(ddb_result, 1) == 'b', "column name (1) is not 'b'")
+      if (allocated(error)) return
 
-    !   call check(error, duckdb_column_name(result, 1) == 'b', "column name (1) is not 'b'")
-    !   if (allocated(error)) return
+      call check(error, duckdb_column_name(ddb_result, 2) == 'NULL', "column name (2) is not 'NULL'")
+      if (allocated(error)) return
 
-    !   call check(error, duckdb_column_name(result, 2) == 'NULL', "column name (2) is not 'NULL'")
-    !   if (allocated(error)) return
+      call check(error, &
+        duckdb_query(conn, "UPDATE test SET a = 1 WHERE b=22", &
+        ddb_result) == duckdbsuccess)
+      if (allocated(error)) return
 
-    !   call check(error, &
-    !     duckdb_query(connection, "UPDATE test SET a = 1 WHERE b=22",&
-    !     result) == duckdbsuccess)
-    !   if (allocated(error)) return
+      call check(error, duckdb_rows_changed(ddb_result) == 2, "Number of rows affected different from 2")
+      if (allocated(error)) return
 
-    !   call check(error, duckdb_rows_changed(result) == 2, "Number of rows affecte different from 2")
-    !   if (allocated(error)) return
+      call duckdb_destroy_result(ddb_result)
+      call duckdb_disconnect(conn)
+      call duckdb_close(db)
 
-    !   call duckdb_destroy_result(result)
-    !   deallocate(result)
-    !   call duckdb_disconnect(connection)
-    !   call duckdb_close(database)
-    ! end subroutine test_multiple_insert
+    end subroutine test_multiple_insert
 
     ! subroutine test_error_conditions(error)
     !   type(error_type), allocatable, intent(out) :: error
