@@ -11,9 +11,8 @@ program tester
   stat = 0
 
   testsuites = [  &
-                new_testsuite("starting_database", collect_starting_database), &
-                new_testsuite("test_fortran_api", collect_fortran_api) &
-               ]
+    new_testsuite("starting_database", collect_starting_database), &
+    new_testsuite("test_fortran_api", collect_fortran_api)]
 
   do is = 1, size(testsuites)
     write(error_unit, fmt) "Testing:", testsuites(is)%name
