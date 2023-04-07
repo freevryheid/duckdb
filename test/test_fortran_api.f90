@@ -29,6 +29,9 @@ module test_fortran_api
       type(duckdb_connection) :: conn
       type(duckdb_result) :: ddb_result
 
+      ! adding here
+      print *, new_line('a') // "duckdb library " // duckdb_library_version() // new_line('a')
+
       ! Open data in in-memory mode
       call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
       if (allocated(error)) return

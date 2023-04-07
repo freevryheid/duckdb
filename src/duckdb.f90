@@ -14,7 +14,7 @@ module duckdb
   ! public :: duckdb_arrow_schema
   ! public :: duckdb_config
   ! public :: duckdb_arrow_array
-  ! public :: duckdb_logical_type
+  public :: duckdb_logical_type
   ! public :: duckdb_data_chunk
   ! public :: duckdb_vector
   ! public :: duckdb_value
@@ -32,37 +32,37 @@ module duckdb
   ! public :: duckdb_list_entry
   ! public :: duckdb_column
   public :: duckdb_result
-  ! public :: duckdb_type
-  ! public :: duckdb_type_invalid
-  ! public :: duckdb_type_boolean
-  ! public :: duckdb_type_tinyint
-  ! public :: duckdb_type_smallint
-  ! public :: duckdb_type_integer
+  public :: duckdb_type
+  public :: duckdb_type_invalid
+  public :: duckdb_type_boolean
+  public :: duckdb_type_tinyint
+  public :: duckdb_type_smallint
+  public :: duckdb_type_integer
   public :: duckdb_type_bigint
-  ! public :: duckdb_type_utinyint
-  ! public :: duckdb_type_usmallint
-  ! public :: duckdb_type_uinteger
-  ! public :: duckdb_type_ubigint
-  ! public :: duckdb_type_float
-  ! public :: duckdb_type_double
-  ! public :: duckdb_type_timestamp
-  ! public :: duckdb_type_date
-  ! public :: duckdb_type_time
-  ! public :: duckdb_type_interval
-  ! public :: duckdb_type_hugeint
-  ! public :: duckdb_type_varchar
-  ! public :: duckdb_type_blob
-  ! public :: duckdb_type_decimal
-  ! public :: duckdb_type_timestamp_s
-  ! public :: duckdb_type_timestamp_ms
-  ! public :: duckdb_type_timestamp_ns
-  ! public :: duckdb_type_enum
-  ! public :: duckdb_type_list
-  ! public :: duckdb_type_struct
-  ! public :: duckdb_type_map
-  ! public :: duckdb_type_uuid
-  ! public :: duckdb_type_union
-  ! public :: duckdb_type_bit
+  public :: duckdb_type_utinyint
+  public :: duckdb_type_usmallint
+  public :: duckdb_type_uinteger
+  public :: duckdb_type_ubigint
+  public :: duckdb_type_float
+  public :: duckdb_type_double
+  public :: duckdb_type_timestamp
+  public :: duckdb_type_date
+  public :: duckdb_type_time
+  public :: duckdb_type_interval
+  public :: duckdb_type_hugeint
+  public :: duckdb_type_varchar
+  public :: duckdb_type_blob
+  public :: duckdb_type_decimal
+  public :: duckdb_type_timestamp_s
+  public :: duckdb_type_timestamp_ms
+  public :: duckdb_type_timestamp_ns
+  public :: duckdb_type_enum
+  public :: duckdb_type_list
+  public :: duckdb_type_struct
+  public :: duckdb_type_map
+  public :: duckdb_type_uuid
+  public :: duckdb_type_union
+  public :: duckdb_type_bit
   ! public :: duckdb_pending_state
   ! public :: duckdb_pending_result_ready
   ! public :: duckdb_pending_result_not_ready
@@ -79,41 +79,41 @@ module duckdb
   public :: duckdb_column_count
   public :: duckdb_row_count
   public :: duckdb_rows_changed
-  ! public :: duckdb_library_version
+  public :: duckdb_library_version
   public :: duckdb_column_name
   public :: duckdb_column_type
-  ! public :: duckdb_column_data
-  ! public :: duckdb_nullmask_data
-  ! public :: duckdb_result_error
-  ! public :: duckdb_result_get_chunk
-  ! public :: duckdb_result_chunk_count
+  public :: duckdb_result_error
+  public :: duckdb_result_get_chunk
+  public :: duckdb_result_chunk_count
   public :: duckdb_value_boolean
   public :: duckdb_value_int8
   public :: duckdb_value_int16
   public :: duckdb_value_int32
   public :: duckdb_value_int64
-  ! public :: duckdb_value_float
-  ! public :: duckdb_value_double
-  ! public :: duckdb_value_date
-  ! public :: duckdb_value_time
-  ! public :: duckdb_value_timestamp
-  ! public :: duckdb_value_interval
+  public :: duckdb_value_hugeint
+  public :: duckdb_value_decimal
+  public :: duckdb_value_float
+  public :: duckdb_value_double
+  public :: duckdb_value_date
+  public :: duckdb_value_time
+  public :: duckdb_value_timestamp
+  public :: duckdb_value_interval
   public :: duckdb_value_string
-  ! public :: duckdb_value_blob
+  public :: duckdb_value_blob
   public :: duckdb_value_is_null
-  ! public :: duckdb_malloc
-  ! public :: duckdb_free
-  ! public :: duckdb_vector_size
-  ! public :: duckdb_from_date
-  ! public :: duckdb_to_date
-  ! public :: duckdb_from_time
-  ! public :: duckdb_to_time
-  ! public :: duckdb_from_timestamp
-  ! public :: duckdb_to_timestamp
-  ! public :: duckdb_hugeint_to_double
-  ! public :: duckdb_double_to_hugeint
-  ! public :: duckdb_decimal_to_double
-  ! public :: duckdb_double_to_decimal
+  public :: duckdb_malloc
+  public :: duckdb_free
+  public :: duckdb_vector_size
+  public :: duckdb_from_date
+  public :: duckdb_to_date
+  public :: duckdb_from_time
+  public :: duckdb_to_time
+  public :: duckdb_from_timestamp
+  public :: duckdb_to_timestamp
+  public :: duckdb_hugeint_to_double
+  public :: duckdb_double_to_hugeint
+  public :: duckdb_decimal_to_double
+  public :: duckdb_double_to_decimal
 
   enum, bind(c)
     enumerator :: duckdb_state                    = 0
@@ -172,51 +172,51 @@ module duckdb
   end type
 
   type, bind(c) :: duckdb_prepared_statement
-    type(c_ptr) :: prep
+    type(c_ptr) :: prep = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_extracted_statements
-    type(c_ptr) :: extrac
+    type(c_ptr) :: extrac = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_pending_result
-    type(c_ptr) :: pend
+    type(c_ptr) :: pend = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_appender
-    type(c_ptr) :: appn
+    type(c_ptr) :: appn = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_arrow
-    type(c_ptr) :: arrw
+    type(c_ptr) :: arrw = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_config
-    type(c_ptr) :: cnfg
+    type(c_ptr) :: cnfg = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_arrow_schema
-    type(c_ptr) :: arrs
+    type(c_ptr) :: arrs = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_arrow_array
-    type(c_ptr) :: arra
+    type(c_ptr) :: arra = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_logical_type
-    type(c_ptr) :: lglt
+    type(c_ptr) :: lglt = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_data_chunk
-    type(c_ptr) :: dtck
+    type(c_ptr) :: dtck = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_vector
-    type(c_ptr) :: vctr
+    type(c_ptr) :: vctr = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_value
-    type(c_ptr) :: val
+    type(c_ptr) :: val = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_date
@@ -267,12 +267,12 @@ module duckdb
   end type
 
   type, bind(c) :: duckdb_string
-    type(c_ptr) :: data
+    type(c_ptr) :: data = c_null_ptr
     integer(kind=c_int64_t) :: size
   end type
 
   type, bind(c) :: duckdb_blob
-    type(c_ptr) :: data
+    type(c_ptr) :: data = c_null_ptr
     integer(kind=c_int64_t) :: size
   end type
 
@@ -282,7 +282,7 @@ module duckdb
   end type
 
   type, bind(c) :: duckdb_column
-    type(c_ptr) :: internal_data
+    type(c_ptr) :: internal_data = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_result
@@ -383,6 +383,11 @@ module duckdb
     end function duckdb_column_type_
 
     ! DUCKDB_API duckdb_logical_type duckdb_column_logical_type(duckdb_result *result, idx_t col);
+    function duckdb_column_logical_type(res) bind(c, name='duckdb_column_logical_type') result(t)
+      import :: duckdb_result, duckdb_logical_type
+      type(duckdb_result) :: res
+      type(duckdb_logical_type) :: t
+    end function duckdb_column_logical_type
 
     ! DUCKDB_API idx_t duckdb_column_count(duckdb_result *result);
     function duckdb_column_count_(res) bind(c, name='duckdb_column_count') result(cc)
@@ -406,38 +411,30 @@ module duckdb
     end function duckdb_rows_changed_
 
     ! DUCKDB_API const char *duckdb_result_error(duckdb_result *result);
-    ! function duckdb_result_error_(res) result(err) bind(c, name='duckdb_result_error')
-    !   import :: c_ptr
-    !   type(c_ptr) :: err
-    !   type(c_ptr), value :: res
-    ! end function duckdb_result_error_
-
-    ! function duckdb_result_error_(res) result(err) bind(c, name='duckdb_result_error')
-    !   import :: c_ptr
-    !   type(c_ptr) :: err
-    !   type(c_ptr), value :: res
-    ! end function duckdb_result_error_
+    function duckdb_result_error_(res) bind(c, name='duckdb_result_error') result(err)
+      import :: c_ptr, duckdb_result
+      type(duckdb_result) :: res
+      type(c_ptr) :: err
+    end function duckdb_result_error_
 
     ! =========================================================================
     ! Result Functions
     ! =========================================================================
 
     ! DUCKDB_API duckdb_data_chunk duckdb_result_get_chunk(duckdb_result result, idx_t chunk_index);
-    ! FIXME
-    ! function duckdb_result_get_chunk_(res, idx) bind(c, name='duckdb_result_get_chunk') result(chunk)
-    !   import :: c_ptr, c_int64_t
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: idx
-    !   type(c_ptr) :: chunk
-    ! end function duckdb_result_get_chunk_
+    function duckdb_result_get_chunk_(res, idx) bind(c, name='duckdb_result_get_chunk') result(chunk)
+      import :: c_int64_t, duckdb_result, duckdb_data_chunk
+      type(duckdb_result), value :: res
+      integer(kind=c_int64_t), value :: idx
+      type(duckdb_data_chunk) :: chunk
+    end function duckdb_result_get_chunk_
 
     ! ! DUCKDB_API idx_t duckdb_result_chunk_count(duckdb_result result);
-    ! ! FIXME
-    ! function duckdb_result_chunk_count_(res) bind(c, name='duckdb_result_chunk_count') result(cc)
-    !   import :: c_ptr, c_int64_t
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t) :: cc
-    ! end function duckdb_result_chunk_count_
+    function duckdb_result_chunk_count_(res) bind(c, name='duckdb_result_chunk_count') result(cc)
+      import :: c_int64_t, duckdb_result
+      type(duckdb_result), value :: res
+      integer(kind=c_int64_t) :: cc
+    end function duckdb_result_chunk_count_
 
     ! ! DUCKDB_API bool duckdb_value_boolean(duckdb_result *result, idx_t col, idx_t row);
     function duckdb_value_boolean_(res, col, row) bind(c, name='duckdb_value_boolean') result(r)
@@ -479,75 +476,75 @@ module duckdb
       integer(kind=c_int64_t) :: r
     end function duckdb_value_int64_
 
-    ! ! DUCKDB_API duckdb_hugeint duckdb_value_hugeint(duckdb_result *result, idx_t col, idx_t row);
-    ! function duckdb_value_hugeint_(res, col, row) bind(c, name='duckdb_value_hugeint') result(r)
-    !   import :: c_ptr, c_int64_t, duckdb_hugeint
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: col, row
-    !   type(duckdb_hugeint) :: r
-    ! end function duckdb_value_hugeint_
+    ! DUCKDB_API duckdb_hugeint duckdb_value_hugeint(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_hugeint_(res, col, row) bind(c, name='duckdb_value_hugeint') result(r)
+      import :: duckdb_result, c_ptr, c_int64_t, duckdb_hugeint
+      type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: col, row
+      type(duckdb_hugeint) :: r
+    end function duckdb_value_hugeint_
 
-    ! ! DUCKDB_API duckdb_decimal duckdb_value_decimal(duckdb_result *result, idx_t col, idx_t row);
-    ! function duckdb_value_decimal_(res, col, row) bind(c, name='duckdb_value_decimal') result(r)
-    !   import :: c_ptr, c_int64_t, duckdb_decimal
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: col, row
-    !   type(duckdb_decimal) :: r
-    ! end function duckdb_value_decimal_
+    ! DUCKDB_API duckdb_decimal duckdb_value_decimal(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_decimal_(res, col, row) bind(c, name='duckdb_value_decimal') result(r)
+      import :: duckdb_result, c_ptr, c_int64_t, duckdb_decimal
+      type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: col, row
+      type(duckdb_decimal) :: r
+    end function duckdb_value_decimal_
 
-    ! ! TODO - Do we need these unsigned versions?
-    ! ! DUCKDB_API uint8_t duckdb_value_uint8(duckdb_result *result, idx_t col, idx_t row);
-    ! ! DUCKDB_API uint16_t duckdb_value_uint16(duckdb_result *result, idx_t col, idx_t row);
-    ! ! DUCKDB_API uint32_t duckdb_value_uint32(duckdb_result *result, idx_t col, idx_t row);
-    ! ! DUCKDB_API uint64_t duckdb_value_uint64(duckdb_result *result, idx_t col, idx_t row);
+    ! TODO - Do we need these unsigned versions?
+    ! DUCKDB_API uint8_t duckdb_value_uint8(duckdb_result *result, idx_t col, idx_t row);
+    ! DUCKDB_API uint16_t duckdb_value_uint16(duckdb_result *result, idx_t col, idx_t row);
+    ! DUCKDB_API uint32_t duckdb_value_uint32(duckdb_result *result, idx_t col, idx_t row);
+    ! DUCKDB_API uint64_t duckdb_value_uint64(duckdb_result *result, idx_t col, idx_t row);
 
-    ! ! DUCKDB_API float duckdb_value_float(duckdb_result *result, idx_t col, idx_t row);
-    ! function duckdb_value_float_(res, col, row) bind(c, name='duckdb_value_float') result(r)
-    !   import :: c_ptr, c_float, c_int64_t
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: col, row
-    !   real(kind=c_float) :: r
-    ! end function duckdb_value_float_
+    ! DUCKDB_API float duckdb_value_float(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_float_(res, col, row) bind(c, name='duckdb_value_float') result(r)
+      import :: duckdb_result, c_float, c_int64_t
+      type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: col, row
+      real(kind=c_float) :: r
+    end function duckdb_value_float_
 
-    ! ! DUCKDB_API double duckdb_value_double(duckdb_result *result, idx_t col, idx_t row);
-    ! function duckdb_value_double_(res, col, row) bind(c, name='duckdb_value_double') result(r)
-    !   import :: c_ptr, c_double, c_int64_t
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: col, row
-    !   real(kind=c_double) :: r
-    ! end function duckdb_value_double_
+    ! DUCKDB_API double duckdb_value_double(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_double_(res, col, row) bind(c, name='duckdb_value_double') result(r)
+      import :: duckdb_result, c_double, c_int64_t
+      type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: col, row
+      real(kind=c_double) :: r
+    end function duckdb_value_double_
 
-    ! ! DUCKDB_API duckdb_date duckdb_value_date(duckdb_result *result, idx_t col, idx_t row);
-    ! function duckdb_value_date_(res, col, row) bind(c, name='duckdb_value_date') result(r)
-    !   import :: c_ptr, c_int64_t, duckdb_date
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: col, row
-    !   type(duckdb_date) :: r
-    ! end function duckdb_value_date_
+    ! DUCKDB_API duckdb_date duckdb_value_date(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_date_(res, col, row) bind(c, name='duckdb_value_date') result(r)
+      import :: duckdb_result, c_int64_t, duckdb_date
+      type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: col, row
+      type(duckdb_date) :: r
+    end function duckdb_value_date_
 
-    ! ! DUCKDB_API duckdb_time duckdb_value_time(duckdb_result *result, idx_t col, idx_t row);
-    ! function duckdb_value_time_(res, col, row) bind(c, name='duckdb_value_time') result(r)
-    !   import :: c_ptr, c_int64_t, duckdb_time
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: col, row
-    !   type(duckdb_time) :: r
-    ! end function duckdb_value_time_
+    ! DUCKDB_API duckdb_time duckdb_value_time(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_time_(res, col, row) bind(c, name='duckdb_value_time') result(r)
+      import :: duckdb_result, c_int64_t, duckdb_time
+      type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: col, row
+      type(duckdb_time) :: r
+    end function duckdb_value_time_
 
-    ! ! DUCKDB_API duckdb_timestamp duckdb_value_timestamp(duckdb_result *result, idx_t col, idx_t row);
-    ! function duckdb_value_timestamp_(res, col, row) bind(c, name='duckdb_value_timestamp') result(r)
-    !   import :: c_ptr, c_int64_t, duckdb_timestamp
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: col, row
-    !   type(duckdb_timestamp) :: r
-    ! end function duckdb_value_timestamp_
+    ! DUCKDB_API duckdb_timestamp duckdb_value_timestamp(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_timestamp_(res, col, row) bind(c, name='duckdb_value_timestamp') result(r)
+      import :: duckdb_result, c_int64_t, duckdb_timestamp
+      type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: col, row
+      type(duckdb_timestamp) :: r
+    end function duckdb_value_timestamp_
 
-    ! ! DUCKDB_API duckdb_interval duckdb_value_interval(duckdb_result *result, idx_t col, idx_t row);
-    ! function duckdb_value_interval_(res, col, row) bind(c, name='duckdb_value_interval') result(r)
-    !   import :: c_ptr, c_int64_t, duckdb_interval
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: col, row
-    !   type(duckdb_interval) :: r
-    ! end function duckdb_value_interval_
+    ! DUCKDB_API duckdb_interval duckdb_value_interval(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_interval_(res, col, row) bind(c, name='duckdb_value_interval') result(r)
+      import :: duckdb_result, c_int64_t, duckdb_interval
+      type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: col, row
+      type(duckdb_interval) :: r
+    end function duckdb_value_interval_
 
     ! DUCKDB_API duckdb_string duckdb_value_string(duckdb_result *result, idx_t col, idx_t row);
     function duckdb_value_string_(res, col, row) bind(c, name='duckdb_value_string') result(r)
@@ -557,13 +554,13 @@ module duckdb
       type(duckdb_string) :: r
     end function duckdb_value_string_
 
-    ! ! DUCKDB_API duckdb_blob duckdb_value_blob(duckdb_result *result, idx_t col, idx_t row);
-    ! function duckdb_value_blob_(res, col, row) bind(c, name='duckdb_value_blob') result(r)
-    !   import :: c_ptr, c_int64_t, duckdb_blob
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: col, row
-    !   type(duckdb_blob) :: r
-    ! end function duckdb_value_blob_
+    ! DUCKDB_API duckdb_blob duckdb_value_blob(duckdb_result *result, idx_t col, idx_t row);
+    function duckdb_value_blob_(res, col, row) bind(c, name='duckdb_value_blob') result(r)
+      import :: duckdb_result, c_int64_t, duckdb_blob
+      type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: col, row
+      type(duckdb_blob) :: r
+    end function duckdb_value_blob_
 
     ! DUCKDB_API bool duckdb_value_is_null(duckdb_result *result, idx_t col, idx_t row);
     function duckdb_value_is_null_(res, col, row) bind(c, name='duckdb_value_is_null') result(r)
@@ -577,110 +574,104 @@ module duckdb
     ! Helpers
     ! =========================================================================
 
-    ! ! DUCKDB_API void *duckdb_malloc(size_t size);
-    ! function duckdb_malloc(size) bind(c, name='duckdb_malloc') result(res)
-    !   import :: c_ptr, c_size_t
-    !   integer(kind=c_size_t) :: size
-    !   type(c_ptr) :: res
-    ! end function duckdb_malloc
+    ! DUCKDB_API void *duckdb_malloc(size_t size);
+    function duckdb_malloc(size) bind(c, name='duckdb_malloc') result(res)
+      import :: c_ptr, c_size_t
+      integer(kind=c_size_t) :: size
+      type(c_ptr) :: res
+    end function duckdb_malloc
 
-    ! ! DUCKDB_API void duckdb_free(void *ptr);
-    ! subroutine duckdb_free(ptr) bind(c, name='duckdb_free')
-    !   import :: c_ptr
-    !   type(c_ptr) :: ptr
-    ! end subroutine duckdb_free
+    ! DUCKDB_API void duckdb_free(void *ptr);
+    subroutine duckdb_free(ptr) bind(c, name='duckdb_free')
+      import :: c_ptr
+      type(c_ptr) :: ptr
+    end subroutine duckdb_free
 
-    ! ! DUCKDB_API idx_t duckdb_vector_size();
-    ! function duckdb_vector_size() bind(c, name='duckdb_vector_size') result(res)
-    !   import :: c_int64_t
-    !   integer(kind=c_int64_t) :: res
-    ! end function duckdb_vector_size
+    ! DUCKDB_API idx_t duckdb_vector_size();
+    ! TODO : provide helper to convert to fortran int
+    function duckdb_vector_size() bind(c, name='duckdb_vector_size') result(res)
+      import :: c_int64_t
+      integer(kind=c_int64_t) :: res
+    end function duckdb_vector_size
 
-    ! ! =========================================================================
-    ! ! Date/Time/Timestamp Helpers
-    ! ! =========================================================================
+    ! =========================================================================
+    ! Date/Time/Timestamp Helpers
+    ! =========================================================================
 
-    ! ! DUCKDB_API duckdb_date_struct duckdb_from_date(duckdb_date date);
-    ! function duckdb_from_date(date) bind(c, name='duckdb_from_date') result(res)
-    !   import :: duckdb_date, duckdb_date_struct
-    !   type(duckdb_date) :: date
-    !   type(duckdb_date_struct) :: res
-    ! end function duckdb_from_date
+    ! DUCKDB_API duckdb_date_struct duckdb_from_date(duckdb_date date);
+    function duckdb_from_date(date) bind(c, name='duckdb_from_date') result(res)
+      import :: duckdb_date, duckdb_date_struct
+      type(duckdb_date), value :: date
+      type(duckdb_date_struct) :: res
+    end function duckdb_from_date
 
-    ! ! DUCKDB_API duckdb_date duckdb_to_date(duckdb_date_struct date);
-    ! function duckdb_to_date(date) bind(c, name='duckdb_to_date') result(res)
-    !   import :: duckdb_date, duckdb_date_struct
-    !   type(duckdb_date) :: res
-    !   type(duckdb_date_struct) :: date
-    ! end function duckdb_to_date
+    ! DUCKDB_API duckdb_date duckdb_to_date(duckdb_date_struct date);
+    function duckdb_to_date(date) bind(c, name='duckdb_to_date') result(res)
+      import :: duckdb_date, duckdb_date_struct
+      type(duckdb_date) :: res
+      type(duckdb_date_struct), value :: date
+    end function duckdb_to_date
 
-    ! ! DUCKDB_API duckdb_time_struct duckdb_from_time(duckdb_time time);
-    ! function duckdb_from_time(time) bind(c, name='duckdb_from_time') result(res)
-    !   import :: duckdb_time, duckdb_time_struct
-    !   type(duckdb_time) :: time
-    !   type(duckdb_time_struct) :: res
-    ! end function duckdb_from_time
+    ! DUCKDB_API duckdb_time_struct duckdb_from_time(duckdb_time time);
+    function duckdb_from_time(time) bind(c, name='duckdb_from_time') result(res)
+      import :: duckdb_time, duckdb_time_struct
+      type(duckdb_time), value :: time
+      type(duckdb_time_struct) :: res
+    end function duckdb_from_time
 
-    ! ! DUCKDB_API duckdb_time duckdb_to_time(duckdb_time_struct time);
-    ! function duckdb_to_time(time) bind(c, name='duckdb_to_time') result(res)
-    !   import :: duckdb_time, duckdb_time_struct
-    !   type(duckdb_time) :: res
-    !   type(duckdb_time_struct) :: time
-    ! end function duckdb_to_time
+    ! DUCKDB_API duckdb_time duckdb_to_time(duckdb_time_struct time);
+    function duckdb_to_time(time) bind(c, name='duckdb_to_time') result(res)
+      import :: duckdb_time, duckdb_time_struct
+      type(duckdb_time) :: res
+      type(duckdb_time_struct), value :: time
+    end function duckdb_to_time
 
-    ! ! DUCKDB_API duckdb_timestamp_struct duckdb_from_timestamp(duckdb_timestamp ts);
-    ! function duckdb_from_timestamp(timestamp) bind(c, name='duckdb_from_timestamp') result(res)
-    !   import :: duckdb_timestamp, duckdb_timestamp_struct
-    !   type(duckdb_timestamp) :: timestamp
-    !   type(duckdb_timestamp_struct) :: res
-    ! end function duckdb_from_timestamp
+    ! DUCKDB_API duckdb_timestamp_struct duckdb_from_timestamp(duckdb_timestamp ts);
+    function duckdb_from_timestamp(ts) bind(c, name='duckdb_from_timestamp') result(res)
+      import :: duckdb_timestamp, duckdb_timestamp_struct
+      type(duckdb_timestamp), value :: ts
+      type(duckdb_timestamp_struct) :: res
+    end function duckdb_from_timestamp
 
-    ! ! DUCKDB_API duckdb_timestamp duckdb_to_timestamp(duckdb_timestamp_struct ts);
-    ! function duckdb_to_timestamp(timestamp) bind(c, name='duckdb_to_timestamp') result(res)
-    !   import :: duckdb_timestamp, duckdb_timestamp_struct
-    !   type(duckdb_timestamp) :: res
-    !   type(duckdb_timestamp_struct) :: timestamp
-    ! end function duckdb_to_timestamp
+    ! DUCKDB_API duckdb_timestamp duckdb_to_timestamp(duckdb_timestamp_struct ts);
+    function duckdb_to_timestamp(ts) bind(c, name='duckdb_to_timestamp') result(res)
+      import :: duckdb_timestamp, duckdb_timestamp_struct
+      type(duckdb_timestamp) :: res
+      type(duckdb_timestamp_struct), value :: ts
+    end function duckdb_to_timestamp
 
     ! =========================================================================
     ! Hugeint Helpers
     ! =========================================================================
 
-    ! ! DUCKDB_API double duckdb_hugeint_to_double(duckdb_hugeint val);
-    ! function duckdb_hugeint_to_double(val) bind(c, name='duckdb_hugeint_to_double') result(res)
-    !   import :: c_double, duckdb_hugeint
-    !   type(duckdb_hugeint) :: val
-    !   real(kind=c_double) :: res
-    ! end function duckdb_hugeint_to_double
+    ! DUCKDB_API double duckdb_hugeint_to_double(duckdb_hugeint val);
+    function duckdb_hugeint_to_double_(val) bind(c, name='duckdb_hugeint_to_double') result(res)
+      import :: c_double, duckdb_hugeint
+      type(duckdb_hugeint), value :: val
+      real(kind=c_double) :: res
+    end function duckdb_hugeint_to_double_
 
-    ! ! DUCKDB_API duckdb_hugeint duckdb_double_to_hugeint(double val);
-    ! function duckdb_double_to_hugeint(val) bind(c, name='duckdb_double_to_hugeint') result(res)
-    !   import :: c_double, duckdb_hugeint
-    !   type(duckdb_hugeint) :: res
-    !   real(kind=c_double) :: val
-    ! end function duckdb_double_to_hugeint
+    ! DUCKDB_API duckdb_hugeint duckdb_double_to_hugeint(double val);
+    function duckdb_double_to_hugeint_(val) bind(c, name='duckdb_double_to_hugeint') result(res)
+      import :: c_double, duckdb_hugeint
+      type(duckdb_hugeint) :: res
+      real(kind=c_double), value :: val
+    end function duckdb_double_to_hugeint_
 
-    ! ! DUCKDB_API duckdb_decimal duckdb_double_to_decimal(double val, uint8_t width, uint8_t scale);
-    ! function duckdb_double_to_decimal(val) bind(c, name='duckdb_double_to_decimal') result(res)
-    !   import :: c_double, duckdb_decimal
-    !   type(duckdb_decimal) :: res
-    !   real(kind=c_double) :: val
-    ! end function duckdb_double_to_decimal
+    ! DUCKDB_API duckdb_decimal duckdb_double_to_decimal(double val, uint8_t width, uint8_t scale);
+    function duckdb_double_to_decimal_(val, width, scale) bind(c, name='duckdb_double_to_decimal') result(res)
+      import :: c_double, c_int8_t, duckdb_decimal
+      type(duckdb_decimal) :: res
+      real(kind=c_double), value :: val
+      integer(kind=c_int8_t), value :: width, scale
+    end function duckdb_double_to_decimal_
 
-    ! ! DUCKDB_API double duckdb_decimal_to_double(duckdb_decimal val);
-    ! function duckdb_decimal_to_double(val) bind(c, name='duckdb_decimal_to_double') result(res)
-    !   import :: c_double, duckdb_decimal
-    !   type(duckdb_decimal) :: val
-    !   real(kind=c_double) :: res
-    ! end function duckdb_decimal_to_double
-
-    ! ! DUCKDB_API void *duckdb_column_data(duckdb_result *result, idx_t col);
-    ! function duckdb_column_data_(res, col) bind(c, name='duckdb_column_data') result(data)
-    !   import :: c_ptr, c_int64_t
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: col
-    !   type(c_ptr) :: data
-    ! end function duckdb_column_data_
+    ! DUCKDB_API double duckdb_decimal_to_double(duckdb_decimal val);
+    function duckdb_decimal_to_double_(val) bind(c, name='duckdb_decimal_to_double') result(res)
+      import :: c_double, duckdb_decimal
+      type(duckdb_decimal), value :: val
+      real(kind=c_double) :: res
+    end function duckdb_decimal_to_double_
 
     ! =========================================================================
     ! Prepared Statements
@@ -1101,17 +1092,6 @@ module duckdb
 
     ! DUCKDB_API bool duckdb_execution_is_finished(duckdb_connection con);
 
-
-
-
-    ! ! DUCKDB_API bool *duckdb_nullmask_data(duckdb_result *result, idx_t col);
-    ! function duckdb_nullmask_data_(res, col) bind(c, name='duckdb_nullmask_data') result(mask)
-    !   import :: c_ptr, c_int64_t
-    !   type(c_ptr), value :: res
-    !   integer(kind=c_int64_t), value :: col
-    !   type(c_ptr) :: mask
-    ! end function duckdb_nullmask_data_
-
   end interface
 
   contains
@@ -1160,6 +1140,13 @@ module duckdb
       end if
     end function duckdb_column_name
 
+    function duckdb_column_type(res, col) result(col_type)
+      integer(kind(duckdb_type)) :: col_type
+      type(duckdb_result) :: res
+      integer :: col
+      col_type = duckdb_column_type_(res, int(col, kind=c_int64_t))
+    end function duckdb_column_type
+
     function duckdb_column_count(res) result(cc)
       type(duckdb_result) :: res
       integer :: cc
@@ -1178,69 +1165,34 @@ module duckdb
       rc = int(duckdb_rows_changed_(res))
     end function duckdb_rows_changed
 
+    function duckdb_result_error(res) result(err)
+      character(len=:), allocatable :: err
+      type(c_ptr) :: tmp
+      type(duckdb_result) :: res
+      tmp = duckdb_result_error_(res)
+      if (c_associated(tmp)) then
+        call c_f_str_ptr(tmp, err)
+      else
+        err= "NULL"
+      end if
+    end function duckdb_result_error
+
     ! =========================================================================
     ! Result Functions
     ! =========================================================================
 
-
-
-
-    function duckdb_column_type(res, col) result(col_type)
-      integer(kind(duckdb_type)) :: col_type
+    function duckdb_result_get_chunk(res, idx) result(chunk)
       type(duckdb_result) :: res
-      integer :: col
-      col_type = duckdb_column_type_(res, int(col, kind=c_int64_t))
-    end function duckdb_column_type
+      integer :: idx
+      type(duckdb_data_chunk) :: chunk
+      chunk = duckdb_result_get_chunk_(res, int(idx, kind=c_int64_t))
+    end function duckdb_result_get_chunk
 
-    ! function duckdb_result_error(res) result(err)
-    !   character(len=:), allocatable :: err
-    !   type(c_ptr) :: tmp1, tmp2
-    !   type(duckdb_result), pointer :: res
-    !   tmp2 = c_loc(res)
-    !   tmp1 = duckdb_result_error_(tmp2)
-    !   if (c_associated(tmp1)) then
-    !     call c_f_str_ptr(tmp1, err)
-    !   else
-    !     err= "NULL"
-    !   end if
-    ! end function duckdb_result_error
-
-    ! function duckdb_column_data(res, col) result(data)
-    !   type(duckdb_result), pointer :: res
-    !   integer :: col
-    !   type(c_ptr) :: tmp
-    !   type(c_ptr) :: data
-    !   tmp = c_loc(res)
-    !   data = duckdb_column_data_(tmp, int(col, kind=c_int64_t))
-    ! end function duckdb_column_data
-
-    ! function duckdb_nullmask_data(res, col) result(mask)
-    !   type(duckdb_result), pointer :: res
-    !   integer :: col
-    !   type(c_ptr) :: tmp
-    !   type(c_ptr) :: mask
-    !   tmp = c_loc(res)
-    !   mask = duckdb_nullmask_data_(tmp, int(col, kind=c_int64_t))
-    ! end function duckdb_nullmask_data
-
-    ! ! FIXME
-    ! function duckdb_result_get_chunk(res, idx) result(chunk)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: idx
-    !   type(c_ptr) :: chunk
-    !   tmp = c_loc(res)
-    !   chunk = duckdb_result_get_chunk_(tmp, int(idx, kind=c_int64_t))
-    ! end function duckdb_result_get_chunk
-
-    ! ! FIXME
-    ! function duckdb_result_chunk_count(res) result(cc)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: cc
-    !   tmp = c_loc(res)
-    !   cc = int(duckdb_result_chunk_count_(tmp))
-    ! end function duckdb_result_chunk_count
+    function duckdb_result_chunk_count(res) result(cc)
+      type(duckdb_result) :: res
+      integer :: cc
+      cc = int(duckdb_result_chunk_count_(res))
+    end function duckdb_result_chunk_count
 
     function duckdb_value_boolean(res, col, row) result(r)
       type(duckdb_result) :: res
@@ -1277,59 +1229,61 @@ module duckdb
       r = int(duckdb_value_int64_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int64)
     end function duckdb_value_int64
 
-    ! function duckdb_value_float(res, col, row) result(r)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: col, row
-    !   real(kind=real32) :: r
-    !   tmp = c_loc(res)
-    !   r = real(duckdb_value_float_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=real32)
-    ! end function duckdb_value_float
+    function duckdb_value_hugeint(res, col, row)  result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      type(duckdb_hugeint) :: r
+      r = duckdb_value_hugeint_(res, int(col, kind=c_int64_t), int(col, kind=c_int64_t))
+    end function duckdb_value_hugeint
 
-    ! function duckdb_value_double(res, col, row) result(r)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: col, row
-    !   real(kind=real64) :: r
-    !   tmp = c_loc(res)
-    !   r = real(duckdb_value_double_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=real64)
-    ! end function duckdb_value_double
+    function duckdb_value_decimal(res, col, row)  result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      type(duckdb_decimal) :: r
+      r = duckdb_value_decimal_(res, int(col, kind=c_int64_t), int(col, kind=c_int64_t))
+    end function duckdb_value_decimal
 
-    ! function duckdb_value_date(res, col, row) result(r)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: col, row
-    !   type(duckdb_date) :: r
-    !   tmp = c_loc(res)
-    !   r = duckdb_value_date_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
-    ! end function duckdb_value_date
+    function duckdb_value_float(res, col, row) result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      real(kind=real32) :: r
+      r = real(duckdb_value_float_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=real32)
+    end function duckdb_value_float
 
-    ! function duckdb_value_time(res, col, row) result(r)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: col, row
-    !   type(duckdb_time) :: r
-    !   tmp = c_loc(res)
-    !   r = duckdb_value_time_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
-    ! end function duckdb_value_time
+    function duckdb_value_double(res, col, row) result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      real(kind=real64) :: r
+      r = real(duckdb_value_double_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=real64)
+    end function duckdb_value_double
 
-    ! function duckdb_value_timestamp(res, col, row) result(r)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: col, row
-    !   type(duckdb_timestamp) :: r
-    !   tmp = c_loc(res)
-    !   r = duckdb_value_timestamp_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
-    ! end function duckdb_value_timestamp
+    function duckdb_value_date(res, col, row) result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      type(duckdb_date) :: r
+      r = duckdb_value_date_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
+    end function duckdb_value_date
 
-    ! function duckdb_value_interval(res, col, row) result(r)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: col, row
-    !   type(duckdb_interval) :: r
-    !   tmp = c_loc(res)
-    !   r = duckdb_value_interval_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
-    ! end function duckdb_value_interval
+    function duckdb_value_time(res, col, row) result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      type(duckdb_time) :: r
+      r = duckdb_value_time_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
+    end function duckdb_value_time
+
+    function duckdb_value_timestamp(res, col, row) result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      type(duckdb_timestamp) :: r
+      r = duckdb_value_timestamp_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
+    end function duckdb_value_timestamp
+
+    function duckdb_value_interval(res, col, row) result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      type(duckdb_interval) :: r
+      r = duckdb_value_interval_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
+    end function duckdb_value_interval
 
     function duckdb_value_string(res, col, row) result(str)
       type(duckdb_result) :: res
@@ -1341,14 +1295,12 @@ module duckdb
       str => str(1:r%size)
     end function duckdb_value_string
 
-    ! function duckdb_value_blob(res, col, row) result(r)
-    !   type(duckdb_result), pointer :: res
-    !   type(c_ptr) :: tmp
-    !   integer :: col, row
-    !   type(duckdb_blob) :: r
-    !   tmp = c_loc(res)
-    !   r = duckdb_value_blob_(tmp, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
-    ! end function duckdb_value_blob
+    function duckdb_value_blob(res, col, row) result(r)
+      type(duckdb_result) :: res
+      integer :: col, row
+      type(duckdb_blob) :: r
+      r = duckdb_value_blob_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
+    end function duckdb_value_blob
 
     function duckdb_value_is_null(res, col, row) result(r)
       type(duckdb_result) :: res
@@ -1362,8 +1314,6 @@ module duckdb
     ! Helpers
     ! =========================================================================
 
-
-
     ! =========================================================================
     ! Date/Time/Timestamp Helpers
     ! =========================================================================
@@ -1371,6 +1321,32 @@ module duckdb
     ! =========================================================================
     ! Hugeint Helpers
     ! =========================================================================
+
+    function duckdb_hugeint_to_double(val)  result(r)
+      type(duckdb_hugeint) :: val
+      real(kind=real64) :: r
+      r = real(duckdb_hugeint_to_double_(val), kind=real64)
+    end function duckdb_hugeint_to_double
+
+    function duckdb_double_to_hugeint(val)  result(r)
+      type(duckdb_hugeint) :: r
+      real(kind=real64) :: val
+      r = duckdb_double_to_hugeint_(real(val, kind=c_double))
+    end function duckdb_double_to_hugeint
+
+    function duckdb_double_to_decimal(val, width, scale)  result(r)
+      type(duckdb_decimal) :: r
+      real(kind=real64) :: val
+      integer :: width, scale
+      r = duckdb_double_to_decimal_(real(val, kind=c_double), int(width, kind=c_int8_t), int(scale, kind=c_int8_t))
+    end function duckdb_double_to_decimal
+
+    function duckdb_decimal_to_double(val)  result(r)
+      type(duckdb_decimal) :: val
+      real(kind=real64) :: r
+      r = real(duckdb_decimal_to_double_(val), kind=real64)
+    end function duckdb_decimal_to_double
+
 
     ! =========================================================================
     ! Prepared Statements
@@ -1435,14 +1411,5 @@ module duckdb
     ! =========================================================================
     ! Threading Information
     ! =========================================================================
-
-
-
-
-
-
-
-
-
 
 end module duckdb
