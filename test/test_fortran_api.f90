@@ -61,6 +61,9 @@ module test_fortran_api
       call check(error, data_out == 42)
       if (allocated(error)) return
 
+      ! use chunk functions for above instead - not working yet
+      ! call check(error, duckdb_result_chunk_count(ddb_result) == 1)
+
       call check(error, duckdb_column_count(ddb_result) == 1, "database column count")
       if (allocated(error)) return
 
@@ -88,7 +91,7 @@ module test_fortran_api
       type(error_type), allocatable, intent(out) :: error
       type(duckdb_database) :: db
       type(duckdb_connection) :: conn
-      type(duckdb_result) :: ddb_result
+      type(duckdb_result) :: ddb_result = duckdb_result()
 
       ! Open data in in-memory mode
       call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
@@ -124,6 +127,8 @@ module test_fortran_api
       type(duckdb_database) :: db
       type(duckdb_connection) :: conn
       type(duckdb_result) :: ddb_result = duckdb_result()
+      type(duckdb_string) :: dstr = duckdb_string()
+      character(len=:), pointer :: str
 
       ! Open data in in-memory mode
       call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
@@ -143,14 +148,18 @@ module test_fortran_api
       call check(error, duckdb_row_count(ddb_result) == 1)
       if (allocated(error)) return
 
-      call check(error, duckdb_value_string(ddb_result, 0, 0) == 'hello')
+      dstr = duckdb_value_string(ddb_result, 0, 0)
+      call c_f_pointer(dstr%data, str)
+      str => str(1:dstr%size)
+      call check(error, str == 'hello')
       if (allocated(error)) return
 
       call check(error, .not. duckdb_value_is_null(ddb_result, 0, 0))
       if (allocated(error)) return
 
-      !FIXME: invalid memory reference on destroy - using this hack before
-      ddb_result = duckdb_result()
+      ! dstr needs to be freed (before destroying result)
+      str => null()
+      dstr = duckdb_string()
 
       call duckdb_destroy_result(ddb_result)
       call duckdb_disconnect(conn)

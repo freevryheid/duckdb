@@ -257,29 +257,29 @@ module duckdb
   end type
 
   type, bind(c) :: duckdb_hugeint
-    integer(kind=c_int64_t) :: lower
-    integer(kind=c_int64_t) :: upper
+    integer(kind=c_int64_t) :: lower = 0
+    integer(kind=c_int64_t) :: upper = 0
   end type
 
   type, bind(c) :: duckdb_decimal
-    integer(kind=c_int8_t) :: width
-    integer(kind=c_int8_t) :: scale
-    type(duckdb_hugeint) :: value
+    integer(kind=c_int8_t) :: width = 0
+    integer(kind=c_int8_t) :: scale = 0
+    type(duckdb_hugeint) :: value = duckdb_hugeint()
   end type
 
   type, bind(c) :: duckdb_string
     type(c_ptr) :: data = c_null_ptr
-    integer(kind=c_int64_t) :: size
+    integer(kind=c_int64_t) :: size = 0
   end type
 
   type, bind(c) :: duckdb_blob
     type(c_ptr) :: data = c_null_ptr
-    integer(kind=c_int64_t) :: size
+    integer(kind=c_int64_t) :: size = 0
   end type
 
   type, bind(c) :: duckdb_list_entry
-    integer(kind=c_int64_t) :: offset
-    integer(kind=c_int64_t) :: length
+    integer(kind=c_int64_t) :: offset = 0
+    integer(kind=c_int64_t) :: length = 0
   end type
 
   type, bind(c) :: duckdb_column
@@ -564,6 +564,7 @@ module duckdb
     ! NOTE: DEPRECIATED
 
     ! DUCKDB_API duckdb_string duckdb_value_string(duckdb_result *result, idx_t col, idx_t row);
+    ! NOTE: The result must be freed with `duckdb_free`.
     function duckdb_value_string_(res, col, row) bind(c, name='duckdb_value_string') result(r)
       import :: duckdb_result, c_int64_t, duckdb_string
       type(duckdb_result), intent(in) :: res
@@ -1165,36 +1166,42 @@ module duckdb
       type(duckdb_result) :: res
       integer :: col
       col_type = duckdb_type_invalid
-      if (c_associated(res%internal_data)) col_type = duckdb_column_type_(res, int(col, kind=c_int64_t))
+      if (c_associated(res%internal_data)) &
+        col_type = duckdb_column_type_(res, int(col, kind=c_int64_t))
     end function duckdb_column_type
 
     function duckdb_column_count(res) result(cc)
       type(duckdb_result) :: res
       integer :: cc
       cc = 0
-      if (c_associated(res%internal_data)) cc = int(duckdb_column_count_(res))
+      if (c_associated(res%internal_data)) &
+        cc = int(duckdb_column_count_(res))
     end function duckdb_column_count
 
     function duckdb_row_count(res) result(rc)
       type(duckdb_result) :: res
       integer :: rc
       rc = 0
-      if (c_associated(res%internal_data)) rc = int(duckdb_row_count_(res))
+      if (c_associated(res%internal_data)) &
+        rc = int(duckdb_row_count_(res))
     end function duckdb_row_count
 
     function duckdb_rows_changed(res) result(rc)
       type(duckdb_result) :: res
       integer :: rc
       rc = 0
-      if (c_associated(res%internal_data)) rc = int(duckdb_rows_changed_(res))
+      if (c_associated(res%internal_data)) &
+        rc = int(duckdb_rows_changed_(res))
     end function duckdb_rows_changed
 
+    ! NOTE: DEPRECIATED
     function duckdb_column_data(res, col) result(data)
       type(c_ptr) :: data
       type(duckdb_result) :: res
       integer :: col
       data = c_null_ptr
-      if (c_associated(res%internal_data)) data = duckdb_column_data_(res, int(col, kind=c_int64_t))
+      if (c_associated(res%internal_data)) &
+        data = duckdb_column_data_(res, int(col, kind=c_int64_t))
     end function duckdb_column_data
 
     function duckdb_result_error(res) result(err)
@@ -1220,22 +1227,28 @@ module duckdb
     end function duckdb_result_get_chunk
 
     function duckdb_result_chunk_count(res) result(cc)
-      type(duckdb_result), value :: res
+      type(duckdb_result) :: res
       integer :: cc
-      cc = int(duckdb_result_chunk_count_(res))
+      cc = 0
+      if (c_associated(res%internal_data)) then
+        cc = int(duckdb_result_chunk_count_(res))
+      end if
     end function duckdb_result_chunk_count
 
     function duckdb_value_boolean(res, col, row) result(r)
       type(duckdb_result) :: res
       integer, value :: col, row
       logical :: r
-      if (c_associated(res%internal_data)) r = duckdb_value_boolean_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
+      r = .false.
+      if (c_associated(res%internal_data)) &
+        r = duckdb_value_boolean_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
     end function duckdb_value_boolean
 
     function duckdb_value_int8(res, col, row) result(r)
       type(duckdb_result) :: res
       integer :: col, row
       integer(kind=int8) :: r
+      r = 0
       if (c_associated(res%internal_data)) &
         r = int(duckdb_value_int8_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int8)
     end function duckdb_value_int8
@@ -1244,6 +1257,7 @@ module duckdb
       type(duckdb_result) :: res
       integer :: col, row
       integer(kind=int16) :: r
+      r = 0
       if (c_associated(res%internal_data)) &
         r = int(duckdb_value_int16_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int16)
     end function duckdb_value_int16
@@ -1252,6 +1266,7 @@ module duckdb
       type(duckdb_result) :: res
       integer :: col, row
       integer(kind=int32) :: r
+      r = 0
       if (c_associated(res%internal_data)) &
         r = int(duckdb_value_int32_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int32)
     end function duckdb_value_int32
@@ -1260,6 +1275,7 @@ module duckdb
       type(duckdb_result) :: res
       integer :: col, row
       integer(kind=int64) :: r
+      r = 0
       if (c_associated(res%internal_data)) &
         r = int(duckdb_value_int64_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t)), kind=int64)
     end function duckdb_value_int64
@@ -1268,6 +1284,7 @@ module duckdb
       type(duckdb_result) :: res
       integer :: col, row
       type(duckdb_hugeint) :: r
+      r = duckdb_hugeint()
       if (c_associated(res%internal_data)) &
         r = duckdb_value_hugeint_(res, int(col, kind=c_int64_t), int(col, kind=c_int64_t))
     end function duckdb_value_hugeint
@@ -1328,15 +1345,12 @@ module duckdb
         r = duckdb_value_interval_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
     end function duckdb_value_interval
 
-    function duckdb_value_string(res, col, row) result(str)
+    function duckdb_value_string(res, col, row) result(r)
       type(duckdb_result), intent(in) :: res
       integer :: col, row
       type(duckdb_string) :: r
-      character(len=:), pointer :: str
       if (c_associated(res%internal_data)) then
         r = duckdb_value_string_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
-        call c_f_pointer(r%data, str)
-        str => str(1:r%size)
       end if
     end function duckdb_value_string
 
