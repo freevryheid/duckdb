@@ -365,9 +365,6 @@ module test_fortran_api
       type(duckdb_database) :: db
       type(duckdb_connection) :: con
       type(duckdb_result) :: result = duckdb_result()
-
-      ! type(c_ptr) :: db, con, chunk
-
       integer :: i, j, nc, nr
 
       ! Open data in in-memory mode
@@ -377,7 +374,6 @@ module test_fortran_api
       call check(error, duckdb_connect(db, con) == duckdbsuccess)
       if (allocated(error)) return
 
-      ! allocate(result)
       ! create a table from reading a parquet file
       call check(error, duckdb_query( &
         con, &
@@ -392,7 +388,6 @@ module test_fortran_api
         result) == duckdbsuccess)
       if (allocated(error)) return
 
-      ! print*, duckdb_column_count(result)
       nc = duckdb_column_count(result)
       call check(error, nc == 2)
       if (allocated(error)) return
@@ -448,9 +443,6 @@ module test_fortran_api
       type(duckdb_connection) :: con
       type(duckdb_result) :: result = duckdb_result()
 
-
-
-
       integer :: col_count, col_idx
       integer :: chunk_count, chunk_idx
       integer :: row_count, row_idx
@@ -481,9 +473,7 @@ module test_fortran_api
       col_count = duckdb_column_count(result)
       call check(error, col_count == 6)
 
-
-
-      ! chunk_count = duckdb_result_chunk_count(result)
+      chunk_count = duckdb_result_chunk_count(result)
 
 
       ! ! Loop over the produced chunks
