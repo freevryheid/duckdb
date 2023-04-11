@@ -437,12 +437,12 @@ module test_fortran_api
 
     subroutine test_data_chunk(error)
       type(error_type), allocatable, intent(out) :: error
-      ! type(c_ptr) :: db, con, chunk
-      ! type(duckdb_result), pointer :: result
       type(duckdb_database) :: db
       type(duckdb_connection) :: con
       type(duckdb_result) :: result = duckdb_result()
 
+      type(duckdb_data_chunk) :: chunk
+      type(duckdb_vector) :: vector
       integer :: col_count, col_idx
       integer :: chunk_count, chunk_idx
       integer :: row_count, row_idx
@@ -475,27 +475,26 @@ module test_fortran_api
 
       chunk_count = duckdb_result_chunk_count(result)
 
+      ! Loop over the produced chunks
+      do chunk_idx = 0, chunk_count - 1
+        chunk = duckdb_result_get_chunk(result, chunk_idx)
+        row_count = duckdb_data_chunk_get_size(chunk)
+        do row_idx = 0, row_count - 1
+          do col_idx = 0, col_count - 1
+            ! Get the column
+            vector = duckdb_data_chunk_get_vector(chunk, col_idx);
+            ! uint64_t *validity = duckdb_vector_get_validity(vector);
+            ! bool is_valid = duckdb_validity_row_is_valid(validity, row_idx);
 
-      ! ! Loop over the produced chunks
-      ! do chunk_idx = 0, chunk_count - 1
-      !   chunk = duckdb_result_get_chunk(result, chunk_idx)
-      !   row_count = duckdb_data_chunk_get_size(chunk)
-      !   do row_idx = 0, row_count - 1
-      !     do col_idx = 0, col_count - 1
-      !       ! Get the column
-      !       duckdb_vector vector = duckdb_data_chunk_get_vector(chunk, col_idx);
-      !       uint64_t *validity = duckdb_vector_get_validity(vector);
-      !       bool is_valid = duckdb_validity_row_is_valid(validity, row_idx);
-
-      !       if (col_idx == 4) then
-      !         ! 'dflt_value' column
-      !         call check(error, is_valid == .false.)
-      !         if (allocated(error)) return
-      !       endif
-      !     end do
-      !   end do
-      !   call duckdb_destroy_data_chunk(chunk)
-      ! end do
+            ! if (col_idx == 4) then
+            !   ! 'dflt_value' column
+            !   call check(error, is_valid == .false.)
+            !   if (allocated(error)) return
+            ! endif
+          end do
+        end do
+        call duckdb_destroy_data_chunk(chunk)
+      end do
 
       call duckdb_destroy_result(result)
       call duckdb_disconnect(con)
