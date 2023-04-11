@@ -1,6 +1,8 @@
 module test_fortran_api
+
   ! https://github.com/duckdb/duckdb/blob/master/test/api/capi/test_capi.cpp
   use, intrinsic :: iso_c_binding
+  use, intrinsic :: iso_fortran_env, only : int8, int16, int32, int64, real32, real64, real128
   use duckdb
   use testdrive, only: new_unittest, unittest_type, error_type, check, skip_test
   implicit none
@@ -9,27 +11,31 @@ module test_fortran_api
   contains
 
     subroutine collect_fortran_api(testsuite)
+
       type(unittest_type), allocatable, intent(out) :: testsuite(:)
 
-      testsuite = [ &
-        new_unittest("basic-api-test", test_basic), &
-        new_unittest("basic-null-test", test_scalar_null), &
-        new_unittest("basic-string-test", test_scalar_string), &
-        new_unittest("basic-bool-test", test_boolean), &
-        new_unittest("basic-insert-test", test_multiple_insert), &
+      testsuite = [                                               &
+        new_unittest("basic-api-test", test_basic),               &
+        new_unittest("basic-null-test", test_scalar_null),        &
+        new_unittest("basic-string-test", test_scalar_string),    &
+        new_unittest("basic-bool-test", test_boolean),            &
+        new_unittest("basic-insert-test", test_multiple_insert),  &
         new_unittest("basic-errors-test", test_error_conditions), &
-        new_unittest("parquet-api-test", test_parquet), &
+        new_unittest("parquet-api-test", test_parquet),           &
         new_unittest("data-chunk-test", test_data_chunk)]
 
     end subroutine collect_fortran_api
 
     subroutine test_basic(error)
+
       type(error_type), allocatable, intent(out) :: error
       type(duckdb_database) :: db
       type(duckdb_connection) :: conn
-      type(duckdb_result) :: ddb_result
+      type(duckdb_result) :: ddb_result = duckdb_result()
+      integer(kind=int64), pointer :: data_out
+      type(c_ptr) :: data_in
 
-      print *, new_line('a') // "duckdb library " // duckdb_library_version() // new_line('a')
+      ! print *, new_line('a') // "duckdb library " // duckdb_library_version() // new_line('a')
 
       ! Open data in in-memory mode
       call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
@@ -47,8 +53,13 @@ module test_fortran_api
       if (allocated(error)) return
 
       ! **DEPRECATED**: Prefer using `duckdb_result_get_chunk` instead
-      ! call check(error, duckdb_column_data(result, 0) == 42)
-      ! if (allocated(error)) return
+      data_in = duckdb_column_data(ddb_result, 0)
+      if (c_associated(data_in)) then
+        allocate(data_out)
+        call c_f_pointer(data_in, data_out)
+      end if
+      call check(error, data_out == 42)
+      if (allocated(error)) return
 
       call check(error, duckdb_column_count(ddb_result) == 1, "database column count")
       if (allocated(error)) return
@@ -59,7 +70,7 @@ module test_fortran_api
       call check(error, duckdb_value_int64(ddb_result, 0, 0) == 42, "col 0 row 0 value")
       if (allocated(error)) return
 
-      ! ! Out of range
+      ! Out of range
       call check(error, duckdb_value_int64(ddb_result, 1, 0) == 0, "col 1 row 0 value")
       if (allocated(error)) return
 
@@ -73,6 +84,7 @@ module test_fortran_api
     end subroutine test_basic
 
     subroutine test_scalar_null(error)
+
       type(error_type), allocatable, intent(out) :: error
       type(duckdb_database) :: db
       type(duckdb_connection) :: conn
@@ -120,8 +132,6 @@ module test_fortran_api
       call check(error, duckdb_connect(db, conn) == duckdbsuccess)
       if (allocated(error)) return
 
-      ! ddb_result = duckdb_result()
-
       ! select scalar value
       call check(error, &
         duckdb_query(conn, "SELECT 'hello'", ddb_result) == duckdbsuccess)
@@ -139,7 +149,7 @@ module test_fortran_api
       call check(error, .not. duckdb_value_is_null(ddb_result, 0, 0))
       if (allocated(error)) return
 
-      !FIXME: invalid memory reference on destroy - using this hack
+      !FIXME: invalid memory reference on destroy - using this hack before
       ddb_result = duckdb_result()
 
       call duckdb_destroy_result(ddb_result)
@@ -314,8 +324,6 @@ module test_fortran_api
     subroutine test_error_conditions(error)
       type(error_type), allocatable, intent(out) :: error
       type(duckdb_result) :: res = duckdb_result()
-
-      ! result => null()
 
       call check(error, .not. duckdb_value_is_null(res, 0, 0), "value_is_null?")
       if (allocated(error)) return
