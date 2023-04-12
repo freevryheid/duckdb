@@ -115,6 +115,12 @@ module duckdb
   public :: duckdb_double_to_hugeint
   public :: duckdb_decimal_to_double
   public :: duckdb_double_to_decimal
+  public :: duckdb_data_chunk_get_size
+  public :: duckdb_data_chunk_get_vector
+  public :: duckdb_data_chunk_get_column_count
+  public :: duckdb_data_chunk_reset
+  public :: duckdb_data_chunk_set_size
+  public :: duckdb_destroy_data_chunk
 
   enum, bind(c)
     enumerator :: duckdb_state                    = 0
@@ -859,18 +865,52 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API duckdb_data_chunk duckdb_create_data_chunk(duckdb_logical_type *types, idx_t column_count);
+    function duckdb_create_data_chunk(types, column_count) bind(c, name='duckdb_create_data_chunk') result(res)
+      import :: duckdb_data_chunk, duckdb_logical_type, c_int64_t
+      type(duckdb_logical_type) :: types
+      integer(kind=c_int64_t) :: column_count
+    end function duckdb_create_data_chunk
 
     ! DUCKDB_API void duckdb_destroy_data_chunk(duckdb_data_chunk *chunk);
+    subroutine duckdb_destroy_data_chunk(chunk) bind(c, name='duckdb_destroy_data_chunk')
+      import :: duckdb_data_chunk
+      type(duckdb_data_chunk) :: chunk
+    end subroutine duckdb_destroy_data_chunk
 
     ! DUCKDB_API void duckdb_data_chunk_reset(duckdb_data_chunk chunk);
+    subroutine duckdb_data_chunk_reset(chunk) bind(c, name='duckdb_data_chunk_reset')
+      import :: duckdb_data_chunk
+      type(duckdb_data_chunk) :: chunk
+    end subroutine duckdb_data_chunk_reset
 
     ! DUCKDB_API idx_t duckdb_data_chunk_get_column_count(duckdb_data_chunk chunk);
+    function duckdb_data_chunk_get_column_count_(chunk) bind(c, name='duckdb_data_chunk_get_column_count') result(res)
+      import :: duckdb_data_chunk, c_int64_t
+      type(duckdb_data_chunk) :: chunk
+      integer(kind=c_int64_t) :: res
+    end function duckdb_data_chunk_get_column_count_
 
     ! DUCKDB_API duckdb_vector duckdb_data_chunk_get_vector(duckdb_data_chunk chunk, idx_t col_idx);
+    function duckdb_data_chunk_get_vector_(chunk, col_idx) bind(c, name='duckdb_data_chunk_get_vector') result(res)
+      import :: duckdb_data_chunk, duckdb_vector, c_int64_t
+      type(duckdb_data_chunk) :: chunk
+      integer(kind=c_int64_t) :: col_idx
+      type(duckdb_vector) :: res 
+    end function duckdb_data_chunk_get_vector_
 
     ! DUCKDB_API idx_t duckdb_data_chunk_get_size(duckdb_data_chunk chunk);
+    function duckdb_data_chunk_get_size_(chunk) bind(c, name='duckdb_data_chunk_get_size') result(res)
+      import :: duckdb_data_chunk, c_int64_t
+      type(duckdb_data_chunk) :: chunk
+      integer(kind=c_int64_t) :: res
+    end function duckdb_data_chunk_get_size_
 
     ! DUCKDB_API void duckdb_data_chunk_set_size(duckdb_data_chunk chunk, idx_t size);
+    subroutine duckdb_data_chunk_set_size(chunk, size) bind(c, name='duckdb_data_chunk_set_size')
+      import :: duckdb_data_chunk, c_int64_t
+      type(duckdb_data_chunk) :: chunk
+      integer(kind=c_int64_t) :: size
+    end subroutine duckdb_data_chunk_set_size
 
     ! =========================================================================
     ! Vector Interface
@@ -1435,7 +1475,27 @@ module duckdb
     ! =========================================================================
     ! Data Chunk Interface
     ! =========================================================================
+    function duckdb_data_chunk_get_column_count(chunk) result(res)
+      type(duckdb_data_chunk) :: chunk
+      integer :: res
 
+      res = int(duckdb_data_chunk_get_column_count_(chunk))
+    end function duckdb_data_chunk_get_column_count
+
+    function duckdb_data_chunk_get_vector(chunk, col_idx) result(res)
+      type(duckdb_data_chunk) :: chunk
+      integer :: col_idx
+      type(duckdb_vector) :: res 
+
+      res = duckdb_data_chunk_get_vector_(chunk, int(col_idx, kind=c_int64_t))
+    end function duckdb_data_chunk_get_vector
+
+    function duckdb_data_chunk_get_size(chunk) result(res)
+      type(duckdb_data_chunk) :: chunk
+      integer :: res
+
+      res = int(duckdb_data_chunk_get_size_(chunk))
+    end function duckdb_data_chunk_get_size
     ! =========================================================================
     ! Vector Interface
     ! =========================================================================
