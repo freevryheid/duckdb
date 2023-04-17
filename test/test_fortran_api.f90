@@ -464,15 +464,17 @@ module test_fortran_api
       &varchar, c34 varchar, c35 varchar, c36 varchar, c37 varchar, c38 varchar, c39 varchar);", &
       result) /= duckdberror)
       if (allocated(error)) return
-
+      
       ! Get table info for the created table
-      call check(error, duckdb_query(con, "PRAGMA table_info(foo);", result) /= duckdberror)
+      call check(error, duckdb_query(con, "PRAGMA table_info('foo');", result) /= duckdberror)
       if (allocated(error)) return
 
       ! Columns ({cid, name, type, notnull, dflt_value, pk}}
       col_count = duckdb_column_count(result)
       call check(error, col_count == 6)
+      if (allocated(error)) return
 
+      result = duckdb_result()
       chunk_count = duckdb_result_chunk_count(result)
 
       ! Loop over the produced chunks
