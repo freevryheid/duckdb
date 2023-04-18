@@ -53,16 +53,17 @@ module test_fortran_api
       if (allocated(error)) return
 
       ! **DEPRECATED**: Prefer using `duckdb_result_get_chunk` instead
-      data_in = duckdb_column_data(ddb_result, 0)
-      if (c_associated(data_in)) then
-        allocate(data_out)
-        call c_f_pointer(data_in, data_out)
-      end if
-      call check(error, data_out == 42)
-      if (allocated(error)) return
+      ! data_in = duckdb_column_data(ddb_result, 0)
+      ! if (c_associated(data_in)) then
+      !   allocate(data_out)
+      !   call c_f_pointer(data_in, data_out)
+      ! end if
+      ! call check(error, data_out == 42)
 
-      ! use chunk functions for above instead - not working yet
-      ! call check(error, duckdb_result_chunk_count(ddb_result) == 1)
+      ! TODO: Uncommenting above results in the following failing (and vice vera)
+      ! maybe because chunk functions cannot be mixed with the legacy result functions
+      call check(error, duckdb_result_chunk_count(ddb_result) == 1, "chunk count")
+      if (allocated(error)) return
 
       call check(error, duckdb_column_count(ddb_result) == 1, "database column count")
       if (allocated(error)) return
@@ -456,13 +457,13 @@ module test_fortran_api
 
       ! Create a table with 40 columns
       call check(error, duckdb_query(con, &
-      "CREATE TABLE foo (c00 varchar, c01 varchar, c02 varchar, c03 varchar, c04 varchar, c05 &
-      &varchar, c06 varchar, c07 varchar, c08 varchar, c09 varchar, c10 varchar, c11 varchar, c12 &
-      &varchar, c13 varchar, c14 varchar, c15 varchar, c16 varchar, c17 varchar, c18 varchar, c19 &
-      &varchar, c20 varchar, c21 varchar, c22 varchar, c23 varchar, c24 varchar, c25 varchar, c26 &
-      &varchar, c27 varchar, c28 varchar, c29 varchar, c30 varchar, c31 varchar, c32 varchar, c33 &
-      &varchar, c34 varchar, c35 varchar, c36 varchar, c37 varchar, c38 varchar, c39 varchar);", &
-      result) /= duckdberror)
+        "CREATE TABLE foo (c00 varchar, c01 varchar, c02 varchar, c03 varchar, c04 varchar, c05 "     // &
+        "varchar, c06 varchar, c07 varchar, c08 varchar, c09 varchar, c10 varchar, c11 varchar, c12 " // &
+        "varchar, c13 varchar, c14 varchar, c15 varchar, c16 varchar, c17 varchar, c18 varchar, c19 " // &
+        "varchar, c20 varchar, c21 varchar, c22 varchar, c23 varchar, c24 varchar, c25 varchar, c26 " // &
+        "varchar, c27 varchar, c28 varchar, c29 varchar, c30 varchar, c31 varchar, c32 varchar, c33 " // &
+        "varchar, c34 varchar, c35 varchar, c36 varchar, c37 varchar, c38 varchar, c39 varchar);",       &
+        result) /= duckdberror)
       if (allocated(error)) return
 
       ! Get table info for the created table
@@ -473,7 +474,12 @@ module test_fortran_api
       col_count = duckdb_column_count(result)
       call check(error, col_count == 6)
 
+      print *, "----------------------- 1"
+
       chunk_count = duckdb_result_chunk_count(result)
+      print *, "chuck_count: ", chunk_count
+
+      print *, "----------------------- 2"
 
       ! Loop over the produced chunks
       do chunk_idx = 0, chunk_count - 1
