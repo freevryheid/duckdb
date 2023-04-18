@@ -869,6 +869,7 @@ module duckdb
       import :: duckdb_data_chunk, duckdb_logical_type, c_int64_t
       type(duckdb_logical_type) :: types
       integer(kind=c_int64_t) :: column_count
+      type(duckdb_data_chunk) :: res
     end function duckdb_create_data_chunk
 
     ! DUCKDB_API void duckdb_destroy_data_chunk(duckdb_data_chunk *chunk);
@@ -917,26 +918,95 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API duckdb_logical_type duckdb_vector_get_column_type(duckdb_vector vector);
+    function duckdb_vector_get_column_type(vector) bind(c, name='duckdb_vector_get_column_type') result(res)
+      import :: duckdb_vector, duckdb_logical_type
+      type(duckdb_vector) :: vector
+      type(duckdb_logical_type) :: res
+    end function duckdb_vector_get_column_type
 
     ! DUCKDB_API void *duckdb_vector_get_data(duckdb_vector vector);
+    function duckdb_vector_get_data(vector) bind(c, name='duckdb_vector_get_data') result(res)
+      import :: duckdb_vector, duckdb_result
+      type(duckdb_vector) :: vector
+      type(duckdb_result) :: res
+    end function duckdb_vector_get_data
 
     ! DUCKDB_API uint64_t *duckdb_vector_get_validity(duckdb_vector vector);
+    !>  Retrieves the validity mask pointer of the specified vector.
+    !>  If all values are valid, this function MIGHT return NULL!
+    !>  The validity mask is a bitset that signifies null-ness within the data chunk. 
+    !>  It is a series of uint64_t values, where each uint64_t value contains validity 
+    !>  for 64 tuples. The bit is set to 1 if the value is valid (i.e. not NULL) or 0 
+    !>  if the value is invalid (i.e. NULL).
+    !>  Validity of a specific value can be obtained like this:
+    !>    idx_t entry_idx = row_idx / 64; 
+    !>    idx_t idx_in_entry = row_idx % 64; 
+    !>    bool is_valid = validity_mask[entry_idx] & (1 « idx_in_entry);
+    !>  Alternatively, the (slower) duckdb_validity_row_is_valid function can be used.
+    function duckdb_vector_get_validity_(vector) bind(c, name='duckdb_vector_get_validity') result(res)
+      import :: duckdb_vector, c_ptr
+      type(duckdb_vector) :: vector
+      type(c_ptr) :: res
+    end function duckdb_vector_get_validity_
 
     ! DUCKDB_API void duckdb_vector_ensure_validity_writable(duckdb_vector vector);
+    subroutine duckdb_vector_ensure_validity_writable(vector) bind(c, name='duckdb_vector_ensure_validity_writable')
+      import :: duckdb_vector
+      type(duckdb_vector) :: vector
+    end subroutine duckdb_vector_ensure_validity_writable
 
     ! DUCKDB_API void duckdb_vector_assign_string_element(duckdb_vector vector, idx_t index, const char *str);
+    subroutine duckdb_vector_assign_string_element_(vector, index, str) bind(c, name='duckdb_vector_assign_string_element')
+      import :: duckdb_vector, c_char, c_int64_t
+      type(duckdb_vector) :: vector
+      integer(kind=c_int64_t), value :: index
+      character(c_char), value :: str
+    end subroutine duckdb_vector_assign_string_element_
 
     ! DUCKDB_API void duckdb_vector_assign_string_element_len(duckdb_vector vector, idx_t index, const char *str, idx_t str_len);
+    subroutine duckdb_vector_assign_string_element_len_(vector, index, str, str_len) bind(c, name='duckdb_vector_assign_string_element_len')
+      import :: duckdb_vector, c_char, c_int64_t
+      type(duckdb_vector) :: vector
+      integer(kind=c_int64_t), value :: index
+      character(c_char), value :: str
+      integer(kind=c_int64_t), value :: str_len
+    end subroutine duckdb_vector_assign_string_element_len_
 
     ! DUCKDB_API duckdb_vector duckdb_list_vector_get_child(duckdb_vector vector);
+    function duckdb_list_vector_get_child(vector) bind(c, name='duckdb_list_vector_get_child') result(res)
+      import :: duckdb_vector
+      type(duckdb_vector) :: vector, res 
+    end function duckdb_list_vector_get_child
 
     ! DUCKDB_API idx_t duckdb_list_vector_get_size(duckdb_vector vector);
+    function duckdb_list_vector_get_size(vector) bind(c, name='duckdb_list_vector_get_size') result(res)
+      import :: duckdb_vector, c_int64_t
+      type(duckdb_vector) :: vector
+      integer(kind=c_int64_t) :: res 
+    end function duckdb_list_vector_get_size
 
     ! DUCKDB_API duckdb_state duckdb_list_vector_set_size(duckdb_vector vector, idx_t size);
+    function duckdb_list_vector_set_size(vector, size) bind(c, name='duckdb_list_vector_set_size') result(res)
+      import :: duckdb_vector, c_int64_t, duckdb_state
+      type(duckdb_vector) :: vector
+      integer(kind=c_int64_t), value :: size
+      integer(kind=kind(duckdb_state)) :: res      
+    end function duckdb_list_vector_set_size
 
     ! DUCKDB_API duckdb_state duckdb_list_vector_reserve(duckdb_vector vector, idx_t required_capacity);
+    function duckdb_list_vector_reserve(vector, required_capacity) bind(c, name='duckdb_list_vector_reserve') result(res)
+      import :: duckdb_vector, c_int64_t, duckdb_state
+      type(duckdb_vector) :: vector
+      integer(kind=c_int64_t), value :: required_capacity
+      integer(kind=kind(duckdb_state)) :: res      
+    end function duckdb_list_vector_reserve
 
     ! DUCKDB_API duckdb_vector duckdb_struct_vector_get_child(duckdb_vector vector, idx_t index);
+    function duckdb_struct_vector_get_child(vector, index) bind(c, name='duckdb_struct_vector_get_child') result(res)
+      import :: duckdb_vector, c_int64_t, duckdb_state
+      type(duckdb_vector) :: vector, res 
+      integer(kind=c_int64_t), value :: index
+    end function duckdb_struct_vector_get_child
 
     ! =========================================================================
     ! Validity Mask Functions
@@ -1499,6 +1569,27 @@ module duckdb
     ! =========================================================================
     ! Vector Interface
     ! =========================================================================
+    function duckdb_vector_get_validity(vector) bind(c, name='duckdb_vector_get_validity') result(res)
+      type(duckdb_vector) :: vector
+      type(c_ptr) :: res
+      res = duckdb_vector_get_validity_(vector)
+    end function duckdb_vector_get_validity
+
+    subroutine duckdb_vector_assign_string_element(vector, index, str)
+      type(duckdb_vector) :: vector
+      integer :: index 
+      character(len=*) :: str
+      call duckdb_vector_assign_string_element_(vector, int(index, kind=c_int64_t), str//c_null_char)
+    end subroutine duckdb_vector_assign_string_element
+
+    subroutine duckdb_vector_assign_string_element_len(vector, index, str, str_len)
+      type(duckdb_vector) :: vector
+      integer :: index
+      character(len=*) :: str
+      integer :: str_len
+      call duckdb_vector_assign_string_element_len_(vector, int(index, kind=c_int64_t), &
+        str//c_null_char, int(str_len, kind=c_int64_t))
+    end subroutine duckdb_vector_assign_string_element_len
 
     ! =========================================================================
     ! Validity Mask Functions
