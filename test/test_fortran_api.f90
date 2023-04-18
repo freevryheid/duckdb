@@ -447,6 +447,7 @@ module test_fortran_api
       integer :: col_count, col_idx
       integer :: chunk_count, chunk_idx
       integer :: row_count, row_idx
+      integer(int64) :: validity
 
       ! Open db in in-memory mode
       call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
@@ -477,7 +478,7 @@ module test_fortran_api
       print *, "----------------------- 1"
 
       chunk_count = duckdb_result_chunk_count(result)
-      print *, "chuck_count: ", chunk_count
+      print *, "chunck_count: ", chunk_count
 
       print *, "----------------------- 2"
 
@@ -489,7 +490,7 @@ module test_fortran_api
           do col_idx = 0, col_count - 1
             ! Get the column
             vector = duckdb_data_chunk_get_vector(chunk, col_idx);
-            ! uint64_t *validity = duckdb_vector_get_validity(vector);
+            validity = duckdb_vector_get_validity(vector)
             ! bool is_valid = duckdb_validity_row_is_valid(validity, row_idx);
 
             ! if (col_idx == 4) then
