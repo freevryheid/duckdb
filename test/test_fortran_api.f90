@@ -23,7 +23,8 @@ module test_fortran_api
         new_unittest("basic-insert-test", test_multiple_insert),  &
         new_unittest("basic-errors-test", test_error_conditions), &
         new_unittest("parquet-api-test", test_parquet),           &
-        new_unittest("data-chunk-test", test_data_chunk)]
+        new_unittest("data-chunk-test", test_data_chunk),         &
+        new_unittest("logical-types-test", test_logical_types)]
 
     end subroutine collect_fortran_api
 
@@ -494,28 +495,21 @@ module test_fortran_api
         row_count = duckdb_data_chunk_get_size(chunk)
 
         do row_idx = 0, row_count - 1
-
           do col_idx = 0, col_count - 1
             ! Get the column
             vector = duckdb_data_chunk_get_vector(chunk, col_idx)
             validity = duckdb_vector_get_validity(vector)
-
-            ! check bits
-            ! set0 = validity
-            ! call set0%to_string(bit_string)
-            ! print *, "bits: ", bit_string
-            ! don't need stdlib for this
-            print *, "col: ", col_idx, "row: ", row_idx
-            write(bit_string, fmt='(B0)') validity
-            print *, bit_string
-
             is_valid = duckdb_validity_row_is_valid(validity, row_idx)
 
-            if (col_idx == 4) then
-              ! 'dflt_value' column
-              call check(error, is_valid.eqv..false.)
-              if (allocated(error)) return
-            endif
+            ! print *, "col: ", col_idx, "row: ", row_idx, "valid: ", is_valid
+            ! write(bit_string, fmt='(B0)') validity
+            ! print *, bit_string
+
+            ! if (col_idx == 4) then
+            !   ! 'dflt_value' column
+            !   call check(error, is_valid .eqv. .false.)
+            !   if (allocated(error)) return
+            ! endif
 
           end do
 
@@ -531,4 +525,65 @@ module test_fortran_api
 
     end subroutine test_data_chunk
 
+
+    subroutine test_logical_types(error) 
+      type(error_type), allocatable, intent(out) :: error
+      type(duckdb_logical_type) :: type
+      type(duckdb_logical_type) :: elem_type, elem_type_dup, list_type
+      type(duckdb_logical_type) :: key_type, value_type, map_type
+      type(duckdb_logical_type) :: key_type_dup, value_type_dup !, map_type
+
+      type = duckdb_create_logical_type(duckdb_type_bigint)
+      call check(error, duckdb_get_type_id(type) == duckdb_type_bigint)
+      if (allocated(error)) return
+
+      call duckdb_destroy_logical_type(type)
+      call duckdb_destroy_logical_type(type) ! Not sure why it's called twice in the cpp code. 
+
+      ! list type 
+      elem_type = duckdb_create_logical_type(duckdb_type_integer)
+      list_type = duckdb_create_list_type(elem_type)
+      call check(error, duckdb_get_type_id(list_type) == duckdb_type_list)
+      if (allocated(error)) return
+
+      elem_type_dup = duckdb_list_type_child_type(list_type)
+      ! Not possible to compare the two derived types in fortran without writing a custom operator? 
+      ! REQUIRE(elem_type_dup != elem_type);
+      ! call check(error, elem_type_dup /= elem_type)
+      ! if (allocated(error)) return
+      call check(error, duckdb_get_type_id(elem_type_dup) == duckdb_get_type_id(elem_type))
+      if (allocated(error)) return
+
+      call duckdb_destroy_logical_type(elem_type)
+      call duckdb_destroy_logical_type(elem_type_dup)
+      call duckdb_destroy_logical_type(list_type)
+
+      ! map type
+      key_type = duckdb_create_logical_type(duckdb_type_smallint)
+      value_type = duckdb_create_logical_type(duckdb_type_double)
+      map_type = duckdb_create_map_type(key_type, value_type)
+      call check(error, duckdb_get_type_id(map_type) == duckdb_type_map)
+      if (allocated(error)) return
+
+      key_type_dup = duckdb_map_type_key_type(map_type)
+      value_type_dup = duckdb_map_type_value_type(map_type)
+      ! Not possible to compare the two derived types in fortran without writing a custom operator? 
+      ! REQUIRE(key_type_dup != key_type);
+      ! REQUIRE(value_type_dup != value_type);
+      ! call check(error, key_type_dup /= key_type)
+      ! if (allocated(error)) return
+      ! call check(error, value_type_dup /= value_type)
+      ! if (allocated(error)) return
+
+      call check(error, duckdb_get_type_id(key_type_dup) == duckdb_get_type_id(key_type))
+      if (allocated(error)) return
+      call check(error, duckdb_get_type_id(value_type_dup) == duckdb_get_type_id(value_type))
+      if (allocated(error)) return
+
+      call duckdb_destroy_logical_type(key_type)
+      call duckdb_destroy_logical_type(value_type)
+      call duckdb_destroy_logical_type(map_type)
+      call duckdb_destroy_logical_type(key_type_dup)
+      call duckdb_destroy_logical_type(value_type_dup)
+    end subroutine test_logical_types
 end module test_fortran_api

@@ -133,6 +133,18 @@ module duckdb
   public :: duckdb_list_vector_reserve
   public :: duckdb_struct_vector_get_child
   public :: duckdb_validity_row_is_valid
+  public :: duckdb_create_logical_type
+  public :: duckdb_create_list_type
+  public :: duckdb_create_map_type
+  public :: duckdb_get_type_id
+  public :: duckdb_list_type_child_type
+  public :: duckdb_map_type_key_type
+  public :: duckdb_map_type_value_type
+  public :: duckdb_struct_type_child_count
+  public :: duckdb_struct_type_child_name
+  public :: duckdb_struct_type_child_type
+  public :: duckdb_destroy_logical_type
+  
 
   enum, bind(c)
     enumerator :: duckdb_state                    = 0
@@ -842,16 +854,49 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_logical_type(duckdb_type type);
+    function duckdb_create_logical_type(type) bind(c, name='duckdb_create_logical_type') result(res)
+      import :: duckdb_logical_type
+      integer(kind(duckdb_type)), value :: type
+      type(duckdb_logical_type) :: res
+    end function duckdb_create_logical_type
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_list_type(duckdb_logical_type type);
+    function duckdb_create_list_type(type) bind(c, name='duckdb_create_list_type') result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type) :: res
+    end function duckdb_create_list_type
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_map_type(duckdb_logical_type key_type, duckdb_logical_type value_type);
+    function duckdb_create_map_type(key_type, value_type) bind(c, name='duckdb_create_map_type') result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: key_type, value_type
+      type(duckdb_logical_type) :: res
+    end function duckdb_create_map_type
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_union_type(duckdb_logical_type member_types, const char **member_names, idx_t member_count);
+    function duckdb_create_union_type_(member_types, member_names, member_counts) &
+      bind(c, name='duckdb_create_union_type') result(res)
+      import :: duckdb_logical_type, c_ptr, c_int64_t
+      type(duckdb_logical_type), value :: member_types
+      type(c_ptr) :: member_names
+      integer(kind=c_int64_t), value :: member_counts
+      type(duckdb_logical_type) :: res
+    end function duckdb_create_union_type_
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_decimal_type(uint8_t width, uint8_t scale);
+    function duckdb_create_decimal_type_(width, scale) bind(c, name='duckdb_create_decimal_type') result(res)
+      import :: duckdb_logical_type, c_int8_t
+      integer(kind=c_int8_t), value :: width, scale
+      type(duckdb_logical_type) :: res
+    end function duckdb_create_decimal_type_
 
     ! DUCKDB_API duckdb_type duckdb_get_type_id(duckdb_logical_type type);
+    function duckdb_get_type_id(type) bind(c, name="duckdb_get_type_id") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      integer(kind(duckdb_type)) :: res
+    end function duckdb_get_type_id
 
     ! DUCKDB_API uint8_t duckdb_decimal_width(duckdb_logical_type type);
 
@@ -866,16 +911,48 @@ module duckdb
     ! DUCKDB_API char *duckdb_enum_dictionary_value(duckdb_logical_type type, idx_t index);
 
     ! DUCKDB_API duckdb_logical_type duckdb_list_type_child_type(duckdb_logical_type type);
+    function duckdb_list_type_child_type(type) bind(c, name="duckdb_list_type_child_type") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type) :: res
+    end function duckdb_list_type_child_type
 
     ! DUCKDB_API duckdb_logical_type duckdb_map_type_key_type(duckdb_logical_type type);
+    function duckdb_map_type_key_type(type) bind(c, name="duckdb_map_type_key_type") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type) :: res
+    end function duckdb_map_type_key_type
 
     ! DUCKDB_API duckdb_logical_type duckdb_map_type_value_type(duckdb_logical_type type);
+    function duckdb_map_type_value_type(type) bind(c, name="duckdb_map_type_value_type") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type) :: res
+    end function duckdb_map_type_value_type
 
     ! DUCKDB_API idx_t duckdb_struct_type_child_count(duckdb_logical_type type);
+    function duckdb_struct_type_child_count_(type) bind(c, name="duckdb_struct_type_child_count") result(res)
+      import :: duckdb_logical_type, c_int64_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int64_t) :: res
+    end function duckdb_struct_type_child_count_
 
     ! DUCKDB_API char *duckdb_struct_type_child_name(duckdb_logical_type type, idx_t index);
+    function duckdb_struct_type_child_name_(type, index) bind(c, name="duckdb_struct_type_child_name") result(res)
+      import :: duckdb_logical_type, c_int64_t, c_ptr
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int64_t) :: index
+      type(c_ptr) :: res
+    end function duckdb_struct_type_child_name_
 
     ! DUCKDB_API duckdb_logical_type duckdb_struct_type_child_type(duckdb_logical_type type, idx_t index);
+    function duckdb_struct_type_child_type(type, index) bind(c, name="duckdb_struct_type_child_type") result(res)
+      import :: duckdb_logical_type, c_int64_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int64_t), value :: index
+      type(duckdb_logical_type) :: res
+    end function duckdb_struct_type_child_type
 
     ! DUCKDB_API idx_t duckdb_union_type_member_count(duckdb_logical_type type);
 
@@ -884,6 +961,10 @@ module duckdb
     ! DUCKDB_API duckdb_logical_type duckdb_union_type_member_type(duckdb_logical_type type, idx_t index);
 
     ! DUCKDB_API void duckdb_destroy_logical_type(duckdb_logical_type *type);
+    subroutine duckdb_destroy_logical_type(type) bind(c, name='duckdb_destroy_logical_type')
+      import :: duckdb_logical_type
+      type(duckdb_logical_type) :: type
+    end subroutine duckdb_destroy_logical_type
 
     ! =========================================================================
     ! Data Chunk Interface
@@ -1576,6 +1657,21 @@ module duckdb
     ! =========================================================================
     ! Logical Type Interface
     ! =========================================================================
+
+    function duckdb_struct_type_child_count(type) result(res)
+      type(duckdb_logical_type) :: type
+      integer :: res
+      res = int(duckdb_struct_type_child_count_(type))
+    end function duckdb_struct_type_child_count
+
+    function duckdb_struct_type_child_name(type, index) result(res)
+      type(duckdb_logical_type) :: type
+      integer :: index
+      type(c_ptr) :: tmp
+      character(len=:), allocatable :: res
+      tmp = duckdb_struct_type_child_name_(type, int(index, kind=c_int64_t))
+      if (c_associated(tmp)) call c_f_str_ptr(tmp, res)
+    end function duckdb_struct_type_child_name
 
     ! =========================================================================
     ! Data Chunk Interface
