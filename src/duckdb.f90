@@ -121,6 +121,17 @@ module duckdb
   public :: duckdb_data_chunk_reset
   public :: duckdb_data_chunk_set_size
   public :: duckdb_destroy_data_chunk
+  public :: duckdb_vector_get_column_type
+  public :: duckdb_vector_get_data
+  public :: duckdb_vector_get_validity
+  public :: duckdb_vector_ensure_validity_writable
+  ! public :: duckdb_vector_assign_string_element
+  ! public :: duckdb_vector_assign_string_element_len
+  public :: duckdb_list_vector_get_child
+  public :: duckdb_list_vector_get_size
+  public :: duckdb_list_vector_set_size
+  public :: duckdb_list_vector_reserve
+  public :: duckdb_struct_vector_get_child
 
   enum, bind(c)
     enumerator :: duckdb_state                    = 0
@@ -1029,6 +1040,12 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API bool duckdb_validity_row_is_valid(uint64_t *validity, idx_t row);
+    ! function duckdb_validity_row_is_valid_(validity, row) bind(c, name='duckdb_validity_row_is_valid') result(res)
+    !   import :: c_bool, c_int64_t
+    !   integer(c_int64_t) :: validity
+    !   integer(c_int64_t), value :: row
+    !   logical(c_bool) :: res
+    ! end function duckdb_validity_row_is_valid_
 
     ! DUCKDB_API void duckdb_validity_set_row_validity(uint64_t *validity, idx_t row, bool valid);
 
@@ -1587,12 +1604,11 @@ module duckdb
     ! =========================================================================
     ! Vector Interface
     ! =========================================================================
-
-    ! function duckdb_vector_get_validity(vector) bind(c, name='duckdb_vector_get_validity') result(res)
-    !   type(duckdb_vector) :: vector
-    !   type(c_ptr) :: res
-    !   res = duckdb_vector_get_validity_(vector)
-    ! end function duckdb_vector_get_validity
+    function duckdb_vector_get_validity(vector) result(res)
+      type(duckdb_vector) :: vector
+      integer(int64) :: res
+      res = int(duckdb_vector_get_validity_(vector), kind=int64)
+    end function duckdb_vector_get_validity
 
     ! subroutine duckdb_vector_assign_string_element(vector, index, str)
     !   type(duckdb_vector) :: vector
@@ -1613,6 +1629,14 @@ module duckdb
     ! =========================================================================
     ! Validity Mask Functions
     ! =========================================================================
+
+    ! function duckdb_validity_row_is_valid(validity, row) result(res)
+    !   integer(int64) :: validity(:)
+    !   integer :: row
+    !   logical :: res
+
+    !   res = duckdb_validity_row_is_valid_(int(validity, c_int64_t), int(row, c_int64_t))
+    ! end function duckdb_validity_row_is_valid
 
     ! =========================================================================
     ! Table Functions
