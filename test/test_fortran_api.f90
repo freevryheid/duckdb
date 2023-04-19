@@ -457,7 +457,7 @@ module test_fortran_api
       integer(kind=int64) :: validity
 
       ! type(bitset_64) :: set0
-      character(:), allocatable :: bit_string
+      character(len=64) :: bit_string
       logical :: is_valid
 
       ! Open db in in-memory mode
@@ -504,15 +504,19 @@ module test_fortran_api
             ! set0 = validity
             ! call set0%to_string(bit_string)
             ! print *, "bits: ", bit_string
-
+            ! don't need stdlib for this
+            print *, "col: ", col_idx, "row: ", row_idx
+            write(bit_string, fmt='(B0)') validity
+            print *, bit_string
 
             is_valid = duckdb_validity_row_is_valid(validity, row_idx)
 
-            ! if (col_idx == 4) then
-            !   ! 'dflt_value' column
-            !   call check(error, is_valid == .false.)
-            !   if (allocated(error)) return
-            ! endif
+            if (col_idx == 4) then
+              ! 'dflt_value' column
+              call check(error, is_valid.eqv..false.)
+              if (allocated(error)) return
+            endif
+
           end do
 
         end do
