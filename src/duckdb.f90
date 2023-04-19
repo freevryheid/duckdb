@@ -132,6 +132,7 @@ module duckdb
   public :: duckdb_list_vector_set_size
   public :: duckdb_list_vector_reserve
   public :: duckdb_struct_vector_get_child
+  public :: duckdb_validity_row_is_valid
 
   enum, bind(c)
     enumerator :: duckdb_state                    = 0
@@ -320,7 +321,7 @@ module duckdb
     type(c_ptr) :: internal_data = c_null_ptr
   end type
 
-  interface
+  interface !******************************************************************
 
     ! =========================================================================
     ! Open/Connect
@@ -892,7 +893,7 @@ module duckdb
     function duckdb_create_data_chunk(types, column_count) bind(c, name='duckdb_create_data_chunk') result(res)
       import :: duckdb_data_chunk, duckdb_logical_type, c_int64_t
       type(duckdb_logical_type) :: types
-      integer(kind=c_int64_t) :: column_count
+      integer(kind=c_int64_t), value :: column_count
       type(duckdb_data_chunk) :: res
     end function duckdb_create_data_chunk
 
@@ -905,36 +906,36 @@ module duckdb
     ! DUCKDB_API void duckdb_data_chunk_reset(duckdb_data_chunk chunk);
     subroutine duckdb_data_chunk_reset(chunk) bind(c, name='duckdb_data_chunk_reset')
       import :: duckdb_data_chunk
-      type(duckdb_data_chunk) :: chunk
+      type(duckdb_data_chunk), value :: chunk
     end subroutine duckdb_data_chunk_reset
 
     ! DUCKDB_API idx_t duckdb_data_chunk_get_column_count(duckdb_data_chunk chunk);
     function duckdb_data_chunk_get_column_count_(chunk) bind(c, name='duckdb_data_chunk_get_column_count') result(res)
       import :: duckdb_data_chunk, c_int64_t
-      type(duckdb_data_chunk) :: chunk
+      type(duckdb_data_chunk), value :: chunk
       integer(kind=c_int64_t) :: res
     end function duckdb_data_chunk_get_column_count_
 
     ! DUCKDB_API duckdb_vector duckdb_data_chunk_get_vector(duckdb_data_chunk chunk, idx_t col_idx);
     function duckdb_data_chunk_get_vector_(chunk, col_idx) bind(c, name='duckdb_data_chunk_get_vector') result(res)
       import :: duckdb_data_chunk, duckdb_vector, c_int64_t
-      type(duckdb_data_chunk) :: chunk
-      integer(kind=c_int64_t) :: col_idx
+      type(duckdb_data_chunk), value :: chunk
+      integer(kind=c_int64_t), value :: col_idx
       type(duckdb_vector) :: res
     end function duckdb_data_chunk_get_vector_
 
     ! DUCKDB_API idx_t duckdb_data_chunk_get_size(duckdb_data_chunk chunk);
     function duckdb_data_chunk_get_size_(chunk) bind(c, name='duckdb_data_chunk_get_size') result(res)
       import :: duckdb_data_chunk, c_int64_t
-      type(duckdb_data_chunk) :: chunk
+      type(duckdb_data_chunk), value :: chunk
       integer(kind=c_int64_t) :: res
     end function duckdb_data_chunk_get_size_
 
     ! DUCKDB_API void duckdb_data_chunk_set_size(duckdb_data_chunk chunk, idx_t size);
     subroutine duckdb_data_chunk_set_size(chunk, size) bind(c, name='duckdb_data_chunk_set_size')
       import :: duckdb_data_chunk, c_int64_t
-      type(duckdb_data_chunk) :: chunk
-      integer(kind=c_int64_t) :: size
+      type(duckdb_data_chunk), value :: chunk
+      integer(kind=c_int64_t), value :: size
     end subroutine duckdb_data_chunk_set_size
 
     ! =========================================================================
@@ -1040,12 +1041,12 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API bool duckdb_validity_row_is_valid(uint64_t *validity, idx_t row);
-    ! function duckdb_validity_row_is_valid_(validity, row) bind(c, name='duckdb_validity_row_is_valid') result(res)
-    !   import :: c_bool, c_int64_t
-    !   integer(c_int64_t) :: validity
-    !   integer(c_int64_t), value :: row
-    !   logical(c_bool) :: res
-    ! end function duckdb_validity_row_is_valid_
+    function duckdb_validity_row_is_valid_(validity, row) bind(c, name='duckdb_validity_row_is_valid') result(res)
+      import :: c_bool, c_int64_t
+      integer(c_int64_t) :: validity
+      integer(c_int64_t), value :: row
+      logical(c_bool) :: res
+    end function duckdb_validity_row_is_valid_
 
     ! DUCKDB_API void duckdb_validity_set_row_validity(uint64_t *validity, idx_t row, bool valid);
 
@@ -1257,7 +1258,7 @@ module duckdb
 
     ! DUCKDB_API bool duckdb_execution_is_finished(duckdb_connection con);
 
-  end interface
+  end interface !**************************************************************
 
   contains
 
@@ -1583,7 +1584,6 @@ module duckdb
     function duckdb_data_chunk_get_column_count(chunk) result(res)
       type(duckdb_data_chunk) :: chunk
       integer :: res
-
       res = int(duckdb_data_chunk_get_column_count_(chunk))
     end function duckdb_data_chunk_get_column_count
 
@@ -1591,52 +1591,51 @@ module duckdb
       type(duckdb_data_chunk) :: chunk
       integer :: col_idx
       type(duckdb_vector) :: res
-
       res = duckdb_data_chunk_get_vector_(chunk, int(col_idx, kind=c_int64_t))
     end function duckdb_data_chunk_get_vector
 
     function duckdb_data_chunk_get_size(chunk) result(res)
       type(duckdb_data_chunk) :: chunk
       integer :: res
-
       res = int(duckdb_data_chunk_get_size_(chunk))
     end function duckdb_data_chunk_get_size
+
     ! =========================================================================
     ! Vector Interface
     ! =========================================================================
+
     function duckdb_vector_get_validity(vector) result(res)
       type(duckdb_vector) :: vector
-      integer(int64) :: res
+      integer(kind=int64) :: res
       res = int(duckdb_vector_get_validity_(vector), kind=int64)
     end function duckdb_vector_get_validity
 
-    ! subroutine duckdb_vector_assign_string_element(vector, index, str)
-    !   type(duckdb_vector) :: vector
-    !   integer :: index
-    !   character(len=*) :: str
-    !   call duckdb_vector_assign_string_element_(vector, int(index, kind=c_int64_t), str//c_null_char)
-    ! end subroutine duckdb_vector_assign_string_element
+    subroutine duckdb_vector_assign_string_element(vector, index, str)
+      type(duckdb_vector) :: vector
+      integer :: index
+      character(len=*) :: str
+      call duckdb_vector_assign_string_element_(vector, int(index, kind=c_int64_t), str // c_null_char)
+    end subroutine duckdb_vector_assign_string_element
 
-    ! subroutine duckdb_vector_assign_string_element_len(vector, index, str, str_len)
-    !   type(duckdb_vector) :: vector
-    !   integer :: index
-    !   character(len=*) :: str
-    !   integer :: str_len
-    !   call duckdb_vector_assign_string_element_len_(vector, int(index, kind=c_int64_t), &
-    !     str//c_null_char, int(str_len, kind=c_int64_t))
-    ! end subroutine duckdb_vector_assign_string_element_len
+    subroutine duckdb_vector_assign_string_element_len(vector, index, str, str_len)
+      type(duckdb_vector) :: vector
+      integer :: index
+      character(len=*) :: str
+      integer :: str_len
+      call duckdb_vector_assign_string_element_len_(vector, int(index, kind=c_int64_t), &
+        str // c_null_char, int(str_len, kind=c_int64_t))
+    end subroutine duckdb_vector_assign_string_element_len
 
     ! =========================================================================
     ! Validity Mask Functions
     ! =========================================================================
 
-    ! function duckdb_validity_row_is_valid(validity, row) result(res)
-    !   integer(int64) :: validity(:)
-    !   integer :: row
-    !   logical :: res
-
-    !   res = duckdb_validity_row_is_valid_(int(validity, c_int64_t), int(row, c_int64_t))
-    ! end function duckdb_validity_row_is_valid
+    function duckdb_validity_row_is_valid(validity, row) result(res)
+      integer(kind=int64) :: validity
+      integer :: row
+      logical :: res
+      res = duckdb_validity_row_is_valid_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t))
+    end function duckdb_validity_row_is_valid
 
     ! =========================================================================
     ! Table Functions

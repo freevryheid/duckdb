@@ -3,6 +3,7 @@ module test_fortran_api
   ! https://github.com/duckdb/duckdb/blob/master/test/api/capi/test_capi.cpp
   use, intrinsic :: iso_c_binding
   use, intrinsic :: iso_fortran_env, only : int8, int16, int32, int64, real32, real64, real128
+  ! use stdlib_bitsets
   use duckdb
   use testdrive, only: new_unittest, unittest_type, error_type, check, skip_test
   implicit none
@@ -60,7 +61,7 @@ module test_fortran_api
       ! end if
       ! call check(error, data_out == 42)
 
-      ! TODO: Uncommenting above results in the following failing (and vice vera)
+      ! TODO: Uncommenting above causes the following to fail (and vice vera)
       ! maybe because chunk functions cannot be mixed with the legacy result functions
       call check(error, duckdb_result_chunk_count(ddb_result) == 1, "chunk count")
       if (allocated(error)) return
@@ -124,6 +125,7 @@ module test_fortran_api
     end subroutine test_scalar_null
 
     subroutine test_scalar_string(error)
+
       type(error_type), allocatable, intent(out) :: error
       type(duckdb_database) :: db
       type(duckdb_connection) :: conn
@@ -247,6 +249,7 @@ module test_fortran_api
     end subroutine test_boolean
 
     subroutine test_multiple_insert(error)
+
       type(error_type), allocatable, intent(out) :: error
       type(duckdb_database) :: db
       type(duckdb_connection) :: conn
@@ -332,6 +335,7 @@ module test_fortran_api
     end subroutine test_multiple_insert
 
     subroutine test_error_conditions(error)
+
       type(error_type), allocatable, intent(out) :: error
       type(duckdb_result) :: res = duckdb_result()
 
@@ -362,6 +366,7 @@ module test_fortran_api
     end subroutine test_error_conditions
 
     subroutine test_parquet(error)
+
       type(error_type), allocatable, intent(out) :: error
       type(duckdb_database) :: db
       type(duckdb_connection) :: con
@@ -434,20 +439,26 @@ module test_fortran_api
       call duckdb_destroy_result(result)
       call duckdb_disconnect(con)
       call duckdb_close(db)
+
     end subroutine test_parquet
 
     subroutine test_data_chunk(error)
+
       type(error_type), allocatable, intent(out) :: error
       type(duckdb_database) :: db
       type(duckdb_connection) :: con
       type(duckdb_result) :: result = duckdb_result()
-
       type(duckdb_data_chunk) :: chunk
       type(duckdb_vector) :: vector
+
       integer :: col_count, col_idx
       integer :: chunk_count, chunk_idx
       integer :: row_count, row_idx
-      integer(int64) :: validity
+      integer(kind=int64) :: validity
+
+      ! type(bitset_64) :: set0
+      character(:), allocatable :: bit_string
+      logical :: is_valid
 
       ! Open db in in-memory mode
       call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
@@ -475,23 +486,27 @@ module test_fortran_api
       col_count = duckdb_column_count(result)
       call check(error, col_count == 6)
 
-      print *, "----------------------- 1"
-
       chunk_count = duckdb_result_chunk_count(result)
-      print *, "chunck_count: ", chunk_count
-
-      print *, "----------------------- 2"
 
       ! Loop over the produced chunks
       do chunk_idx = 0, chunk_count - 1
         chunk = duckdb_result_get_chunk(result, chunk_idx)
         row_count = duckdb_data_chunk_get_size(chunk)
+
         do row_idx = 0, row_count - 1
+
           do col_idx = 0, col_count - 1
             ! Get the column
-            vector = duckdb_data_chunk_get_vector(chunk, col_idx);
+            vector = duckdb_data_chunk_get_vector(chunk, col_idx)
             validity = duckdb_vector_get_validity(vector)
-            ! bool is_valid = duckdb_validity_row_is_valid(validity, row_idx);
+
+            ! check bits
+            ! set0 = validity
+            ! call set0%to_string(bit_string)
+            ! print *, "bits: ", bit_string
+
+
+            is_valid = duckdb_validity_row_is_valid(validity, row_idx)
 
             ! if (col_idx == 4) then
             !   ! 'dflt_value' column
@@ -499,8 +514,11 @@ module test_fortran_api
             !   if (allocated(error)) return
             ! endif
           end do
+
         end do
+
         call duckdb_destroy_data_chunk(chunk)
+
       end do
 
       call duckdb_destroy_result(result)
