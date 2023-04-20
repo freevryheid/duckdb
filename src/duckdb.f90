@@ -144,7 +144,7 @@ module duckdb
   public :: duckdb_struct_type_child_name
   public :: duckdb_struct_type_child_type
   public :: duckdb_destroy_logical_type
-  
+
 
   enum, bind(c)
     enumerator :: duckdb_state                    = 0
@@ -653,11 +653,10 @@ module duckdb
     end subroutine duckdb_free
 
     ! DUCKDB_API idx_t duckdb_vector_size();
-    ! TODO : provide helper to convert to fortran int
-    function duckdb_vector_size() bind(c, name='duckdb_vector_size') result(res)
+    function duckdb_vector_size_() bind(c, name='duckdb_vector_size') result(res)
       import :: c_int64_t
       integer(kind=c_int64_t) :: res
-    end function duckdb_vector_size
+    end function duckdb_vector_size_
 
     ! =========================================================================
     ! Date/Time/Timestamp Helpers
@@ -1050,9 +1049,10 @@ module duckdb
     !>    bool is_valid = validity_mask[entry_idx] & (1 « idx_in_entry);
     !>  Alternatively, the (slower) duckdb_validity_row_is_valid function can be used.
     function duckdb_vector_get_validity_(vector) bind(c, name='duckdb_vector_get_validity') result(res)
-      import :: duckdb_vector, c_int64_t
+      import :: duckdb_vector, c_int64_t, c_ptr
       type(duckdb_vector), value :: vector
-      integer(kind=c_int64_t) :: res
+      type(c_ptr) :: res
+      ! integer(kind=c_int64_t) :: res
     end function duckdb_vector_get_validity_
 
     ! DUCKDB_API void duckdb_vector_ensure_validity_writable(duckdb_vector vector);
@@ -1371,7 +1371,7 @@ module duckdb
       character(len=:), allocatable :: sql
       type(duckdb_result) :: out_result
       sql = query // c_null_char ! convert to c string
-      ! print *, sql
+      print *, sql
       res = duckdb_query_(connection, sql, out_result)
     end function duckdb_query
 
@@ -1604,6 +1604,11 @@ module duckdb
     ! Helpers
     ! =========================================================================
 
+    function duckdb_vector_size() result(res)
+      integer :: res
+      res = int(duckdb_vector_size_())
+    end function duckdb_vector_size
+
     ! =========================================================================
     ! Date/Time/Timestamp Helpers
     ! =========================================================================
@@ -1702,8 +1707,11 @@ module duckdb
 
     function duckdb_vector_get_validity(vector) result(res)
       type(duckdb_vector) :: vector
-      integer(kind=int64) :: res
-      res = int(duckdb_vector_get_validity_(vector), kind=int64)
+      type(c_ptr) :: ptr
+      integer(kind=int64), pointer :: res
+      ptr = duckdb_vector_get_validity_(vector)
+      call c_f_pointer(ptr, res)
+      ! res = int(duckdb_vector_get_validity_(vector), kind=int64)
     end function duckdb_vector_get_validity
 
     subroutine duckdb_vector_assign_string_element(vector, index, str)
