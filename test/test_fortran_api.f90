@@ -503,7 +503,7 @@ module test_fortran_api
             validity = duckdb_vector_get_validity(vector)
             is_valid = duckdb_validity_row_is_valid(validity, row_idx)
 
-            print *, "col: ", col_idx, "row: ", row_idx, "valid: ", is_valid
+            print *, "col: ", col_idx, "row: ", row_idx, "valid: ", is_valid, "fortran: ", btest(validity, row_idx+1)
             write(bit_string, fmt='(B0)') validity
             print *, bit_string
 
