@@ -144,6 +144,7 @@ module duckdb
   public :: duckdb_struct_type_child_name
   public :: duckdb_struct_type_child_type
   public :: duckdb_destroy_logical_type
+  public :: duckdb_create_data_chunk
 
 
   enum, bind(c)
@@ -970,12 +971,12 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API duckdb_data_chunk duckdb_create_data_chunk(duckdb_logical_type *types, idx_t column_count);
-    function duckdb_create_data_chunk(types, column_count) bind(c, name='duckdb_create_data_chunk') result(res)
+    function duckdb_create_data_chunk_(types, column_count) bind(c, name='duckdb_create_data_chunk') result(res)
       import :: duckdb_data_chunk, duckdb_logical_type, c_int64_t
-      type(duckdb_logical_type) :: types
+      type(duckdb_logical_type) :: types(*)
       integer(kind=c_int64_t), value :: column_count
       type(duckdb_data_chunk) :: res
-    end function duckdb_create_data_chunk
+    end function duckdb_create_data_chunk_
 
     ! DUCKDB_API void duckdb_destroy_data_chunk(duckdb_data_chunk *chunk);
     subroutine duckdb_destroy_data_chunk(chunk) bind(c, name='duckdb_destroy_data_chunk')
@@ -1371,7 +1372,6 @@ module duckdb
       character(len=:), allocatable :: sql
       type(duckdb_result) :: out_result
       sql = query // c_null_char ! convert to c string
-      print *, sql
       res = duckdb_query_(connection, sql, out_result)
     end function duckdb_query
 
@@ -1681,6 +1681,12 @@ module duckdb
     ! =========================================================================
     ! Data Chunk Interface
     ! =========================================================================
+    function duckdb_create_data_chunk(types, column_count) result(res)
+      type(duckdb_logical_type) :: types(*)
+      integer :: column_count
+      type(duckdb_data_chunk) :: res
+      res = duckdb_create_data_chunk_(types, int(column_count, kind=c_int64_t))
+    end function duckdb_create_data_chunk
 
     function duckdb_data_chunk_get_column_count(chunk) result(res)
       type(duckdb_data_chunk) :: chunk
