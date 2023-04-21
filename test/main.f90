@@ -3,6 +3,7 @@ program tester
   use testdrive, only : run_testsuite, new_testsuite, testsuite_type
   use test_starting_database, only : collect_starting_database
   use test_fortran_api, only: collect_fortran_api
+  use test_parquet_files, only: collect_parquet_files
   implicit none
   integer :: stat, is
   type(testsuite_type), allocatable :: testsuites(:)
@@ -12,7 +13,9 @@ program tester
 
   testsuites = [  &
     new_testsuite("starting_database", collect_starting_database), &
-    new_testsuite("test_fortran_api", collect_fortran_api)]
+    new_testsuite("test_fortran_api", collect_fortran_api),        &
+    new_testsuite("test_parquet_files", collect_parquet_files)     &
+    ]
 
   do is = 1, size(testsuites)
     write(error_unit, fmt) "Testing:", testsuites(is)%name
