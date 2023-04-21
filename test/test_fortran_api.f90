@@ -24,7 +24,8 @@ module test_fortran_api
         new_unittest("basic-errors-test", test_error_conditions), &
         new_unittest("parquet-api-test", test_parquet),           &
         new_unittest("data-chunk-test", test_data_chunk),         &
-        new_unittest("logical-types-test", test_logical_types)]
+        new_unittest("logical-types-test", test_logical_types),   &
+        new_unittest("data-chunk-api-test", test_data_chunk_api)]
 
     end subroutine collect_fortran_api
 
@@ -503,7 +504,8 @@ module test_fortran_api
             validity = duckdb_vector_get_validity(vector)
             is_valid = duckdb_validity_row_is_valid(validity, row_idx)
 
-            print *, "col: ", col_idx, "row: ", row_idx, "valid: ", is_valid, "fortran: ", btest(validity, row_idx+1)
+            print *, "col: ", col_idx, "row: ", row_idx, "valid: ", is_valid, "fortran: ", &
+              btest(validity, row_idx)," ", btest(validity, row_idx+1)
             write(bit_string, fmt='(B0)') validity
             print *, bit_string
 
@@ -527,7 +529,6 @@ module test_fortran_api
 
     end subroutine test_data_chunk
 
-
     subroutine test_logical_types(error)
 
       type(error_type), allocatable, intent(out) :: error
@@ -550,10 +551,6 @@ module test_fortran_api
       if (allocated(error)) return
 
       elem_type_dup = duckdb_list_type_child_type(list_type)
-      ! Not possible to compare the two derived types in fortran without writing a custom operator?
-      ! REQUIRE(elem_type_dup != elem_type);
-      ! call check(error, elem_type_dup /= elem_type)
-      ! if (allocated(error)) return
       call check(error, duckdb_get_type_id(elem_type_dup) == duckdb_get_type_id(elem_type))
       if (allocated(error)) return
 
@@ -570,13 +567,6 @@ module test_fortran_api
 
       key_type_dup = duckdb_map_type_key_type(map_type)
       value_type_dup = duckdb_map_type_value_type(map_type)
-      ! Not possible to compare the two derived types in fortran without writing a custom operator?
-      ! REQUIRE(key_type_dup != key_type);
-      ! REQUIRE(value_type_dup != value_type);
-      ! call check(error, key_type_dup /= key_type)
-      ! if (allocated(error)) return
-      ! call check(error, value_type_dup /= value_type)
-      ! if (allocated(error)) return
 
       call check(error, duckdb_get_type_id(key_type_dup) == duckdb_get_type_id(key_type))
       if (allocated(error)) return
@@ -591,4 +581,123 @@ module test_fortran_api
 
     end subroutine test_logical_types
 
+    subroutine test_data_chunk_api(error)
+      type(error_type), allocatable, intent(out) :: error
+
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: con
+      type(duckdb_result) :: result
+      type(duckdb_logical_type) :: types(2), first_type
+      type(duckdb_data_chunk) :: chunk
+
+      ! Open db in in-memory mode
+      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+      if (allocated(error)) return
+
+      call check(error, duckdb_connect(db, con) == duckdbsuccess)
+      if (allocated(error)) return
+
+      ! Not clear what STANDARD_VECTOR_SIZE is in the cpp test!
+      ! call check(error, duckdb_vector_size() == STANDARD_VECTOR_SIZE)
+      ! if (allocated(error)) return
+
+      call check(error, duckdb_query(con, "CREATE TABLE test(i BIGINT, j SMALLINT);", &
+        result) /= duckdberror)
+      if (allocated(error)) return
+
+      types(1) = duckdb_create_logical_type(duckdb_type_bigint)
+      types(2) = duckdb_create_logical_type(duckdb_type_smallint)
+
+      chunk = duckdb_create_data_chunk(types, 2)
+      call check(error, c_associated(chunk%dtck))
+      if (allocated(error)) return
+
+      call check(error, duckdb_data_chunk_get_column_count(chunk) == 2)
+      if (allocated(error)) return
+
+      first_type = duckdb_vector_get_column_type(duckdb_data_chunk_get_vector(chunk, 0))
+      call check(error, duckdb_get_type_id(first_type) == duckdb_type_bigint)
+      if (allocated(error)) return
+
+      call duckdb_destroy_logical_type(first_type)
+
+
+! 	auto second_type = duckdb_vector_get_column_type(duckdb_data_chunk_get_vector(data_chunk, 1));
+! 	REQUIRE(duckdb_get_type_id(second_type) == DUCKDB_TYPE_SMALLINT);
+! 	duckdb_destroy_logical_type(&second_type);
+
+! 	REQUIRE(duckdb_data_chunk_get_vector(data_chunk, 999) == nullptr);
+! 	REQUIRE(duckdb_data_chunk_get_vector(nullptr, 0) == nullptr);
+! 	REQUIRE(duckdb_vector_get_column_type(nullptr) == nullptr);
+
+! 	REQUIRE(duckdb_data_chunk_get_size(data_chunk) == 0);
+! 	REQUIRE(duckdb_data_chunk_get_size(nullptr) == 0);
+
+! 	// use the appender to insert a value using the data chunk API
+
+! 	duckdb_appender appender;
+! 	status = duckdb_appender_create(tester.connection, nullptr, "test", &appender);
+! 	REQUIRE(status == DuckDBSuccess);
+
+! 	// append standard primitive values
+! 	auto col1_ptr = (int64_t *)duckdb_vector_get_data(duckdb_data_chunk_get_vector(data_chunk, 0));
+! 	*col1_ptr = 42;
+! 	auto col2_ptr = (int16_t *)duckdb_vector_get_data(duckdb_data_chunk_get_vector(data_chunk, 1));
+! 	*col2_ptr = 84;
+
+! 	REQUIRE(duckdb_vector_get_data(nullptr) == nullptr);
+
+! 	duckdb_data_chunk_set_size(data_chunk, 1);
+! 	REQUIRE(duckdb_data_chunk_get_size(data_chunk) == 1);
+
+! 	REQUIRE(duckdb_append_data_chunk(appender, data_chunk) == DuckDBSuccess);
+! 	REQUIRE(duckdb_append_data_chunk(appender, nullptr) == DuckDBError);
+! 	REQUIRE(duckdb_append_data_chunk(nullptr, data_chunk) == DuckDBError);
+
+! 	// append nulls
+! 	duckdb_data_chunk_reset(data_chunk);
+! 	REQUIRE(duckdb_data_chunk_get_size(data_chunk) == 0);
+
+! 	duckdb_vector_ensure_validity_writable(duckdb_data_chunk_get_vector(data_chunk, 0));
+! 	duckdb_vector_ensure_validity_writable(duckdb_data_chunk_get_vector(data_chunk, 1));
+! 	auto col1_validity = duckdb_vector_get_validity(duckdb_data_chunk_get_vector(data_chunk, 0));
+! 	REQUIRE(duckdb_validity_row_is_valid(col1_validity, 0));
+! 	duckdb_validity_set_row_validity(col1_validity, 0, false);
+! 	REQUIRE(!duckdb_validity_row_is_valid(col1_validity, 0));
+
+! 	auto col2_validity = duckdb_vector_get_validity(duckdb_data_chunk_get_vector(data_chunk, 1));
+! 	REQUIRE(col2_validity);
+! 	REQUIRE(duckdb_validity_row_is_valid(col2_validity, 0));
+! 	duckdb_validity_set_row_validity(col2_validity, 0, false);
+! 	REQUIRE(!duckdb_validity_row_is_valid(col2_validity, 0));
+
+! 	duckdb_data_chunk_set_size(data_chunk, 1);
+! 	REQUIRE(duckdb_data_chunk_get_size(data_chunk) == 1);
+
+! 	REQUIRE(duckdb_append_data_chunk(appender, data_chunk) == DuckDBSuccess);
+
+! 	REQUIRE(duckdb_vector_get_validity(nullptr) == nullptr);
+
+! 	duckdb_appender_destroy(&appender);
+
+! 	result = tester.Query("SELECT * FROM test");
+! 	REQUIRE_NO_FAIL(*result);
+! 	REQUIRE(result->Fetch<int64_t>(0, 0) == 42);
+! 	REQUIRE(result->Fetch<int16_t>(1, 0) == 84);
+! 	REQUIRE(result->IsNull(0, 1));
+! 	REQUIRE(result->IsNull(1, 1));
+
+! 	duckdb_data_chunk_reset(data_chunk);
+! 	duckdb_data_chunk_reset(nullptr);
+! 	REQUIRE(duckdb_data_chunk_get_size(data_chunk) == 0);
+
+! 	duckdb_destroy_data_chunk(&data_chunk);
+! 	duckdb_destroy_data_chunk(&data_chunk);
+
+! 	duckdb_destroy_data_chunk(nullptr);
+
+! 	duckdb_destroy_logical_type(&types[0]);
+! 	duckdb_destroy_logical_type(&types[1]);
+! }
+    end subroutine test_data_chunk_api
 end module test_fortran_api
