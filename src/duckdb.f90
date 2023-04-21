@@ -150,13 +150,11 @@ module duckdb
   public :: duckdb_create_list_type
   public :: duckdb_create_map_type
   public :: duckdb_get_type_id
-
-  ! public :: duckdb_decimal_width
-  ! public :: duckdb_decimal_scale
-  ! public :: duckdb_type duckdb_decimal_internal_type
-  ! public :: duckdb_enum_internal_type
-  ! public :: duckdb_enum_dictionary_size
-
+  public :: duckdb_decimal_width
+  public :: duckdb_decimal_scale
+  public :: duckdb_decimal_internal_type
+  public :: duckdb_enum_internal_type
+  public :: duckdb_enum_dictionary_size
   public :: duckdb_enum_dictionary_value
   public :: duckdb_list_type_child_type
   public :: duckdb_map_type_key_type
@@ -926,14 +924,39 @@ module duckdb
     end function duckdb_get_type_id
 
     ! DUCKDB_API uint8_t duckdb_decimal_width(duckdb_logical_type type);
+    function duckdb_decimal_width_(type) bind(c, name='duckdb_decimal_width') result(res)
+      import :: duckdb_logical_type, c_int8_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int8_t) :: res
+    end function duckdb_decimal_width_
 
     ! DUCKDB_API uint8_t duckdb_decimal_scale(duckdb_logical_type type);
+    function duckdb_decimal_scale_(type) bind(c, name='duckdb_decimal_scale') result(res)
+      import :: duckdb_logical_type, c_int8_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int8_t) :: res
+    end function duckdb_decimal_scale_
 
     ! DUCKDB_API duckdb_type duckdb_decimal_internal_type(duckdb_logical_type type);
+    function duckdb_decimal_internal_type(type) bind(c, name="duckdb_decimal_internal_type") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      integer(kind(duckdb_type)) :: res
+    end function duckdb_decimal_internal_type
 
     ! DUCKDB_API duckdb_type duckdb_enum_internal_type(duckdb_logical_type type);
+    function duckdb_enum_internal_type(type) bind(c, name="duckdb_enum_internal_type") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      integer(kind(duckdb_type)) :: res
+    end function duckdb_enum_internal_type
 
     ! DUCKDB_API uint32_t duckdb_enum_dictionary_size(duckdb_logical_type type);
+    function duckdb_enum_dictionary_size_(type) bind(c, name='duckdb_enum_dictionary_size') result(res)
+      import :: duckdb_logical_type, c_int32_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int32_t) :: res
+    end function duckdb_enum_dictionary_size_
 
     ! DUCKDB_API char *duckdb_enum_dictionary_value(duckdb_logical_type type, idx_t index);
     function duckdb_enum_dictionary_value_(type, index) bind(c, name="duckdb_enum_dictionary_value") result(res)
@@ -1695,6 +1718,24 @@ module duckdb
     ! =========================================================================
     ! Logical Type Interface
     ! =========================================================================
+
+    function duckdb_decimal_width(type) result(res)
+      type(duckdb_logical_type) :: type
+      integer(kind=int8) :: res
+      res = int(duckdb_decimal_width_(type), kind=int8)
+    end function duckdb_decimal_width
+
+    function duckdb_decimal_scale(type) result(res)
+      type(duckdb_logical_type) :: type
+      integer(kind=int8) :: res
+      res = int(duckdb_decimal_scale_(type), kind=int8)
+    end function duckdb_decimal_scale
+
+    function duckdb_enum_dictionary_size(type) result(res)
+      type(duckdb_logical_type) :: type
+      integer(kind=int32) :: res
+      res = int(duckdb_enum_dictionary_size_(type), kind=int32)
+    end function duckdb_enum_dictionary_size
 
     function duckdb_enum_dictionary_value(type, index) result(res)
       type(duckdb_logical_type) :: type
