@@ -496,31 +496,24 @@ module test_fortran_api
       do chunk_idx = 0, chunk_count - 1
         chunk = duckdb_result_get_chunk(result, chunk_idx)
         row_count = duckdb_data_chunk_get_size(chunk)
-
         do row_idx = 0, row_count - 1
           do col_idx = 0, col_count - 1
             ! Get the column
             vector = duckdb_data_chunk_get_vector(chunk, col_idx)
             validity = duckdb_vector_get_validity(vector)
             is_valid = duckdb_validity_row_is_valid(validity, row_idx)
-
-            print *, "col: ", col_idx, "row: ", row_idx, "valid: ", is_valid, "fortran: ", &
-              btest(validity, row_idx)," ", btest(validity, row_idx+1)
-            write(bit_string, fmt='(B0)') validity
-            print *, bit_string
-
+            call check(error, is_valid .eqv. btest(validity, row_idx), "validity")
+            if (allocated(error)) return
+            ! write(bit_string, fmt='(B0)') validity
+            ! print *, bit_string
             if (col_idx == 4) then
               ! 'dflt_value' column
               call check(error, is_valid .eqv. .false.)
               if (allocated(error)) return
             endif
-
           end do
-
         end do
-
         call duckdb_destroy_data_chunk(chunk)
-
       end do
 
       call duckdb_destroy_result(result)
@@ -542,7 +535,7 @@ module test_fortran_api
       if (allocated(error)) return
 
       call duckdb_destroy_logical_type(type)
-      call duckdb_destroy_logical_type(type) ! Not sure why it's called twice in the cpp code.
+      call duckdb_destroy_logical_type(type) ! TODO: Not sure why it's called twice in the cpp code.
 
       ! list type
       elem_type = duckdb_create_logical_type(duckdb_type_integer)
@@ -582,6 +575,7 @@ module test_fortran_api
     end subroutine test_logical_types
 
     subroutine test_data_chunk_api(error)
+
       type(error_type), allocatable, intent(out) :: error
 
       type(duckdb_database) :: db
@@ -597,9 +591,10 @@ module test_fortran_api
       call check(error, duckdb_connect(db, con) == duckdbsuccess)
       if (allocated(error)) return
 
-      ! Not clear what STANDARD_VECTOR_SIZE is in the cpp test!
-      ! call check(error, duckdb_vector_size() == STANDARD_VECTOR_SIZE)
-      ! if (allocated(error)) return
+      ! FIXME: Not clear what STANDARD_VECTOR_SIZE is in the cpp test!
+      ! Pull in parameters defined in other duckdb includes
+      call check(error, duckdb_vector_size() == STANDARD_VECTOR_SIZE, "STANDARD_VECTOR_SIZE")
+      if (allocated(error)) return
 
       call check(error, duckdb_query(con, "CREATE TABLE test(i BIGINT, j SMALLINT);", &
         result) /= duckdberror)
@@ -700,4 +695,5 @@ module test_fortran_api
 ! 	duckdb_destroy_logical_type(&types[1]);
 ! }
     end subroutine test_data_chunk_api
+
 end module test_fortran_api

@@ -6,6 +6,7 @@ module duckdb
   private
   public :: duckdb_database
   public :: duckdb_connection
+
   ! public ::  duckdb_prepared_statement
   ! public :: duckdb_extracted_statements
   ! public :: duckdb_pending_result
@@ -14,6 +15,7 @@ module duckdb
   ! public :: duckdb_arrow_schema
   ! public :: duckdb_config
   ! public :: duckdb_arrow_array
+
   public :: duckdb_logical_type
   public :: duckdb_data_chunk
   public :: duckdb_vector
@@ -63,10 +65,12 @@ module duckdb
   public :: duckdb_type_uuid
   public :: duckdb_type_union
   public :: duckdb_type_bit
+
   ! public :: duckdb_pending_state
   ! public :: duckdb_pending_result_ready
   ! public :: duckdb_pending_result_not_ready
   ! public :: duckdb_pending_error
+
   public :: duckdb_state
   public :: duckdbsuccess
   public :: duckdberror
@@ -74,6 +78,13 @@ module duckdb
   public :: duckdb_close
   public :: duckdb_connect
   public :: duckdb_disconnect
+
+  ! public :: duckdb_create_config
+  ! public :: duckdb_config_count
+  ! public :: duckdb_get_config_flag
+  ! public :: duckdb_set_config
+  ! public :: duckdb_destroy_config
+
   public :: duckdb_query
   public :: duckdb_destroy_result
   public :: duckdb_column_count
@@ -125,8 +136,10 @@ module duckdb
   public :: duckdb_vector_get_data
   public :: duckdb_vector_get_validity
   public :: duckdb_vector_ensure_validity_writable
+
   ! public :: duckdb_vector_assign_string_element
   ! public :: duckdb_vector_assign_string_element_len
+
   public :: duckdb_list_vector_get_child
   public :: duckdb_list_vector_get_size
   public :: duckdb_list_vector_set_size
@@ -137,6 +150,14 @@ module duckdb
   public :: duckdb_create_list_type
   public :: duckdb_create_map_type
   public :: duckdb_get_type_id
+
+  ! public :: duckdb_decimal_width
+  ! public :: duckdb_decimal_scale
+  ! public :: duckdb_type duckdb_decimal_internal_type
+  ! public :: duckdb_enum_internal_type
+  ! public :: duckdb_enum_dictionary_size
+
+  public :: duckdb_enum_dictionary_value
   public :: duckdb_list_type_child_type
   public :: duckdb_map_type_key_type
   public :: duckdb_map_type_value_type
@@ -145,6 +166,8 @@ module duckdb
   public :: duckdb_struct_type_child_type
   public :: duckdb_destroy_logical_type
   public :: duckdb_create_data_chunk
+
+  public :: STANDARD_VECTOR_SIZE
 
   enum, bind(c)
     enumerator :: duckdb_state                    = 0
@@ -332,6 +355,11 @@ module duckdb
     type(c_ptr) :: deprecated_error_message = c_null_ptr
     type(c_ptr) :: internal_data = c_null_ptr
   end type
+
+  ! from vector_size.hpp
+  integer, parameter :: STANDARD_VECTOR_SIZE = 2048
+
+
 
   interface !******************************************************************
 
@@ -908,6 +936,12 @@ module duckdb
     ! DUCKDB_API uint32_t duckdb_enum_dictionary_size(duckdb_logical_type type);
 
     ! DUCKDB_API char *duckdb_enum_dictionary_value(duckdb_logical_type type, idx_t index);
+    function duckdb_enum_dictionary_value_(type, index) bind(c, name="duckdb_enum_dictionary_value") result(res)
+      import :: duckdb_logical_type, c_ptr, c_int64_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int64_t), value :: index
+      type(c_ptr) :: res
+    end function duckdb_enum_dictionary_value_
 
     ! DUCKDB_API duckdb_logical_type duckdb_list_type_child_type(duckdb_logical_type type);
     function duckdb_list_type_child_type(type) bind(c, name="duckdb_list_type_child_type") result(res)
@@ -1661,6 +1695,15 @@ module duckdb
     ! =========================================================================
     ! Logical Type Interface
     ! =========================================================================
+
+    function duckdb_enum_dictionary_value(type, index) result(res)
+      type(duckdb_logical_type) :: type
+      integer :: index
+      type(c_ptr) :: ptr
+      character(len=:), allocatable :: res
+      ptr = duckdb_enum_dictionary_value_(type, int(index, kind=c_int64_t))
+      call c_f_str_ptr(ptr, res)
+    end function duckdb_enum_dictionary_value
 
     function duckdb_struct_type_child_count(type) result(res)
       type(duckdb_logical_type) :: type
