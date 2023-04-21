@@ -2,7 +2,7 @@ module test_fortran_api
 
   ! https://github.com/duckdb/duckdb/blob/master/test/api/capi/test_capi.cpp
   use, intrinsic :: iso_c_binding
-  use, intrinsic :: iso_fortran_env, only : int8, int16, int32, int64, real32, real64, real128
+  use constants
   use duckdb
   use testdrive, only: new_unittest, unittest_type, error_type, check, skip_test
   implicit none

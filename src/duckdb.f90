@@ -1,7 +1,7 @@
 module duckdb
-  use, intrinsic :: iso_c_binding,
-  use, intrinsic :: iso_fortran_env, only : int8, int16, int32, int64, real32, real64, real128
+  use, intrinsic :: iso_c_binding
   use util
+  use constants
   implicit none
   private
   public :: duckdb_database

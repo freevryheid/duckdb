@@ -1,6 +1,7 @@
 module test_data_chunk
   use, intrinsic :: iso_c_binding
   use duckdb
+  use constants
   use testdrive, only: new_unittest, unittest_type, error_type, check, skip_test
   implicit none
   private
