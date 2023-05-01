@@ -10,7 +10,7 @@ module duckdb
   ! public ::  duckdb_prepared_statement
   ! public :: duckdb_extracted_statements
   ! public :: duckdb_pending_result
-  ! public :: duckdb_appender
+  public :: duckdb_appender
   ! public :: duckdb_arrow
   ! public :: duckdb_arrow_schema
   ! public :: duckdb_config
@@ -169,6 +169,8 @@ module duckdb
   public :: duckdb_struct_type_child_type
   public :: duckdb_destroy_logical_type
   public :: duckdb_create_data_chunk
+  public :: duckdb_appender_create
+  public :: duckdb_appender_error
 
   public :: STANDARD_VECTOR_SIZE
 
@@ -1337,8 +1339,22 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API duckdb_state duckdb_appender_create(duckdb_connection connection, const char *schema, const char *table, duckdb_appender *out_appender);
+    function duckdb_appender_create_(connection, schema, table, out_appender) &
+      bind(c, name='duckdb_appender_create') result(res)
+      import :: duckdb_state, duckdb_connection, duckdb_appender, c_char
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_connection), value :: connection
+      character(kind=c_char) :: schema 
+      character(kind=c_char) :: table
+      type(duckdb_appender) :: out_appender
+    end function duckdb_appender_create_
 
     ! DUCKDB_API const char *duckdb_appender_error(duckdb_appender appender);
+    function duckdb_appender_error_(appender) bind(c, name='duckdb_appender_error') result(err)
+      import :: c_ptr, duckdb_appender
+      type(duckdb_appender) :: appender
+      type(c_ptr) :: err
+    end function duckdb_appender_error_
 
     ! DUCKDB_API duckdb_state duckdb_appender_flush(duckdb_appender appender);
 
@@ -1926,7 +1942,27 @@ module duckdb
     ! =========================================================================
     ! Appender
     ! =========================================================================
+    function duckdb_appender_create(connection, schema, table, out_appender) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_connection), value :: connection
+      character(len=*) :: schema 
+      character(len=*) :: table
+      type(duckdb_appender) :: out_appender
 
+      res = duckdb_appender_create_(connection, trim(schema)//c_null_char, &
+        trim(table)//c_null_char, out_appender)
+    end function duckdb_appender_create
+
+    function duckdb_appender_error(appender) result(err)
+      character(len=:), allocatable :: err
+      type(c_ptr) :: tmp
+      type(duckdb_appender) :: appender
+      appender = "NULL"
+      if (c_associated(appender%appn)) then
+        tmp = duckdb_appender_error_(appender)
+        if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
+      end if
+    end function duckdb_appender_error
     ! =========================================================================
     ! Arrow Interface
     ! =========================================================================

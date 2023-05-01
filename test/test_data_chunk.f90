@@ -165,8 +165,10 @@ subroutine test_data_chunk_api(error)
   type(duckdb_database) :: db
   type(duckdb_connection) :: con
   type(duckdb_result) :: result
-  type(duckdb_logical_type) :: types(2), first_type
-  type(duckdb_data_chunk) :: chunk
+  type(duckdb_logical_type) :: types(2), first_type, second_type
+  type(duckdb_data_chunk) :: chunk, c
+  type(duckdb_vector) :: v
+  type(duckdb_appender) :: appender
 
   ! Open db in in-memory mode
   call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
@@ -175,9 +177,8 @@ subroutine test_data_chunk_api(error)
   call check(error, duckdb_connect(db, con) == duckdbsuccess)
   if (allocated(error)) return
 
-  ! Not clear what STANDARD_VECTOR_SIZE is in the cpp test!
-  ! call check(error, duckdb_vector_size() == STANDARD_VECTOR_SIZE)
-  ! if (allocated(error)) return
+  call check(error, duckdb_vector_size() == STANDARD_VECTOR_SIZE)
+  if (allocated(error)) return
 
   call check(error, duckdb_query(con, "CREATE TABLE test(i BIGINT, j SMALLINT);", &
     result) /= duckdberror)
@@ -199,25 +200,36 @@ subroutine test_data_chunk_api(error)
 
   call duckdb_destroy_logical_type(first_type)
 
+  second_type = duckdb_vector_get_column_type(duckdb_data_chunk_get_vector(chunk, 1))
+  call check(error, duckdb_get_type_id(second_type) == duckdb_type_smallint)
+  if (allocated(error)) return
 
-! 	auto second_type = duckdb_vector_get_column_type(duckdb_data_chunk_get_vector(data_chunk, 1));
-! 	REQUIRE(duckdb_get_type_id(second_type) == DUCKDB_TYPE_SMALLINT);
-! 	duckdb_destroy_logical_type(&second_type);
+  call duckdb_destroy_logical_type(second_type)
 
-! 	REQUIRE(duckdb_data_chunk_get_vector(data_chunk, 999) == nullptr);
-! 	REQUIRE(duckdb_data_chunk_get_vector(nullptr, 0) == nullptr);
-! 	REQUIRE(duckdb_vector_get_column_type(nullptr) == nullptr);
+  v = duckdb_data_chunk_get_vector(chunk, 999)
+  call check(error, .not. c_associated(v%vctr))
+  if (allocated(error)) return
 
-! 	REQUIRE(duckdb_data_chunk_get_size(data_chunk) == 0);
-! 	REQUIRE(duckdb_data_chunk_get_size(nullptr) == 0);
+  v = duckdb_data_chunk_get_vector(c, 0)
+  call check(error, .not. c_associated(v%vctr))
+  if (allocated(error)) return
 
-! 	// use the appender to insert a value using the data chunk API
+  first_type = duckdb_vector_get_column_type(v)
+  call check(error, .not. c_associated(first_type%lglt))
+  if (allocated(error)) return
 
-! 	duckdb_appender appender;
-! 	status = duckdb_appender_create(tester.connection, nullptr, "test", &appender);
-! 	REQUIRE(status == DuckDBSuccess);
+  call check(error, duckdb_data_chunk_get_size(chunk) == 0)
+  if (allocated(error)) return 
 
-! 	// append standard primitive values
+  call check(error, duckdb_data_chunk_get_size(c) == 0)
+  if (allocated(error)) return 
+
+  ! use the appender to insert a value using the data chunk API
+  call check(error, duckdb_appender_create(con, "", "test", appender) == duckdbsuccess)
+  if (allocated(error)) return
+
+  ! append standard primitive values
+  
 ! 	auto col1_ptr = (int64_t *)duckdb_vector_get_data(duckdb_data_chunk_get_vector(data_chunk, 0));
 ! 	*col1_ptr = 42;
 ! 	auto col2_ptr = (int16_t *)duckdb_vector_get_data(duckdb_data_chunk_get_vector(data_chunk, 1));
