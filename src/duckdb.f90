@@ -1,11 +1,12 @@
 module duckdb
-  use, intrinsic :: iso_c_binding,
-  use, intrinsic :: iso_fortran_env, only : int8, int16, int32, int64, real32, real64, real128
+  use, intrinsic :: iso_c_binding
   use util
+  use constants
   implicit none
   private
   public :: duckdb_database
   public :: duckdb_connection
+
   ! public ::  duckdb_prepared_statement
   ! public :: duckdb_extracted_statements
   ! public :: duckdb_pending_result
@@ -14,6 +15,7 @@ module duckdb
   ! public :: duckdb_arrow_schema
   ! public :: duckdb_config
   ! public :: duckdb_arrow_array
+
   public :: duckdb_logical_type
   public :: duckdb_data_chunk
   public :: duckdb_vector
@@ -63,10 +65,12 @@ module duckdb
   public :: duckdb_type_uuid
   public :: duckdb_type_union
   public :: duckdb_type_bit
+
   ! public :: duckdb_pending_state
   ! public :: duckdb_pending_result_ready
   ! public :: duckdb_pending_result_not_ready
   ! public :: duckdb_pending_error
+
   public :: duckdb_state
   public :: duckdbsuccess
   public :: duckdberror
@@ -74,12 +78,19 @@ module duckdb
   public :: duckdb_close
   public :: duckdb_connect
   public :: duckdb_disconnect
+
+  public :: duckdb_create_config
+  public :: duckdb_config_count
+  ! public :: duckdb_get_config_flag
+  ! public :: duckdb_set_config
+  public :: duckdb_destroy_config
   public :: duckdb_query
   public :: duckdb_destroy_result
   public :: duckdb_column_count
   public :: duckdb_row_count
   public :: duckdb_rows_changed
   public :: duckdb_column_data ! DEPRECIATED
+  public :: duckdb_nullmask_data ! DEPRECIATED
   public :: duckdb_library_version
   public :: duckdb_column_name
   public :: duckdb_column_type
@@ -121,6 +132,45 @@ module duckdb
   public :: duckdb_data_chunk_reset
   public :: duckdb_data_chunk_set_size
   public :: duckdb_destroy_data_chunk
+  public :: duckdb_vector_get_column_type
+  public :: duckdb_vector_get_data
+  public :: duckdb_vector_get_validity
+  public :: duckdb_vector_ensure_validity_writable
+
+  ! public :: duckdb_vector_assign_string_element
+  ! public :: duckdb_vector_assign_string_element_len
+
+  public :: duckdb_list_vector_get_child
+  public :: duckdb_list_vector_get_size
+  public :: duckdb_list_vector_set_size
+  public :: duckdb_list_vector_reserve
+  public :: duckdb_struct_vector_get_child
+
+  public :: duckdb_validity_row_is_valid
+  public :: duckdb_validity_set_row_validity
+  public :: duckdb_validity_set_row_invalid
+  public :: duckdb_validity_set_row_valid
+
+  public :: duckdb_create_logical_type
+  public :: duckdb_create_list_type
+  public :: duckdb_create_map_type
+  public :: duckdb_get_type_id
+  public :: duckdb_decimal_width
+  public :: duckdb_decimal_scale
+  public :: duckdb_decimal_internal_type
+  public :: duckdb_enum_internal_type
+  public :: duckdb_enum_dictionary_size
+  public :: duckdb_enum_dictionary_value
+  public :: duckdb_list_type_child_type
+  public :: duckdb_map_type_key_type
+  public :: duckdb_map_type_value_type
+  public :: duckdb_struct_type_child_count
+  public :: duckdb_struct_type_child_name
+  public :: duckdb_struct_type_child_type
+  public :: duckdb_destroy_logical_type
+  public :: duckdb_create_data_chunk
+
+  public :: STANDARD_VECTOR_SIZE
 
   enum, bind(c)
     enumerator :: duckdb_state                    = 0
@@ -289,14 +339,30 @@ module duckdb
   end type
 
   type, bind(c) :: duckdb_column
+    type(c_ptr) :: deprecated_data = c_null_ptr
+    ! logical(kind=c_bool) :: deprecated_nullmask = .false. ! this is a pointer
+    type(c_ptr) :: deprecated_nullmask = c_null_ptr
+    integer(kind(duckdb_type)) :: deprecated_type = duckdb_type_invalid
+    ! character(kind=c_char) :: deprecated_name = c_null_char
+    type(c_ptr) :: deprecated_name = c_null_ptr
     type(c_ptr) :: internal_data = c_null_ptr
   end type
 
   type, bind(c) :: duckdb_result
+    integer(kind=c_int64_t) :: deprecated_column_count = 0
+    integer(kind=c_int64_t) :: deprecated_row_count = 0
+    integer(kind=c_int64_t) :: deprecated_rows_changed = 0
+    ! type(duckdb_column) :: deprecated_columns = duckdb_column() // this is a pointer
+    type(c_ptr) :: deprecated_columns = c_null_ptr
+    ! character(kind=c_char) :: deprecated_error_message = c_null_char
+    type(c_ptr) :: deprecated_error_message = c_null_ptr
     type(c_ptr) :: internal_data = c_null_ptr
   end type
 
-  interface
+  ! from vector_size.hpp
+  integer, parameter :: STANDARD_VECTOR_SIZE = 2048
+
+  interface !******************************************************************
 
     ! =========================================================================
     ! Open/Connect
@@ -345,14 +411,27 @@ module duckdb
     ! TODO
 
     ! DUCKDB_API duckdb_state duckdb_create_config(duckdb_config *out_config);
+    function duckdb_create_config(out_config) bind(c, name='duckdb_create_config') result(res)
+      import :: duckdb_state, duckdb_config
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_config) :: out_config
+    end function duckdb_create_config
 
     ! DUCKDB_API size_t duckdb_config_count();
+    function duckdb_config_count_() bind(c, name='duckdb_config_count') result(res)
+      import :: c_size_t
+      integer(kind=c_size_t) :: res
+    end function duckdb_config_count_
 
     ! DUCKDB_API duckdb_state duckdb_get_config_flag(size_t index, const char **out_name, const char **out_description);
 
     ! DUCKDB_API duckdb_state duckdb_set_config(duckdb_config config, const char *name, const char *option);
 
     ! DUCKDB_API void duckdb_destroy_config(duckdb_config *config);
+    subroutine duckdb_destroy_config(config) bind(c, name='duckdb_destroy_config')
+      import :: duckdb_config
+      type(duckdb_config) :: config
+    end subroutine duckdb_destroy_config
 
     ! =========================================================================
     ! Query Execution
@@ -418,7 +497,7 @@ module duckdb
     end function duckdb_rows_changed_
 
     ! DUCKDB_API void *duckdb_column_data(duckdb_result *result, idx_t col);
-    ! NOTE: DEPRECIATED
+    ! DEPRECIATED
     function duckdb_column_data_(res, col) bind(c, name='duckdb_column_data') result(data)
       import :: duckdb_result, c_int64_t, c_ptr
       type(c_ptr) :: data
@@ -427,7 +506,13 @@ module duckdb
     end function duckdb_column_data_
 
     ! DUCKDB_API bool *duckdb_nullmask_data(duckdb_result *result, idx_t col);
-    ! NOTE: DEPRECIATED
+    ! DEPRECIATED
+    function duckdb_nullmask_data_(res, col) bind(c, name='duckdb_nullmask_data') result(ptr)
+      import :: duckdb_result, c_int64_t, c_ptr
+      type(c_ptr) :: ptr
+      type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: col
+    end function duckdb_nullmask_data_
 
     ! DUCKDB_API const char *duckdb_result_error(duckdb_result *result);
     function duckdb_result_error_(res) bind(c, name='duckdb_result_error') result(err)
@@ -616,11 +701,10 @@ module duckdb
     end subroutine duckdb_free
 
     ! DUCKDB_API idx_t duckdb_vector_size();
-    ! TODO : provide helper to convert to fortran int
-    function duckdb_vector_size() bind(c, name='duckdb_vector_size') result(res)
+    function duckdb_vector_size_() bind(c, name='duckdb_vector_size') result(res)
       import :: c_int64_t
       integer(kind=c_int64_t) :: res
-    end function duckdb_vector_size
+    end function duckdb_vector_size_
 
     ! =========================================================================
     ! Date/Time/Timestamp Helpers
@@ -817,40 +901,136 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_logical_type(duckdb_type type);
+    function duckdb_create_logical_type(type) bind(c, name='duckdb_create_logical_type') result(res)
+      import :: duckdb_logical_type
+      integer(kind(duckdb_type)), value :: type
+      type(duckdb_logical_type) :: res
+    end function duckdb_create_logical_type
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_list_type(duckdb_logical_type type);
+    function duckdb_create_list_type(type) bind(c, name='duckdb_create_list_type') result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type) :: res
+    end function duckdb_create_list_type
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_map_type(duckdb_logical_type key_type, duckdb_logical_type value_type);
+    function duckdb_create_map_type(key_type, value_type) bind(c, name='duckdb_create_map_type') result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: key_type, value_type
+      type(duckdb_logical_type) :: res
+    end function duckdb_create_map_type
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_union_type(duckdb_logical_type member_types, const char **member_names, idx_t member_count);
+    function duckdb_create_union_type_(member_types, member_names, member_counts) &
+      bind(c, name='duckdb_create_union_type') result(res)
+      import :: duckdb_logical_type, c_ptr, c_int64_t
+      type(duckdb_logical_type), value :: member_types
+      type(c_ptr) :: member_names
+      integer(kind=c_int64_t), value :: member_counts
+      type(duckdb_logical_type) :: res
+    end function duckdb_create_union_type_
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_decimal_type(uint8_t width, uint8_t scale);
+    function duckdb_create_decimal_type_(width, scale) bind(c, name='duckdb_create_decimal_type') result(res)
+      import :: duckdb_logical_type, c_int8_t
+      integer(kind=c_int8_t), value :: width, scale
+      type(duckdb_logical_type) :: res
+    end function duckdb_create_decimal_type_
 
     ! DUCKDB_API duckdb_type duckdb_get_type_id(duckdb_logical_type type);
+    function duckdb_get_type_id(type) bind(c, name="duckdb_get_type_id") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      integer(kind(duckdb_type)) :: res
+    end function duckdb_get_type_id
 
     ! DUCKDB_API uint8_t duckdb_decimal_width(duckdb_logical_type type);
+    function duckdb_decimal_width_(type) bind(c, name='duckdb_decimal_width') result(res)
+      import :: duckdb_logical_type, c_int8_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int8_t) :: res
+    end function duckdb_decimal_width_
 
     ! DUCKDB_API uint8_t duckdb_decimal_scale(duckdb_logical_type type);
+    function duckdb_decimal_scale_(type) bind(c, name='duckdb_decimal_scale') result(res)
+      import :: duckdb_logical_type, c_int8_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int8_t) :: res
+    end function duckdb_decimal_scale_
 
     ! DUCKDB_API duckdb_type duckdb_decimal_internal_type(duckdb_logical_type type);
+    function duckdb_decimal_internal_type(type) bind(c, name="duckdb_decimal_internal_type") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      integer(kind(duckdb_type)) :: res
+    end function duckdb_decimal_internal_type
 
     ! DUCKDB_API duckdb_type duckdb_enum_internal_type(duckdb_logical_type type);
+    function duckdb_enum_internal_type(type) bind(c, name="duckdb_enum_internal_type") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      integer(kind(duckdb_type)) :: res
+    end function duckdb_enum_internal_type
 
     ! DUCKDB_API uint32_t duckdb_enum_dictionary_size(duckdb_logical_type type);
+    function duckdb_enum_dictionary_size_(type) bind(c, name='duckdb_enum_dictionary_size') result(res)
+      import :: duckdb_logical_type, c_int32_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int32_t) :: res
+    end function duckdb_enum_dictionary_size_
 
     ! DUCKDB_API char *duckdb_enum_dictionary_value(duckdb_logical_type type, idx_t index);
+    function duckdb_enum_dictionary_value_(type, index) bind(c, name="duckdb_enum_dictionary_value") result(res)
+      import :: duckdb_logical_type, c_ptr, c_int64_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int64_t), value :: index
+      type(c_ptr) :: res
+    end function duckdb_enum_dictionary_value_
 
     ! DUCKDB_API duckdb_logical_type duckdb_list_type_child_type(duckdb_logical_type type);
+    function duckdb_list_type_child_type(type) bind(c, name="duckdb_list_type_child_type") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type) :: res
+    end function duckdb_list_type_child_type
 
     ! DUCKDB_API duckdb_logical_type duckdb_map_type_key_type(duckdb_logical_type type);
+    function duckdb_map_type_key_type(type) bind(c, name="duckdb_map_type_key_type") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type) :: res
+    end function duckdb_map_type_key_type
 
     ! DUCKDB_API duckdb_logical_type duckdb_map_type_value_type(duckdb_logical_type type);
+    function duckdb_map_type_value_type(type) bind(c, name="duckdb_map_type_value_type") result(res)
+      import :: duckdb_logical_type
+      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type) :: res
+    end function duckdb_map_type_value_type
 
     ! DUCKDB_API idx_t duckdb_struct_type_child_count(duckdb_logical_type type);
+    function duckdb_struct_type_child_count_(type) bind(c, name="duckdb_struct_type_child_count") result(res)
+      import :: duckdb_logical_type, c_int64_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int64_t) :: res
+    end function duckdb_struct_type_child_count_
 
     ! DUCKDB_API char *duckdb_struct_type_child_name(duckdb_logical_type type, idx_t index);
+    function duckdb_struct_type_child_name_(type, index) bind(c, name="duckdb_struct_type_child_name") result(res)
+      import :: duckdb_logical_type, c_int64_t, c_ptr
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int64_t) :: index
+      type(c_ptr) :: res
+    end function duckdb_struct_type_child_name_
 
     ! DUCKDB_API duckdb_logical_type duckdb_struct_type_child_type(duckdb_logical_type type, idx_t index);
+    function duckdb_struct_type_child_type(type, index) bind(c, name="duckdb_struct_type_child_type") result(res)
+      import :: duckdb_logical_type, c_int64_t
+      type(duckdb_logical_type), value :: type
+      integer(kind=c_int64_t), value :: index
+      type(duckdb_logical_type) :: res
+    end function duckdb_struct_type_child_type
 
     ! DUCKDB_API idx_t duckdb_union_type_member_count(duckdb_logical_type type);
 
@@ -859,17 +1039,22 @@ module duckdb
     ! DUCKDB_API duckdb_logical_type duckdb_union_type_member_type(duckdb_logical_type type, idx_t index);
 
     ! DUCKDB_API void duckdb_destroy_logical_type(duckdb_logical_type *type);
+    subroutine duckdb_destroy_logical_type(type) bind(c, name='duckdb_destroy_logical_type')
+      import :: duckdb_logical_type
+      type(duckdb_logical_type) :: type
+    end subroutine duckdb_destroy_logical_type
 
     ! =========================================================================
     ! Data Chunk Interface
     ! =========================================================================
 
     ! DUCKDB_API duckdb_data_chunk duckdb_create_data_chunk(duckdb_logical_type *types, idx_t column_count);
-    function duckdb_create_data_chunk(types, column_count) bind(c, name='duckdb_create_data_chunk') result(res)
+    function duckdb_create_data_chunk_(types, column_count) bind(c, name='duckdb_create_data_chunk') result(res)
       import :: duckdb_data_chunk, duckdb_logical_type, c_int64_t
-      type(duckdb_logical_type) :: types
-      integer(kind=c_int64_t) :: column_count
-    end function duckdb_create_data_chunk
+      type(duckdb_logical_type) :: types(*)
+      integer(kind=c_int64_t), value :: column_count
+      type(duckdb_data_chunk) :: res
+    end function duckdb_create_data_chunk_
 
     ! DUCKDB_API void duckdb_destroy_data_chunk(duckdb_data_chunk *chunk);
     subroutine duckdb_destroy_data_chunk(chunk) bind(c, name='duckdb_destroy_data_chunk')
@@ -880,36 +1065,36 @@ module duckdb
     ! DUCKDB_API void duckdb_data_chunk_reset(duckdb_data_chunk chunk);
     subroutine duckdb_data_chunk_reset(chunk) bind(c, name='duckdb_data_chunk_reset')
       import :: duckdb_data_chunk
-      type(duckdb_data_chunk) :: chunk
+      type(duckdb_data_chunk), value :: chunk
     end subroutine duckdb_data_chunk_reset
 
     ! DUCKDB_API idx_t duckdb_data_chunk_get_column_count(duckdb_data_chunk chunk);
     function duckdb_data_chunk_get_column_count_(chunk) bind(c, name='duckdb_data_chunk_get_column_count') result(res)
       import :: duckdb_data_chunk, c_int64_t
-      type(duckdb_data_chunk) :: chunk
+      type(duckdb_data_chunk), value :: chunk
       integer(kind=c_int64_t) :: res
     end function duckdb_data_chunk_get_column_count_
 
     ! DUCKDB_API duckdb_vector duckdb_data_chunk_get_vector(duckdb_data_chunk chunk, idx_t col_idx);
     function duckdb_data_chunk_get_vector_(chunk, col_idx) bind(c, name='duckdb_data_chunk_get_vector') result(res)
       import :: duckdb_data_chunk, duckdb_vector, c_int64_t
-      type(duckdb_data_chunk) :: chunk
-      integer(kind=c_int64_t) :: col_idx
-      type(duckdb_vector) :: res 
+      type(duckdb_data_chunk), value :: chunk
+      integer(kind=c_int64_t), value :: col_idx
+      type(duckdb_vector) :: res
     end function duckdb_data_chunk_get_vector_
 
     ! DUCKDB_API idx_t duckdb_data_chunk_get_size(duckdb_data_chunk chunk);
     function duckdb_data_chunk_get_size_(chunk) bind(c, name='duckdb_data_chunk_get_size') result(res)
       import :: duckdb_data_chunk, c_int64_t
-      type(duckdb_data_chunk) :: chunk
+      type(duckdb_data_chunk), value :: chunk
       integer(kind=c_int64_t) :: res
     end function duckdb_data_chunk_get_size_
 
     ! DUCKDB_API void duckdb_data_chunk_set_size(duckdb_data_chunk chunk, idx_t size);
     subroutine duckdb_data_chunk_set_size(chunk, size) bind(c, name='duckdb_data_chunk_set_size')
       import :: duckdb_data_chunk, c_int64_t
-      type(duckdb_data_chunk) :: chunk
-      integer(kind=c_int64_t) :: size
+      type(duckdb_data_chunk), value :: chunk
+      integer(kind=c_int64_t), value :: size
     end subroutine duckdb_data_chunk_set_size
 
     ! =========================================================================
@@ -917,38 +1102,133 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API duckdb_logical_type duckdb_vector_get_column_type(duckdb_vector vector);
+    function duckdb_vector_get_column_type(vector) bind(c, name='duckdb_vector_get_column_type') result(res)
+      import :: duckdb_vector, duckdb_logical_type
+      type(duckdb_vector), value :: vector
+      type(duckdb_logical_type) :: res
+    end function duckdb_vector_get_column_type
 
     ! DUCKDB_API void *duckdb_vector_get_data(duckdb_vector vector);
+    function duckdb_vector_get_data(vector) bind(c, name='duckdb_vector_get_data') result(res)
+      import :: duckdb_vector, c_ptr
+      type(duckdb_vector), value :: vector
+      type(c_ptr) :: res
+    end function duckdb_vector_get_data
 
     ! DUCKDB_API uint64_t *duckdb_vector_get_validity(duckdb_vector vector);
+    !>  Retrieves the validity mask pointer of the specified vector.
+    !>  If all values are valid, this function MIGHT return NULL!
+    !>  The validity mask is a bitset that signifies null-ness within the data chunk.
+    !>  It is a series of uint64_t values, where each uint64_t value contains validity
+    !>  for 64 tuples. The bit is set to 1 if the value is valid (i.e. not NULL) or 0
+    !>  if the value is invalid (i.e. NULL).
+    !>  Validity of a specific value can be obtained like this:
+    !>    idx_t entry_idx = row_idx / 64;
+    !>    idx_t idx_in_entry = row_idx % 64;
+    !>    bool is_valid = validity_mask[entry_idx] & (1 « idx_in_entry);
+    !>  Alternatively, the (slower) duckdb_validity_row_is_valid function can be used.
+    function duckdb_vector_get_validity_(vector) bind(c, name='duckdb_vector_get_validity') result(res)
+      import :: duckdb_vector, c_int64_t, c_ptr
+      type(duckdb_vector), value :: vector
+      type(c_ptr) :: res
+      ! integer(kind=c_int64_t) :: res
+    end function duckdb_vector_get_validity_
 
     ! DUCKDB_API void duckdb_vector_ensure_validity_writable(duckdb_vector vector);
+    subroutine duckdb_vector_ensure_validity_writable(vector) bind(c, name='duckdb_vector_ensure_validity_writable')
+      import :: duckdb_vector
+      type(duckdb_vector), value :: vector
+    end subroutine duckdb_vector_ensure_validity_writable
 
     ! DUCKDB_API void duckdb_vector_assign_string_element(duckdb_vector vector, idx_t index, const char *str);
+    subroutine duckdb_vector_assign_string_element_(vector, index, str) bind(c, name='duckdb_vector_assign_string_element')
+      import :: duckdb_vector, c_char, c_int64_t
+      type(duckdb_vector), value :: vector
+      integer(kind=c_int64_t), value :: index
+      character(kind=c_char) :: str
+    end subroutine duckdb_vector_assign_string_element_
 
     ! DUCKDB_API void duckdb_vector_assign_string_element_len(duckdb_vector vector, idx_t index, const char *str, idx_t str_len);
+    subroutine duckdb_vector_assign_string_element_len_(vector, index, str, str_len) &
+      bind(c, name='duckdb_vector_assign_string_element_len')
+      import :: duckdb_vector, c_char, c_int64_t
+      type(duckdb_vector), value :: vector
+      integer(kind=c_int64_t), value :: index
+      character(kind=c_char) :: str
+      integer(kind=c_int64_t), value :: str_len
+    end subroutine duckdb_vector_assign_string_element_len_
 
     ! DUCKDB_API duckdb_vector duckdb_list_vector_get_child(duckdb_vector vector);
+    function duckdb_list_vector_get_child(vector) bind(c, name='duckdb_list_vector_get_child') result(res)
+      import :: duckdb_vector
+      type(duckdb_vector), value :: vector
+      type(duckdb_vector) :: res
+    end function duckdb_list_vector_get_child
 
     ! DUCKDB_API idx_t duckdb_list_vector_get_size(duckdb_vector vector);
+    function duckdb_list_vector_get_size(vector) bind(c, name='duckdb_list_vector_get_size') result(res)
+      import :: duckdb_vector, c_int64_t
+      type(duckdb_vector), value :: vector
+      integer(kind=c_int64_t) :: res
+    end function duckdb_list_vector_get_size
 
     ! DUCKDB_API duckdb_state duckdb_list_vector_set_size(duckdb_vector vector, idx_t size);
+    function duckdb_list_vector_set_size(vector, size) bind(c, name='duckdb_list_vector_set_size') result(res)
+      import :: duckdb_vector, c_int64_t, duckdb_state
+      type(duckdb_vector), value :: vector
+      integer(kind=c_int64_t), value :: size
+      integer(kind(duckdb_state)) :: res
+    end function duckdb_list_vector_set_size
 
     ! DUCKDB_API duckdb_state duckdb_list_vector_reserve(duckdb_vector vector, idx_t required_capacity);
+    function duckdb_list_vector_reserve(vector, required_capacity) bind(c, name='duckdb_list_vector_reserve') result(res)
+      import :: duckdb_vector, c_int64_t, duckdb_state
+      type(duckdb_vector), value :: vector
+      integer(kind=c_int64_t), value :: required_capacity
+      integer(kind(duckdb_state)) :: res
+    end function duckdb_list_vector_reserve
 
     ! DUCKDB_API duckdb_vector duckdb_struct_vector_get_child(duckdb_vector vector, idx_t index);
+    function duckdb_struct_vector_get_child(vector, index) bind(c, name='duckdb_struct_vector_get_child') result(res)
+      import :: duckdb_vector, c_int64_t, duckdb_state
+      type(duckdb_vector), value :: vector
+      type(duckdb_vector) :: res
+      integer(kind=c_int64_t), value :: index
+    end function duckdb_struct_vector_get_child
 
     ! =========================================================================
     ! Validity Mask Functions
     ! =========================================================================
 
     ! DUCKDB_API bool duckdb_validity_row_is_valid(uint64_t *validity, idx_t row);
+    function duckdb_validity_row_is_valid_(validity, row) bind(c, name='duckdb_validity_row_is_valid') result(res)
+      import :: c_bool, c_int64_t
+      integer(kind=c_int64_t) :: validity
+      integer(kind=c_int64_t), value :: row
+      logical(kind=c_bool) :: res
+    end function duckdb_validity_row_is_valid_
 
     ! DUCKDB_API void duckdb_validity_set_row_validity(uint64_t *validity, idx_t row, bool valid);
+    subroutine duckdb_validity_set_row_validity_(validity, row, valid) bind(c, name='duckdb_validity_set_row_validity')
+      import :: c_bool, c_int64_t
+      integer(kind=c_int64_t) :: validity
+      integer(kind=c_int64_t), value :: row
+      logical(kind=c_bool) :: valid
+    end subroutine duckdb_validity_set_row_validity_
 
     ! DUCKDB_API void duckdb_validity_set_row_invalid(uint64_t *validity, idx_t row);
+    subroutine duckdb_validity_set_row_invalid_(validity, row) bind(c, name='duckdb_validity_set_row_invalid')
+      import :: c_int64_t
+      integer(kind=c_int64_t) :: validity
+      integer(kind=c_int64_t), value :: row
+    end subroutine duckdb_validity_set_row_invalid_
 
     ! DUCKDB_API void duckdb_validity_set_row_valid(uint64_t *validity, idx_t row);
+    subroutine duckdb_validity_set_row_valid_(validity, row) bind(c, name='duckdb_validity_set_row_valid')
+      import :: c_int64_t
+      integer(kind=c_int64_t) :: validity
+      integer(kind=c_int64_t), value :: row
+    end subroutine duckdb_validity_set_row_valid_
 
     ! =========================================================================
     ! Table Functions
@@ -1154,7 +1434,7 @@ module duckdb
 
     ! DUCKDB_API bool duckdb_execution_is_finished(duckdb_connection con);
 
-  end interface
+  end interface !**************************************************************
 
   contains
 
@@ -1173,7 +1453,10 @@ module duckdb
     ! Configuration
     ! =========================================================================
 
-    ! Nada
+    function duckdb_config_count() result(res)
+      integer :: res
+      res = int(duckdb_config_count_())
+    end function duckdb_config_count
 
     ! =========================================================================
     ! Query Execution
@@ -1244,6 +1527,19 @@ module duckdb
         data = duckdb_column_data_(res, int(col, kind=c_int64_t))
     end function duckdb_column_data
 
+    ! NOTE: DEPRECIATED
+    function duckdb_nullmask_data(res, col) result(rst)
+      type(c_ptr) :: tmp
+      type(duckdb_result) :: res
+      integer :: col
+      logical, pointer :: rst
+      tmp= c_null_ptr
+      rst = .false.
+      if (c_associated(res%internal_data)) &
+        tmp = duckdb_nullmask_data_(res, int(col, kind=c_int64_t))
+      if (c_associated(tmp)) call c_f_pointer(tmp, rst)
+    end function duckdb_nullmask_data
+
     function duckdb_result_error(res) result(err)
       character(len=:), allocatable :: err
       type(c_ptr) :: tmp
@@ -1267,7 +1563,7 @@ module duckdb
     end function duckdb_result_get_chunk
 
     function duckdb_result_chunk_count(res) result(cc)
-      type(duckdb_result) :: res
+      type(duckdb_result):: res
       integer :: cc
       cc = 0
       if (c_associated(res%internal_data)) then
@@ -1413,10 +1709,14 @@ module duckdb
       endif
     end function duckdb_value_is_null
 
-
     ! =========================================================================
     ! Helpers
     ! =========================================================================
+
+    function duckdb_vector_size() result(res)
+      integer :: res
+      res = int(duckdb_vector_size_())
+    end function duckdb_vector_size
 
     ! =========================================================================
     ! Date/Time/Timestamp Helpers
@@ -1472,37 +1772,136 @@ module duckdb
     ! Logical Type Interface
     ! =========================================================================
 
+    function duckdb_decimal_width(type) result(res)
+      type(duckdb_logical_type) :: type
+      integer(kind=int8) :: res
+      res = int(duckdb_decimal_width_(type), kind=int8)
+    end function duckdb_decimal_width
+
+    function duckdb_decimal_scale(type) result(res)
+      type(duckdb_logical_type) :: type
+      integer(kind=int8) :: res
+      res = int(duckdb_decimal_scale_(type), kind=int8)
+    end function duckdb_decimal_scale
+
+    function duckdb_enum_dictionary_size(type) result(res)
+      type(duckdb_logical_type) :: type
+      integer(kind=int32) :: res
+      res = int(duckdb_enum_dictionary_size_(type), kind=int32)
+    end function duckdb_enum_dictionary_size
+
+    function duckdb_enum_dictionary_value(type, index) result(res)
+      type(duckdb_logical_type) :: type
+      integer :: index
+      type(c_ptr) :: ptr
+      character(len=:), allocatable :: res
+      ptr = duckdb_enum_dictionary_value_(type, int(index, kind=c_int64_t))
+      call c_f_str_ptr(ptr, res)
+    end function duckdb_enum_dictionary_value
+
+    function duckdb_struct_type_child_count(type) result(res)
+      type(duckdb_logical_type) :: type
+      integer :: res
+      res = int(duckdb_struct_type_child_count_(type))
+    end function duckdb_struct_type_child_count
+
+    function duckdb_struct_type_child_name(type, index) result(res)
+      type(duckdb_logical_type) :: type
+      integer :: index
+      type(c_ptr) :: tmp
+      character(len=:), allocatable :: res
+      tmp = duckdb_struct_type_child_name_(type, int(index, kind=c_int64_t))
+      if (c_associated(tmp)) call c_f_str_ptr(tmp, res)
+    end function duckdb_struct_type_child_name
+
     ! =========================================================================
     ! Data Chunk Interface
     ! =========================================================================
+
+    function duckdb_create_data_chunk(types, column_count) result(res)
+      type(duckdb_logical_type) :: types(*)
+      integer :: column_count
+      type(duckdb_data_chunk) :: res
+      res = duckdb_create_data_chunk_(types, int(column_count, kind=c_int64_t))
+    end function duckdb_create_data_chunk
+
     function duckdb_data_chunk_get_column_count(chunk) result(res)
       type(duckdb_data_chunk) :: chunk
       integer :: res
-
       res = int(duckdb_data_chunk_get_column_count_(chunk))
     end function duckdb_data_chunk_get_column_count
 
     function duckdb_data_chunk_get_vector(chunk, col_idx) result(res)
       type(duckdb_data_chunk) :: chunk
       integer :: col_idx
-      type(duckdb_vector) :: res 
-
+      type(duckdb_vector) :: res
       res = duckdb_data_chunk_get_vector_(chunk, int(col_idx, kind=c_int64_t))
     end function duckdb_data_chunk_get_vector
 
     function duckdb_data_chunk_get_size(chunk) result(res)
       type(duckdb_data_chunk) :: chunk
       integer :: res
-
       res = int(duckdb_data_chunk_get_size_(chunk))
     end function duckdb_data_chunk_get_size
+
     ! =========================================================================
     ! Vector Interface
     ! =========================================================================
 
+    function duckdb_vector_get_validity(vector) result(res)
+      type(duckdb_vector) :: vector
+      type(c_ptr) :: ptr
+      integer(kind=int64), pointer :: res
+      ptr = duckdb_vector_get_validity_(vector)
+      call c_f_pointer(ptr, res)
+      ! res = int(duckdb_vector_get_validity_(vector), kind=int64)
+    end function duckdb_vector_get_validity
+
+    subroutine duckdb_vector_assign_string_element(vector, index, str)
+      type(duckdb_vector) :: vector
+      integer :: index
+      character(len=*) :: str
+      call duckdb_vector_assign_string_element_(vector, int(index, kind=c_int64_t), str // c_null_char)
+    end subroutine duckdb_vector_assign_string_element
+
+    subroutine duckdb_vector_assign_string_element_len(vector, index, str, str_len)
+      type(duckdb_vector) :: vector
+      integer :: index
+      character(len=*) :: str
+      integer :: str_len
+      call duckdb_vector_assign_string_element_len_(vector, int(index, kind=c_int64_t), &
+        str // c_null_char, int(str_len, kind=c_int64_t))
+    end subroutine duckdb_vector_assign_string_element_len
+
     ! =========================================================================
     ! Validity Mask Functions
     ! =========================================================================
+
+    function duckdb_validity_row_is_valid(validity, row) result(res)
+      integer(kind=int64) :: validity
+      integer :: row
+      logical :: res
+      res = duckdb_validity_row_is_valid_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t))
+    end function duckdb_validity_row_is_valid
+
+    subroutine duckdb_validity_set_row_validity(validity, row, valid)
+      integer(kind=int64) :: validity
+      integer :: row
+      logical :: valid
+      call duckdb_validity_set_row_validity_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t), logical(valid, kind=c_bool))
+    end subroutine duckdb_validity_set_row_validity
+
+    subroutine duckdb_validity_set_row_invalid(validity, row)
+      integer(kind=int64) :: validity
+      integer :: row
+      call duckdb_validity_set_row_invalid_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t))
+    end subroutine duckdb_validity_set_row_invalid
+
+    subroutine duckdb_validity_set_row_valid(validity, row)
+      integer(kind=int64) :: validity
+      integer :: row
+      call duckdb_validity_set_row_invalid_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t))
+    end subroutine duckdb_validity_set_row_valid
 
     ! =========================================================================
     ! Table Functions
