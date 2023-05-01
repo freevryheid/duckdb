@@ -168,7 +168,11 @@ subroutine test_data_chunk_api(error)
   type(duckdb_logical_type) :: types(2), first_type, second_type
   type(duckdb_data_chunk) :: chunk, c
   type(duckdb_vector) :: v
-  type(duckdb_appender) :: appender
+  type(duckdb_appender) :: appender, a
+  type(c_ptr) :: col1_ptr, col2_ptr 
+  integer(int64), target :: col1_val
+  integer(int16), target :: col2_val
+  integer(kind=int64) :: col1_validity, col2_validity
 
   ! Open db in in-memory mode
   call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
@@ -229,65 +233,105 @@ subroutine test_data_chunk_api(error)
   if (allocated(error)) return
 
   ! append standard primitive values
-  
-! 	auto col1_ptr = (int64_t *)duckdb_vector_get_data(duckdb_data_chunk_get_vector(data_chunk, 0));
-! 	*col1_ptr = 42;
-! 	auto col2_ptr = (int16_t *)duckdb_vector_get_data(duckdb_data_chunk_get_vector(data_chunk, 1));
-! 	*col2_ptr = 84;
+  col1_ptr = duckdb_vector_get_data(duckdb_data_chunk_get_vector(chunk, 0))
+  col1_val = 42_int64
+  col1_ptr = c_loc(col1_val)
 
-! 	REQUIRE(duckdb_vector_get_data(nullptr) == nullptr);
+  col2_ptr = duckdb_vector_get_data(duckdb_data_chunk_get_vector(chunk, 0))
+  col2_val = 84_int16
+  col2_ptr = c_loc(col2_val)
 
-! 	duckdb_data_chunk_set_size(data_chunk, 1);
-! 	REQUIRE(duckdb_data_chunk_get_size(data_chunk) == 1);
+  call check(error, .not. c_associated(duckdb_vector_get_data(v)))
+  if (allocated(error)) return
 
-! 	REQUIRE(duckdb_append_data_chunk(appender, data_chunk) == DuckDBSuccess);
-! 	REQUIRE(duckdb_append_data_chunk(appender, nullptr) == DuckDBError);
-! 	REQUIRE(duckdb_append_data_chunk(nullptr, data_chunk) == DuckDBError);
+  call duckdb_data_chunk_set_size(chunk, 1)
+  call check(error, duckdb_data_chunk_get_size(chunk) == 1, "Mismatching chunk size.")
+  if (allocated(error)) return 
 
-! 	// append nulls
-! 	duckdb_data_chunk_reset(data_chunk);
-! 	REQUIRE(duckdb_data_chunk_get_size(data_chunk) == 0);
+  call check(error, duckdb_append_data_chunk(appender, chunk) == duckdbsuccess, "Append chunk error.")
+  if (allocated(error)) return 
 
-! 	duckdb_vector_ensure_validity_writable(duckdb_data_chunk_get_vector(data_chunk, 0));
-! 	duckdb_vector_ensure_validity_writable(duckdb_data_chunk_get_vector(data_chunk, 1));
-! 	auto col1_validity = duckdb_vector_get_validity(duckdb_data_chunk_get_vector(data_chunk, 0));
-! 	REQUIRE(duckdb_validity_row_is_valid(col1_validity, 0));
-! 	duckdb_validity_set_row_validity(col1_validity, 0, false);
-! 	REQUIRE(!duckdb_validity_row_is_valid(col1_validity, 0));
+  call check(error, duckdb_append_data_chunk(appender, c) == duckdberror, "Append null chunk.")
+  if (allocated(error)) return 
 
-! 	auto col2_validity = duckdb_vector_get_validity(duckdb_data_chunk_get_vector(data_chunk, 1));
+  call check(error, duckdb_append_data_chunk(a, chunk) == duckdberror, "Append to null appender.")
+  if (allocated(error)) return 
+
+  ! append nulls
+  call duckdb_data_chunk_reset(chunk)
+  call check(error, duckdb_data_chunk_get_size(chunk) == 0)
+  if (allocated(error)) return 
+
+  call duckdb_vector_ensure_validity_writable(duckdb_data_chunk_get_vector(chunk, 0))
+  call duckdb_vector_ensure_validity_writable(duckdb_data_chunk_get_vector(chunk, 1))
+  col1_validity = duckdb_vector_get_validity(duckdb_data_chunk_get_vector(chunk, 0))
+
+  print*, 'Tests below fail. set_row_validity does not seem to work.'
+  print*, 'col1'
+  print*, 'is_valid = ', duckdb_validity_row_is_valid(col1_validity, 0)
+  print*, 'btest(validity, 0)  = ', btest(col1_validity, 0)
+  print '(B0)', col1_validity
+  call check(error, duckdb_validity_row_is_valid(col1_validity, 0))
+  if (allocated(error)) return 
+  call duckdb_validity_set_row_validity(col1_validity, 0, .false.)
+  print*, 'is_valid = ', duckdb_validity_row_is_valid(col1_validity, 0)
+  print*, 'btest(col1_validity, 0)  = ', btest(col1_validity, 0)
+  print '(B0)', col1_validity
+  call check(error, .not. duckdb_validity_row_is_valid(col1_validity, 0), "Failed to invalidate row 0")
+  if (allocated(error)) return 
+
+
+  col2_validity = duckdb_vector_get_validity(duckdb_data_chunk_get_vector(chunk, 1))
 ! 	REQUIRE(col2_validity);
-! 	REQUIRE(duckdb_validity_row_is_valid(col2_validity, 0));
-! 	duckdb_validity_set_row_validity(col2_validity, 0, false);
-! 	REQUIRE(!duckdb_validity_row_is_valid(col2_validity, 0));
+  print*, 'col2'
+  print*, 'is_valid = ', duckdb_validity_row_is_valid(col2_validity, 0)
+  print*, 'btest(col2_validity, 0)  = ', btest(col2_validity, 0)
+  print '(B0)', col2_validity
+  call check(error, duckdb_validity_row_is_valid(col2_validity, 0))
+  if (allocated(error)) return 
+  call duckdb_validity_set_row_validity(col2_validity, 0, .false.)
+  call check(error, .not. duckdb_validity_row_is_valid(col2_validity, 0))
+  if (allocated(error)) return 
+  print*, 'is_valid = ', duckdb_validity_row_is_valid(col2_validity, 0)
+  print*, 'btest(col2_validity, 0)  = ', btest(col2_validity, 0)
+  print '(B0)', col2_validity
 
-! 	duckdb_data_chunk_set_size(data_chunk, 1);
-! 	REQUIRE(duckdb_data_chunk_get_size(data_chunk) == 1);
 
-! 	REQUIRE(duckdb_append_data_chunk(appender, data_chunk) == DuckDBSuccess);
+  call duckdb_data_chunk_set_size(chunk, 1)
+  call check(error, duckdb_data_chunk_get_size(chunk) == 1)
+  if (allocated(error)) return 
 
-! 	REQUIRE(duckdb_vector_get_validity(nullptr) == nullptr);
+  call check(error, duckdb_append_data_chunk(appender, chunk) == duckdbsuccess)
+  if (allocated(error)) return 
 
-! 	duckdb_appender_destroy(&appender);
+  call check(error, .not. associated(duckdb_vector_get_validity(v)))
+  if (allocated(error)) return
 
-! 	result = tester.Query("SELECT * FROM test");
-! 	REQUIRE_NO_FAIL(*result);
-! 	REQUIRE(result->Fetch<int64_t>(0, 0) == 42);
-! 	REQUIRE(result->Fetch<int16_t>(1, 0) == 84);
-! 	REQUIRE(result->IsNull(0, 1));
-! 	REQUIRE(result->IsNull(1, 1));
+  call check(error, duckdb_appender_destroy(appender) == duckdbsuccess)
+  if (allocated(error)) return
 
-! 	duckdb_data_chunk_reset(data_chunk);
-! 	duckdb_data_chunk_reset(nullptr);
-! 	REQUIRE(duckdb_data_chunk_get_size(data_chunk) == 0);
+  call check(error, duckdb_query(con, "SELECT * FROM test", result) /= duckdberror)
+  if (allocated(error)) return
 
-! 	duckdb_destroy_data_chunk(&data_chunk);
-! 	duckdb_destroy_data_chunk(&data_chunk);
+  call check(error, duckdb_value_int64(result, 0, 0) == col1_val, "col1 row1 value")
+  if (allocated(error)) return
+  call check(error, duckdb_value_int16(result, 1, 0) == col2_val, "col2 row1 value")
+  if (allocated(error)) return
+  call check(error, duckdb_value_is_null(result, 0, 1), "col1 row2 null")
+  if (allocated(error)) return
+  call check(error, duckdb_value_is_null(result, 1, 1), "col2 row2 null")
+  if (allocated(error)) return
 
-! 	duckdb_destroy_data_chunk(nullptr);
+  call duckdb_data_chunk_reset(chunk)
+  call duckdb_data_chunk_reset(c)
+  call check(error, duckdb_data_chunk_get_size(chunk) == 0)
+  if (allocated(error)) return 
 
-! 	duckdb_destroy_logical_type(&types[0]);
-! 	duckdb_destroy_logical_type(&types[1]);
-! }
+  call duckdb_destroy_data_chunk(chunk)
+  call duckdb_destroy_data_chunk(chunk)
+  call duckdb_destroy_data_chunk(c)
+
+  call duckdb_destroy_logical_type(types(1))
+  call duckdb_destroy_logical_type(types(2))
 end subroutine test_data_chunk_api
 end module test_data_chunk
