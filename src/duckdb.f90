@@ -79,18 +79,18 @@ module duckdb
   public :: duckdb_connect
   public :: duckdb_disconnect
 
-  ! public :: duckdb_create_config
-  ! public :: duckdb_config_count
+  public :: duckdb_create_config
+  public :: duckdb_config_count
   ! public :: duckdb_get_config_flag
   ! public :: duckdb_set_config
-  ! public :: duckdb_destroy_config
-
+  public :: duckdb_destroy_config
   public :: duckdb_query
   public :: duckdb_destroy_result
   public :: duckdb_column_count
   public :: duckdb_row_count
   public :: duckdb_rows_changed
   public :: duckdb_column_data ! DEPRECIATED
+  public :: duckdb_nullmask_data ! DEPRECIATED
   public :: duckdb_library_version
   public :: duckdb_column_name
   public :: duckdb_column_type
@@ -145,7 +145,12 @@ module duckdb
   public :: duckdb_list_vector_set_size
   public :: duckdb_list_vector_reserve
   public :: duckdb_struct_vector_get_child
+
   public :: duckdb_validity_row_is_valid
+  public :: duckdb_validity_set_row_validity
+  public :: duckdb_validity_set_row_invalid
+  public :: duckdb_validity_set_row_valid
+
   public :: duckdb_create_logical_type
   public :: duckdb_create_list_type
   public :: duckdb_create_map_type
@@ -357,8 +362,6 @@ module duckdb
   ! from vector_size.hpp
   integer, parameter :: STANDARD_VECTOR_SIZE = 2048
 
-
-
   interface !******************************************************************
 
     ! =========================================================================
@@ -408,14 +411,27 @@ module duckdb
     ! TODO
 
     ! DUCKDB_API duckdb_state duckdb_create_config(duckdb_config *out_config);
+    function duckdb_create_config(out_config) bind(c, name='duckdb_create_config') result(res)
+      import :: duckdb_state, duckdb_config
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_config) :: out_config
+    end function duckdb_create_config
 
     ! DUCKDB_API size_t duckdb_config_count();
+    function duckdb_config_count_() bind(c, name='duckdb_config_count') result(res)
+      import :: c_size_t
+      integer(kind=c_size_t) :: res
+    end function duckdb_config_count_
 
     ! DUCKDB_API duckdb_state duckdb_get_config_flag(size_t index, const char **out_name, const char **out_description);
 
     ! DUCKDB_API duckdb_state duckdb_set_config(duckdb_config config, const char *name, const char *option);
 
     ! DUCKDB_API void duckdb_destroy_config(duckdb_config *config);
+    subroutine duckdb_destroy_config(config) bind(c, name='duckdb_destroy_config')
+      import :: duckdb_config
+      type(duckdb_config) :: config
+    end subroutine duckdb_destroy_config
 
     ! =========================================================================
     ! Query Execution
@@ -481,7 +497,7 @@ module duckdb
     end function duckdb_rows_changed_
 
     ! DUCKDB_API void *duckdb_column_data(duckdb_result *result, idx_t col);
-    ! NOTE: DEPRECIATED
+    ! DEPRECIATED
     function duckdb_column_data_(res, col) bind(c, name='duckdb_column_data') result(data)
       import :: duckdb_result, c_int64_t, c_ptr
       type(c_ptr) :: data
@@ -490,7 +506,13 @@ module duckdb
     end function duckdb_column_data_
 
     ! DUCKDB_API bool *duckdb_nullmask_data(duckdb_result *result, idx_t col);
-    ! NOTE: DEPRECIATED
+    ! DEPRECIATED
+    function duckdb_nullmask_data_(res, col) bind(c, name='duckdb_nullmask_data') result(ptr)
+      import :: duckdb_result, c_int64_t, c_ptr
+      type(c_ptr) :: ptr
+      type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: col
+    end function duckdb_nullmask_data_
 
     ! DUCKDB_API const char *duckdb_result_error(duckdb_result *result);
     function duckdb_result_error_(res) bind(c, name='duckdb_result_error') result(err)
@@ -1181,16 +1203,32 @@ module duckdb
     ! DUCKDB_API bool duckdb_validity_row_is_valid(uint64_t *validity, idx_t row);
     function duckdb_validity_row_is_valid_(validity, row) bind(c, name='duckdb_validity_row_is_valid') result(res)
       import :: c_bool, c_int64_t
-      integer(c_int64_t) :: validity
-      integer(c_int64_t), value :: row
-      logical(c_bool) :: res
+      integer(kind=c_int64_t) :: validity
+      integer(kind=c_int64_t), value :: row
+      logical(kind=c_bool) :: res
     end function duckdb_validity_row_is_valid_
 
     ! DUCKDB_API void duckdb_validity_set_row_validity(uint64_t *validity, idx_t row, bool valid);
+    subroutine duckdb_validity_set_row_validity_(validity, row, valid) bind(c, name='duckdb_validity_set_row_validity')
+      import :: c_bool, c_int64_t
+      integer(kind=c_int64_t) :: validity
+      integer(kind=c_int64_t), value :: row
+      logical(kind=c_bool) :: valid
+    end subroutine duckdb_validity_set_row_validity_
 
     ! DUCKDB_API void duckdb_validity_set_row_invalid(uint64_t *validity, idx_t row);
+    subroutine duckdb_validity_set_row_invalid_(validity, row) bind(c, name='duckdb_validity_set_row_invalid')
+      import :: c_int64_t
+      integer(kind=c_int64_t) :: validity
+      integer(kind=c_int64_t), value :: row
+    end subroutine duckdb_validity_set_row_invalid_
 
     ! DUCKDB_API void duckdb_validity_set_row_valid(uint64_t *validity, idx_t row);
+    subroutine duckdb_validity_set_row_valid_(validity, row) bind(c, name='duckdb_validity_set_row_valid')
+      import :: c_int64_t
+      integer(kind=c_int64_t) :: validity
+      integer(kind=c_int64_t), value :: row
+    end subroutine duckdb_validity_set_row_valid_
 
     ! =========================================================================
     ! Table Functions
@@ -1415,7 +1453,10 @@ module duckdb
     ! Configuration
     ! =========================================================================
 
-    ! Nada
+    function duckdb_config_count() result(res)
+      integer :: res
+      res = int(duckdb_config_count_())
+    end function duckdb_config_count
 
     ! =========================================================================
     ! Query Execution
@@ -1485,6 +1526,19 @@ module duckdb
       if (c_associated(res%internal_data)) &
         data = duckdb_column_data_(res, int(col, kind=c_int64_t))
     end function duckdb_column_data
+
+    ! NOTE: DEPRECIATED
+    function duckdb_nullmask_data(res, col) result(rst)
+      type(c_ptr) :: tmp
+      type(duckdb_result) :: res
+      integer :: col
+      logical, pointer :: rst
+      tmp= c_null_ptr
+      rst = .false.
+      if (c_associated(res%internal_data)) &
+        tmp = duckdb_nullmask_data_(res, int(col, kind=c_int64_t))
+      if (c_associated(tmp)) call c_f_pointer(tmp, rst)
+    end function duckdb_nullmask_data
 
     function duckdb_result_error(res) result(err)
       character(len=:), allocatable :: err
@@ -1655,7 +1709,6 @@ module duckdb
       endif
     end function duckdb_value_is_null
 
-
     ! =========================================================================
     ! Helpers
     ! =========================================================================
@@ -1764,6 +1817,7 @@ module duckdb
     ! =========================================================================
     ! Data Chunk Interface
     ! =========================================================================
+
     function duckdb_create_data_chunk(types, column_count) result(res)
       type(duckdb_logical_type) :: types(*)
       integer :: column_count
@@ -1829,6 +1883,25 @@ module duckdb
       logical :: res
       res = duckdb_validity_row_is_valid_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t))
     end function duckdb_validity_row_is_valid
+
+    subroutine duckdb_validity_set_row_validity(validity, row, valid)
+      integer(kind=int64) :: validity
+      integer :: row
+      logical :: valid
+      call duckdb_validity_set_row_validity_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t), logical(valid, kind=c_bool))
+    end subroutine duckdb_validity_set_row_validity
+
+    subroutine duckdb_validity_set_row_invalid(validity, row)
+      integer(kind=int64) :: validity
+      integer :: row
+      call duckdb_validity_set_row_invalid_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t))
+    end subroutine duckdb_validity_set_row_invalid
+
+    subroutine duckdb_validity_set_row_valid(validity, row)
+      integer(kind=int64) :: validity
+      integer :: row
+      call duckdb_validity_set_row_invalid_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t))
+    end subroutine duckdb_validity_set_row_valid
 
     ! =========================================================================
     ! Table Functions

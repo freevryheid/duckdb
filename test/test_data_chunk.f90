@@ -76,15 +76,16 @@ subroutine test_chunks(error)
 
     do row_idx = 0, row_count - 1
       do col_idx = 0, col_count - 1
+
         ! Get the column
         vector = duckdb_data_chunk_get_vector(chunk, col_idx)
         validity = duckdb_vector_get_validity(vector)
         is_valid = duckdb_validity_row_is_valid(validity, row_idx)
 
-        print *, "col: ", col_idx, "row: ", row_idx, "valid: ", is_valid, "fortran: ", &
-          btest(validity, row_idx)," ", btest(validity, row_idx+1)
-        write(bit_string, fmt='(B0)') validity
-        print *, bit_string
+        ! print *, "col: ", col_idx, "row: ", row_idx, "valid: ", is_valid, "fortran: ", &
+        !   btest(validity, row_idx)," ", btest(validity, row_idx+1)
+        ! write(bit_string, fmt='(B0)') validity
+        ! print *, bit_string
 
         if (col_idx == 4) then
           ! 'dflt_value' column
