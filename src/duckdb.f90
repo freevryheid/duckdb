@@ -10,7 +10,7 @@ module duckdb
   ! public ::  duckdb_prepared_statement
   ! public :: duckdb_extracted_statements
   ! public :: duckdb_pending_result
-  ! public :: duckdb_appender
+  public :: duckdb_appender
   ! public :: duckdb_arrow
   ! public :: duckdb_arrow_schema
   ! public :: duckdb_config
@@ -205,6 +205,10 @@ module duckdb
   public :: duckdb_struct_type_child_type
   public :: duckdb_destroy_logical_type
   public :: duckdb_create_data_chunk
+  public :: duckdb_appender_create
+  public :: duckdb_appender_error
+  public :: duckdb_appender_destroy
+  public :: duckdb_append_data_chunk
 
   public :: STANDARD_VECTOR_SIZE
 
@@ -1267,11 +1271,11 @@ module duckdb
     end function duckdb_data_chunk_get_size_
 
     ! DUCKDB_API void duckdb_data_chunk_set_size(duckdb_data_chunk chunk, idx_t size);
-    subroutine duckdb_data_chunk_set_size(chunk, size) bind(c, name='duckdb_data_chunk_set_size')
+    subroutine duckdb_data_chunk_set_size_(chunk, size) bind(c, name='duckdb_data_chunk_set_size')
       import :: duckdb_data_chunk, c_int64_t
       type(duckdb_data_chunk), value :: chunk
       integer(kind=c_int64_t), value :: size
-    end subroutine duckdb_data_chunk_set_size
+    end subroutine duckdb_data_chunk_set_size_
 
     ! =========================================================================
     ! Vector Interface
@@ -1389,7 +1393,7 @@ module duckdb
       import :: c_bool, c_int64_t
       integer(kind=c_int64_t) :: validity
       integer(kind=c_int64_t), value :: row
-      logical(kind=c_bool) :: valid
+      logical(kind=c_bool), value :: valid
     end subroutine duckdb_validity_set_row_validity_
 
     ! DUCKDB_API void duckdb_validity_set_row_invalid(uint64_t *validity, idx_t row);
@@ -1513,14 +1517,33 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API duckdb_state duckdb_appender_create(duckdb_connection connection, const char *schema, const char *table, duckdb_appender *out_appender);
+    function duckdb_appender_create_(connection, schema, table, out_appender) &
+      bind(c, name='duckdb_appender_create') result(res)
+      import :: duckdb_state, duckdb_connection, duckdb_appender, c_char
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_connection), value :: connection
+      character(kind=c_char) :: schema 
+      character(kind=c_char) :: table
+      type(duckdb_appender) :: out_appender
+    end function duckdb_appender_create_
 
     ! DUCKDB_API const char *duckdb_appender_error(duckdb_appender appender);
+    function duckdb_appender_error_(appender) bind(c, name='duckdb_appender_error') result(err)
+      import :: c_ptr, duckdb_appender
+      type(duckdb_appender) :: appender
+      type(c_ptr) :: err
+    end function duckdb_appender_error_
 
     ! DUCKDB_API duckdb_state duckdb_appender_flush(duckdb_appender appender);
 
     ! DUCKDB_API duckdb_state duckdb_appender_close(duckdb_appender appender);
 
     ! DUCKDB_API duckdb_state duckdb_appender_destroy(duckdb_appender *appender);
+    function duckdb_appender_destroy(appender) bind(c, name='duckdb_appender_destroy') result(res)
+      import :: duckdb_state, duckdb_appender
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender) :: appender
+    end function duckdb_appender_destroy
 
     ! DUCKDB_API duckdb_state duckdb_appender_begin_row(duckdb_appender appender);
 
@@ -1567,6 +1590,12 @@ module duckdb
     ! DUCKDB_API duckdb_state duckdb_append_null(duckdb_appender appender);
 
     ! DUCKDB_API duckdb_state duckdb_append_data_chunk(duckdb_appender appender, duckdb_data_chunk chunk);
+    function duckdb_append_data_chunk(appender, chunk) bind(c, name='duckdb_append_data_chunk') result(res)
+      import :: duckdb_state, duckdb_appender, duckdb_data_chunk
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+      type(duckdb_data_chunk), value :: chunk
+    end function duckdb_append_data_chunk
 
     ! =========================================================================
     ! Arrow Interface
@@ -2204,6 +2233,12 @@ module duckdb
       res = int(duckdb_data_chunk_get_size_(chunk))
     end function duckdb_data_chunk_get_size
 
+    subroutine duckdb_data_chunk_set_size(chunk, size) 
+      type(duckdb_data_chunk) :: chunk
+      integer :: size
+      call duckdb_data_chunk_set_size_(chunk, int(size, kind=c_int64_t))
+    end subroutine duckdb_data_chunk_set_size
+
     ! =========================================================================
     ! Vector Interface
     ! =========================================================================
@@ -2286,7 +2321,27 @@ module duckdb
     ! =========================================================================
     ! Appender
     ! =========================================================================
+    function duckdb_appender_create(connection, schema, table, out_appender) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_connection), value :: connection
+      character(len=*) :: schema 
+      character(len=*) :: table
+      type(duckdb_appender) :: out_appender
 
+      res = duckdb_appender_create_(connection, trim(schema)//c_null_char, &
+        trim(table)//c_null_char, out_appender)
+    end function duckdb_appender_create
+
+    function duckdb_appender_error(appender) result(err)
+      character(len=:), allocatable :: err
+      type(c_ptr) :: tmp
+      type(duckdb_appender) :: appender
+      err = "NULL"
+      if (c_associated(appender%appn)) then
+        tmp = duckdb_appender_error_(appender)
+        if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
+      end if
+    end function duckdb_appender_error
     ! =========================================================================
     ! Arrow Interface
     ! =========================================================================
