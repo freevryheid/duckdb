@@ -270,42 +270,18 @@ subroutine test_data_chunk_api(error)
   call duckdb_vector_ensure_validity_writable(duckdb_data_chunk_get_vector(chunk, 1))
   col1_validity = duckdb_vector_get_validity(duckdb_data_chunk_get_vector(chunk, 0))
 
-  print*, 'Tests below fail. set_row_validity does not seem to work.'
-  print*, 'col1'
-  print*, 'is_valid = ', duckdb_validity_row_is_valid(col1_validity, 0)
-  print*, 'btest(validity, 0)  = ', btest(col1_validity, 0)
-  print '(B0)', col1_validity
   call check(error, duckdb_validity_row_is_valid(col1_validity, 0))
   if (allocated(error)) return
   call duckdb_validity_set_row_validity(col1_validity, 0, .false.)
-  ! col1_validity = ibclr(col1_validity, 0)
-  ! print '(B0)', tst
-
-
-
-
-  print*, 'is_valid = ', duckdb_validity_row_is_valid(col1_validity, 0)
-  print*, 'btest(col1_validity, 0)  = ', btest(col1_validity, 0)
-  print '(B0)', col1_validity
   call check(error, .not. duckdb_validity_row_is_valid(col1_validity, 0), "Failed to invalidate row 0")
   if (allocated(error)) return
 
-
   col2_validity = duckdb_vector_get_validity(duckdb_data_chunk_get_vector(chunk, 1))
-! 	REQUIRE(col2_validity);
-  print*, 'col2'
-  print*, 'is_valid = ', duckdb_validity_row_is_valid(col2_validity, 0)
-  print*, 'btest(col2_validity, 0)  = ', btest(col2_validity, 0)
-  print '(B0)', col2_validity
   call check(error, duckdb_validity_row_is_valid(col2_validity, 0))
   if (allocated(error)) return
   call duckdb_validity_set_row_validity(col2_validity, 0, .false.)
   call check(error, .not. duckdb_validity_row_is_valid(col2_validity, 0))
   if (allocated(error)) return
-  print*, 'is_valid = ', duckdb_validity_row_is_valid(col2_validity, 0)
-  print*, 'btest(col2_validity, 0)  = ', btest(col2_validity, 0)
-  print '(B0)', col2_validity
-
 
   call duckdb_data_chunk_set_size(chunk, 1)
   call check(error, duckdb_data_chunk_get_size(chunk) == 1)
