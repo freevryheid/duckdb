@@ -31,6 +31,7 @@ contains
     type(duckdb_result) :: result = duckdb_result()
 
     type(duckdb_appender) :: appender, a
+    type(duckdb_appender) :: tappender 
     integer(kind=kind(duckdb_state)) :: status
 
     ! Open db in in-memory mode
@@ -122,5 +123,109 @@ contains
 
     call check(error, duckdb_appender_error(appender) /= "NULL")
     if (allocated(error)) return
+
+    status = duckdb_append_varchar(appender, "Hello, World")
+    call check(error, status == duckdbsuccess, "duckdb_append_varchar 2 error.")
+    if (allocated(error)) return 
+
+    ! Out of columns.
+    status = duckdb_append_int32(appender, 42)
+    call check(error, status == duckdberror, "duckdb_append_int32 3 should fail.")
+    if (allocated(error)) return 
+
+    call check(error, duckdb_appender_error(appender) /= "NULL")
+    if (allocated(error)) return
+
+    status = duckdb_appender_end_row(appender)
+    call check(error, status == duckdbsuccess)
+    if (allocated(error)) return 
+
+    ! we can flush again why not
+    status = duckdb_appender_flush(appender)
+    call check(error, status == duckdbsuccess)
+    if (allocated(error)) return 
+
+    status = duckdb_appender_close(appender)
+    call check(error, status == duckdbsuccess)
+    if (allocated(error)) return 
+
+    status = duckdb_query(con, "SELECT * FROM test", result)
+    call check(error, status == duckdbsuccess, "Query gives error.")
+    if (allocated(error)) return 
+
+    call check(error, duckdb_value_int32(result, 0, 0) == 42)
+    if (allocated(error)) return 
+
+    call check(error, abs(duckdb_value_double(result, 1, 0) - 4.2_real64) < 1e-3)
+    if (allocated(error)) return 
+
+    ! FIXME duckdb_value_string returns a duckdb_string. Should we return a character array?
+    ! call check(error, duckdb_value_string(result, 2, 0) == "Hello, World")
+    ! if (allocated(error)) return 
+
+    status = duckdb_appender_destroy(appender)
+    call check(error, status == duckdbsuccess)
+    if (allocated(error)) return 
+
+    !! Working with a destroyed appender should return errors
+    status = duckdb_appender_close(appender)
+    call check(error, status == duckdberror)
+    if (allocated(error)) return 
+    call check(error, duckdb_appender_error(appender) == "NULL")
+    if (allocated(error)) return
+
+    status = duckdb_appender_flush(appender)
+    call check(error, status == duckdberror)
+    if (allocated(error)) return 
+
+    status = duckdb_appender_end_row(appender)
+    call check(error, status == duckdberror)
+    if (allocated(error)) return 
+
+    status = duckdb_append_int32(appender, 42)
+    call check(error, status == duckdberror)
+    if (allocated(error)) return 
+
+    status = duckdb_appender_destroy(appender)
+    call check(error, status == duckdberror)
+    if (allocated(error)) return 
+
+    status = duckdb_appender_close(a)
+    call check(error, status == duckdberror)
+    if (allocated(error)) return 
+
+    status = duckdb_appender_flush(a)
+    call check(error, status == duckdberror)
+    if (allocated(error)) return 
+
+    status = duckdb_appender_end_row(a)
+    call check(error, status == duckdberror)
+    if (allocated(error)) return 
+
+    status = duckdb_append_int32(a, 42)
+    call check(error, status == duckdberror)
+    if (allocated(error)) return 
+
+    status = duckdb_appender_destroy(a)
+    call check(error, status == duckdberror)
+    if (allocated(error)) return 
+
+    call check(error, duckdb_query(con, "CREATE TABLE many_types(bool boolean,  &
+      &t TINYINT, s SMALLINT, b BIGINT, ut UTINYINT, us USMALLINT, ui UINTEGER, &
+      &ub UBIGINT, uf REAL, ud DOUBLE, txt VARCHAR, blb BLOB, dt DATE, tm TIME, &
+      &ts TIMESTAMP, ival INTERVAL, h HUGEINT)", result) == duckdbsuccess)
+    if (allocated(error)) return 
+
+    status = duckdb_appender_create(con, "", "many_types", tappender)
+    call check(error, status == duckdbsuccess)
+    if (allocated(error)) return 
+
+    status = duckdb_appender_begin_row(tappender)
+    call check(error, status == duckdbsuccess, "duckdb_appender_begin_row error.")
+    if (allocated(error)) return 
+
+    status = duckdb_append_bool(tappender, .true.)
+    call check(error, status == duckdbsuccess, "duckdb_appender_bool error.")
+    if (allocated(error)) return 
   end subroutine test_appender_statements
 end module test_appender

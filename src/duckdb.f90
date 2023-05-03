@@ -213,6 +213,7 @@ module duckdb
   public :: duckdb_appender_destroy
   public :: duckdb_appender_begin_row
   public :: duckdb_appender_end_row
+  public :: duckdb_append_bool
   public :: duckdb_append_int32
   public :: duckdb_append_double
   public :: duckdb_append_varchar
@@ -1610,6 +1611,12 @@ module duckdb
     end function duckdb_appender_end_row
 
     ! DUCKDB_API duckdb_state duckdb_append_bool(duckdb_appender appender, bool value);
+    function duckdb_append_bool_(appender, value) bind(c, name='duckdb_append_bool') result(res)
+      import :: duckdb_state, duckdb_appender, c_bool
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+      logical(kind=c_bool), value :: value 
+    end function duckdb_append_bool_
 
     ! DUCKDB_API duckdb_state duckdb_append_int8(duckdb_appender appender, int8_t value);
 
@@ -2475,6 +2482,13 @@ module duckdb
         if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
       end if
     end function duckdb_appender_error
+
+    function duckdb_append_bool(appender, value) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender) :: appender
+      logical :: value 
+      res = duckdb_append_bool_(appender, logical(value, kind=c_bool))
+    end function duckdb_append_bool
 
     function duckdb_append_int32(appender, value) result(res)
       integer(kind(duckdb_state)) :: res
