@@ -2351,7 +2351,10 @@ module duckdb
       integer(kind=int64) :: validity
       integer :: row
       logical :: res
-      res = duckdb_validity_row_is_valid_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t))
+      integer(kind=c_int64_t) :: tmp
+      tmp = int(validity, kind=c_int64_t)
+      res = duckdb_validity_row_is_valid_(tmp, int(row, kind=c_int64_t))
+      validity = int(tmp, kind=int64)
     end function duckdb_validity_row_is_valid
 
     subroutine duckdb_validity_set_row_validity(validity, row, valid)
@@ -2359,29 +2362,27 @@ module duckdb
       integer :: row
       logical :: valid
       integer(kind=c_int64_t) :: tmp
-
       tmp = int(validity, kind=c_int64_t)
-
-      ! valid = .not.valid
-
-      ! call duckdb_validity_set_row_validity_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t), logical(valid, kind=c_bool))
       call duckdb_validity_set_row_validity_(tmp, int(row, kind=c_int64_t), logical(valid, kind=c_bool))
-
-
       validity = int(tmp, kind=int64)
-
     end subroutine duckdb_validity_set_row_validity
 
     subroutine duckdb_validity_set_row_invalid(validity, row)
       integer(kind=int64) :: validity
       integer :: row
-      call duckdb_validity_set_row_invalid_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t))
+      integer(kind=c_int64_t) :: tmp
+      tmp = int(validity, kind=c_int64_t)
+      call duckdb_validity_set_row_invalid_(tmp, int(row, kind=c_int64_t))
+      validity = int(tmp, kind=int64)
     end subroutine duckdb_validity_set_row_invalid
 
     subroutine duckdb_validity_set_row_valid(validity, row)
       integer(kind=int64) :: validity
       integer :: row
-      call duckdb_validity_set_row_invalid_(int(validity, kind=c_int64_t), int(row, kind=c_int64_t))
+      integer(kind=c_int64_t) :: tmp
+      tmp = int(validity, kind=c_int64_t)
+      call duckdb_validity_set_row_invalid_(tmp, int(row, kind=c_int64_t))
+      validity = int(tmp, kind=int64)
     end subroutine duckdb_validity_set_row_valid
 
     ! =========================================================================
@@ -2407,9 +2408,10 @@ module duckdb
     ! =========================================================================
     ! Appender
     ! =========================================================================
+
     function duckdb_appender_create(connection, schema, table, out_appender) result(res)
       integer(kind(duckdb_state)) :: res
-      type(duckdb_connection), value :: connection
+      type(duckdb_connection) :: connection
       character(len=*) :: schema
       character(len=*) :: table
       type(duckdb_appender) :: out_appender
@@ -2428,6 +2430,7 @@ module duckdb
         if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
       end if
     end function duckdb_appender_error
+
     ! =========================================================================
     ! Arrow Interface
     ! =========================================================================
