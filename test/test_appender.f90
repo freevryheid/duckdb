@@ -227,5 +227,37 @@ contains
     status = duckdb_append_bool(tappender, .true.)
     call check(error, status == duckdbsuccess, "duckdb_appender_bool error.")
     if (allocated(error)) return 
+
+    status = duckdb_append_int8(tappender, 1_int8)
+    call check(error, status == duckdbsuccess, "duckdb_appender_int8 error.")
+    if (allocated(error)) return 
+  
+    status = duckdb_append_int16(tappender, 1_int16)
+    call check(error, status == duckdbsuccess, "duckdb_appender_int16 error.")
+    if (allocated(error)) return 
+  
+    ! status = duckdb_append_int64(tappender, 1);
+    ! REQUIRE(status == DuckDBSuccess);
+  
+    ! status = duckdb_append_uint8(tappender, 1);
+    ! REQUIRE(status == DuckDBSuccess);
+  
+    ! status = duckdb_append_uint16(tappender, 1);
+    ! REQUIRE(status == DuckDBSuccess);
+  
+    ! status = duckdb_append_uint32(tappender, 1);
+    ! REQUIRE(status == DuckDBSuccess);
+  
+    ! status = duckdb_append_uint64(tappender, 1);
+    ! REQUIRE(status == DuckDBSuccess);
+  
+    ! status = duckdb_append_float(tappender, 0.5f);
+    ! REQUIRE(status == DuckDBSuccess);
+  
+    ! status = duckdb_append_double(tappender, 0.5);
+    ! REQUIRE(status == DuckDBSuccess);
+  
+    ! status = duckdb_append_varchar_length(tappender, "hello world", 5);
+    ! REQUIRE(status == DuckDBSuccess);
   end subroutine test_appender_statements
 end module test_appender
