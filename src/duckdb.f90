@@ -208,7 +208,15 @@ module duckdb
   public :: duckdb_create_data_chunk
   public :: duckdb_appender_create
   public :: duckdb_appender_error
+  public :: duckdb_appender_flush
+  public :: duckdb_appender_close
   public :: duckdb_appender_destroy
+  public :: duckdb_appender_begin_row
+  public :: duckdb_appender_end_row
+  public :: duckdb_append_bool
+  public :: duckdb_append_int32
+  public :: duckdb_append_double
+  public :: duckdb_append_varchar
   public :: duckdb_append_data_chunk
 
   public :: STANDARD_VECTOR_SIZE
@@ -1563,13 +1571,23 @@ module duckdb
     ! DUCKDB_API const char *duckdb_appender_error(duckdb_appender appender);
     function duckdb_appender_error_(appender) bind(c, name='duckdb_appender_error') result(err)
       import :: c_ptr, duckdb_appender
-      type(duckdb_appender) :: appender
+      type(duckdb_appender), value :: appender
       type(c_ptr) :: err
     end function duckdb_appender_error_
 
     ! DUCKDB_API duckdb_state duckdb_appender_flush(duckdb_appender appender);
+    function duckdb_appender_flush(appender) bind(c, name='duckdb_appender_flush') result(res)
+      import :: duckdb_state, duckdb_appender
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+    end function duckdb_appender_flush
 
     ! DUCKDB_API duckdb_state duckdb_appender_close(duckdb_appender appender);
+    function duckdb_appender_close(appender) bind(c, name='duckdb_appender_close') result(res)
+      import :: duckdb_state, duckdb_appender
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+    end function duckdb_appender_close
 
     ! DUCKDB_API duckdb_state duckdb_appender_destroy(duckdb_appender *appender);
     function duckdb_appender_destroy(appender) bind(c, name='duckdb_appender_destroy') result(res)
@@ -1579,16 +1597,38 @@ module duckdb
     end function duckdb_appender_destroy
 
     ! DUCKDB_API duckdb_state duckdb_appender_begin_row(duckdb_appender appender);
+    function duckdb_appender_begin_row(appender) bind(c, name='duckdb_appender_begin_row') result(res)
+      import :: duckdb_state, duckdb_appender
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+    end function duckdb_appender_begin_row
 
     ! DUCKDB_API duckdb_state duckdb_appender_end_row(duckdb_appender appender);
+    function duckdb_appender_end_row(appender) bind(c, name='duckdb_appender_end_row') result(res)
+      import :: duckdb_state, duckdb_appender
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+    end function duckdb_appender_end_row
 
     ! DUCKDB_API duckdb_state duckdb_append_bool(duckdb_appender appender, bool value);
+    function duckdb_append_bool_(appender, value) bind(c, name='duckdb_append_bool') result(res)
+      import :: duckdb_state, duckdb_appender, c_bool
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+      logical(kind=c_bool), value :: value 
+    end function duckdb_append_bool_
 
     ! DUCKDB_API duckdb_state duckdb_append_int8(duckdb_appender appender, int8_t value);
 
     ! DUCKDB_API duckdb_state duckdb_append_int16(duckdb_appender appender, int16_t value);
 
     ! DUCKDB_API duckdb_state duckdb_append_int32(duckdb_appender appender, int32_t value);
+    function duckdb_append_int32_(appender, value) bind(c, name='duckdb_append_int32') result(res)
+      import :: duckdb_state, duckdb_appender, c_int32_t
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+      integer(kind=c_int32_t), value :: value 
+    end function duckdb_append_int32_
 
     ! DUCKDB_API duckdb_state duckdb_append_int64(duckdb_appender appender, int64_t value);
 
@@ -1605,6 +1645,12 @@ module duckdb
     ! DUCKDB_API duckdb_state duckdb_append_float(duckdb_appender appender, float value);
 
     ! DUCKDB_API duckdb_state duckdb_append_double(duckdb_appender appender, double value);
+    function duckdb_append_double_(appender, value) bind(c, name='duckdb_append_double') result(res)
+      import :: duckdb_state, duckdb_appender, c_double
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+      real(kind=c_double), value :: value 
+    end function duckdb_append_double_
 
     ! DUCKDB_API duckdb_state duckdb_append_date(duckdb_appender appender, duckdb_date value);
 
@@ -1615,6 +1661,12 @@ module duckdb
     ! DUCKDB_API duckdb_state duckdb_append_interval(duckdb_appender appender, duckdb_interval value);
 
     ! DUCKDB_API duckdb_state duckdb_append_varchar(duckdb_appender appender, const char *val);
+    function duckdb_append_varchar_(appender, value) bind(c, name='duckdb_append_varchar') result(res)
+      import :: duckdb_state, duckdb_appender, c_char
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+      character(kind=c_char) :: value 
+    end function duckdb_append_varchar_
 
     ! DUCKDB_API duckdb_state duckdb_append_varchar_length(duckdb_appender appender, const char *val, idx_t length);
 
@@ -2183,7 +2235,7 @@ module duckdb
       character(len=:), allocatable :: cval
       cval = val // c_null_char ! convert to c string
       if (c_associated(ps%prep)) &
-        res = duckdb_bind_varchar_(ps, int(idx, kind=c_int64_t), val)
+        res = duckdb_bind_varchar_(ps, int(idx, kind=c_int64_t), cval)
     end function duckdb_bind_varchar
 
     function duckdb_bind_varchar_length(ps, idx, val, length) result(res)
@@ -2194,7 +2246,7 @@ module duckdb
       character(len=:), allocatable :: cval
       cval = val // c_null_char ! convert to c string
       if (c_associated(ps%prep)) &
-        res = duckdb_bind_varchar_length_(ps, int(idx, kind=c_int64_t), val, int(length, kind=c_int64_t))
+        res = duckdb_bind_varchar_length_(ps, int(idx, kind=c_int64_t), cval, int(length, kind=c_int64_t))
     end function duckdb_bind_varchar_length
 
     ! FIXME
@@ -2430,6 +2482,37 @@ module duckdb
         if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
       end if
     end function duckdb_appender_error
+
+    function duckdb_append_bool(appender, value) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender) :: appender
+      logical :: value 
+      res = duckdb_append_bool_(appender, logical(value, kind=c_bool))
+    end function duckdb_append_bool
+
+    function duckdb_append_int32(appender, value) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender) :: appender
+      integer :: value 
+      res = duckdb_append_int32_(appender, int(value, kind=c_int32_t))
+    end function duckdb_append_int32
+
+    function duckdb_append_double(appender, value) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender) :: appender
+      real(kind=real64) :: value 
+      res = duckdb_append_double_(appender, real(value, kind=c_double))
+    end function duckdb_append_double
+
+    function duckdb_append_varchar(appender, val) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender) :: appender
+      character(len=*) :: val
+      character(len=:), allocatable :: cval
+      cval = val // c_null_char ! convert to c string
+      if (c_associated(appender%appn)) &
+        res = duckdb_append_varchar_(appender, cval)
+    end function duckdb_append_varchar
 
     ! =========================================================================
     ! Arrow Interface
