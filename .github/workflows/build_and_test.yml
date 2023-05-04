@@ -27,6 +27,7 @@ jobs:
 
     - uses: fortran-lang/setup-fpm@v5
       with:
+        fpm-version: v0.7.0
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Install dependencies ubuntu
