@@ -168,15 +168,19 @@ subroutine test_data_chunk_api(error)
 
   type(duckdb_database) :: db
   type(duckdb_connection) :: con
-  type(duckdb_result) :: result
+  type(duckdb_result) :: result = duckdb_result()
   type(duckdb_logical_type) :: types(2), first_type, second_type
-  type(duckdb_data_chunk) :: chunk, c
+  type(duckdb_data_chunk) :: chunk != duckdb_data_chunk()
+  type(duckdb_data_chunk) :: c != duckdb_data_chunk()
   type(duckdb_vector) :: v
   type(duckdb_appender) :: appender, a
+
   type(c_ptr) :: col1_ptr, col2_ptr
-  integer(int64), target :: col1_val
-  integer(int16), target :: col2_val
-  integer(kind=int64) :: col1_validity, col2_validity, tst
+
+  integer(kind=int64), pointer:: col1_val
+  integer(kind=int16), pointer:: col2_val
+
+  integer(kind=int64) :: col1_validity, col2_validity
 
   ! Open db in in-memory mode
   call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
@@ -232,18 +236,30 @@ subroutine test_data_chunk_api(error)
   call check(error, duckdb_data_chunk_get_size(c) == 0)
   if (allocated(error)) return
 
+  ! ===================================================
+  ! adding some checks to make sense of this for myself
+
   ! use the appender to insert a value using the data chunk API
-  call check(error, duckdb_appender_create(con, "", "test", appender) == duckdbsuccess)
+  call check(error, duckdb_appender_create(con, "", "test", appender) == duckdbsuccess, "create appender")
+  if (allocated(error)) return
+
+  ! NOTE: reconfirming chunk types
+  first_type = duckdb_vector_get_column_type(duckdb_data_chunk_get_vector(chunk, 0))
+  call check(error, duckdb_get_type_id(first_type) == duckdb_type_bigint, "retest chunk")
   if (allocated(error)) return
 
   ! append standard primitive values
+  ! NOTE: chunk was created earlier as [bigint, smallint]
   col1_ptr = duckdb_vector_get_data(duckdb_data_chunk_get_vector(chunk, 0))
+  call c_f_pointer(col1_ptr, col1_val)
+  ! col1_ptr => col1_val
   col1_val = 42_int64
-  col1_ptr = c_loc(col1_val)
+  ! col1_ptr = c_loc(col1_val)
 
-  col2_ptr = duckdb_vector_get_data(duckdb_data_chunk_get_vector(chunk, 0))
+  col2_ptr = duckdb_vector_get_data(duckdb_data_chunk_get_vector(chunk, 1))
+  call c_f_pointer(col2_ptr, col2_val)
   col2_val = 84_int16
-  col2_ptr = c_loc(col2_val)
+  ! col2_ptr = c_loc(col2_val)
 
   call check(error, .not. c_associated(duckdb_vector_get_data(v)))
   if (allocated(error)) return
@@ -268,8 +284,8 @@ subroutine test_data_chunk_api(error)
 
   call duckdb_vector_ensure_validity_writable(duckdb_data_chunk_get_vector(chunk, 0))
   call duckdb_vector_ensure_validity_writable(duckdb_data_chunk_get_vector(chunk, 1))
-  col1_validity = duckdb_vector_get_validity(duckdb_data_chunk_get_vector(chunk, 0))
 
+  col1_validity = duckdb_vector_get_validity(duckdb_data_chunk_get_vector(chunk, 0))
   call check(error, duckdb_validity_row_is_valid(col1_validity, 0))
   if (allocated(error)) return
   call duckdb_validity_set_row_validity(col1_validity, 0, .false.)
@@ -296,13 +312,25 @@ subroutine test_data_chunk_api(error)
   call check(error, duckdb_appender_destroy(appender) == duckdbsuccess)
   if (allocated(error)) return
 
+  result = duckdb_result()
+
   call check(error, duckdb_query(con, "SELECT * FROM test", result) /= duckdberror)
   if (allocated(error)) return
+
+  ! print*, "col count: ", duckdb_column_count(result)
+  ! print*, "row count: ", duckdb_row_count(result)
 
   call check(error, duckdb_value_int64(result, 0, 0) == col1_val, "col1 row1 value")
   if (allocated(error)) return
   call check(error, duckdb_value_int16(result, 1, 0) == col2_val, "col2 row1 value")
   if (allocated(error)) return
+  ! print *, "log:", duckdb_value_is_null(result, 0, 1)
+
+  ! something weird is happening here :)
+  call check(error, duckdb_value_int64(result, 0, 1) == col1_val, "here")
+  if (allocated(error)) return
+
+
   call check(error, duckdb_value_is_null(result, 0, 1), "col1 row2 null")
   if (allocated(error)) return
   call check(error, duckdb_value_is_null(result, 1, 1), "col2 row2 null")

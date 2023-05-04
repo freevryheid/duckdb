@@ -3,12 +3,12 @@ fortran bindings to duckdb c api
 
 *still under development - contributions welcome*
 
-### Implementation status 
+### Implementation status
 
 - [x] **test_starting_database.cpp**
   - [x] Simple In-Memory DB Start Up and Shutdown
   - [x] Multiple In-Memory DB Start Up and Shutdown
-- [ ] **test_capi.cpp** 
+- [ ] **test_capi.cpp**
   - [ ] Basic test of C API (_Part implemented_)
   - [ ] Test different types of C API
   - [ ] Test errors in C API
@@ -54,7 +54,7 @@ fortran bindings to duckdb c api
   - [ ] Test C API examples from the website
 
 
-### Seetup and test
+### Setup and test
 
 Requires the c library that can be downloaded from https://github.com/duckdb/duckdb/releases
 

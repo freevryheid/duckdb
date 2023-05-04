@@ -1627,7 +1627,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, c_bool
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      logical(kind=c_bool), value :: value 
+      logical(kind=c_bool), value :: value
     end function duckdb_append_bool_
 
     ! DUCKDB_API duckdb_state duckdb_append_int8(duckdb_appender appender, int8_t value);
@@ -1635,7 +1635,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, c_int8_t
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      integer(kind=c_int8_t), value :: value 
+      integer(kind=c_int8_t), value :: value
     end function duckdb_append_int8_
 
     ! DUCKDB_API duckdb_state duckdb_append_int16(duckdb_appender appender, int16_t value);
@@ -1643,7 +1643,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, c_int16_t
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      integer(kind=c_int16_t), value :: value 
+      integer(kind=c_int16_t), value :: value
     end function duckdb_append_int16_
 
     ! DUCKDB_API duckdb_state duckdb_append_int32(duckdb_appender appender, int32_t value);
@@ -1651,7 +1651,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, c_int32_t
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      integer(kind=c_int32_t), value :: value 
+      integer(kind=c_int32_t), value :: value
     end function duckdb_append_int32_
 
     ! DUCKDB_API duckdb_state duckdb_append_int64(duckdb_appender appender, int64_t value);
@@ -1659,7 +1659,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, c_int64_t
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      integer(kind=c_int64_t), value :: value 
+      integer(kind=c_int64_t), value :: value
     end function duckdb_append_int64_
 
     ! DUCKDB_API duckdb_state duckdb_append_hugeint(duckdb_appender appender, duckdb_hugeint value);
@@ -1667,7 +1667,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, duckdb_hugeint
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(duckdb_hugeint), value :: value 
+      type(duckdb_hugeint), value :: value
     end function duckdb_append_hugeint
 
     ! NOTE: Fortran doesn't currently have an unsigned integer definition.
@@ -1682,7 +1682,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, c_float
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      real(kind=c_float), value :: value 
+      real(kind=c_float), value :: value
     end function duckdb_append_float_
 
     ! DUCKDB_API duckdb_state duckdb_append_double(duckdb_appender appender, double value);
@@ -1690,7 +1690,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, c_double
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      real(kind=c_double), value :: value 
+      real(kind=c_double), value :: value
     end function duckdb_append_double_
 
     ! DUCKDB_API duckdb_state duckdb_append_date(duckdb_appender appender, duckdb_date value);
@@ -1698,7 +1698,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, duckdb_date
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(duckdb_date), value :: value 
+      type(duckdb_date), value :: value
     end function duckdb_append_date
 
     ! DUCKDB_API duckdb_state duckdb_append_time(duckdb_appender appender, duckdb_time value);
@@ -1706,7 +1706,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, duckdb_time
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(duckdb_time), value :: value 
+      type(duckdb_time), value :: value
     end function duckdb_append_time
 
     ! DUCKDB_API duckdb_state duckdb_append_timestamp(duckdb_appender appender, duckdb_timestamp value);
@@ -1714,7 +1714,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, duckdb_timestamp
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(duckdb_timestamp), value :: value 
+      type(duckdb_timestamp), value :: value
     end function duckdb_append_timestamp
 
     ! DUCKDB_API duckdb_state duckdb_append_interval(duckdb_appender appender, duckdb_interval value);
@@ -1722,7 +1722,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, duckdb_interval
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(duckdb_interval), value :: value 
+      type(duckdb_interval), value :: value
     end function duckdb_append_interval
 
     ! DUCKDB_API duckdb_state duckdb_append_varchar(duckdb_appender appender, const char *val);
@@ -1730,14 +1730,14 @@ module duckdb
       import :: duckdb_state, duckdb_appender, c_char
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      character(kind=c_char) :: value 
+      character(kind=c_char) :: value
     end function duckdb_append_varchar_
 
     ! DUCKDB_API duckdb_state duckdb_append_varchar_length(duckdb_appender appender, const char *val, idx_t length);
 
     ! DUCKDB_API duckdb_state duckdb_append_blob(duckdb_appender appender, const void *data, idx_t length);
-    ! FIXME: Similar to duckdb_bind_blob_ the c-api uses a pointer rather than 
-    !        using a type_blob. Address in the helper function? 
+    ! FIXME: Similar to duckdb_bind_blob_ the c-api uses a pointer rather than
+    !        using a type_blob. Address in the helper function?
     function duckdb_append_blob_(appender, data, length) bind(c, name='duckdb_append_blob') result(res)
       import :: duckdb_state, duckdb_appender, c_ptr, c_int64_t
       integer(kind(duckdb_state)) :: res
@@ -2101,11 +2101,9 @@ module duckdb
       type(duckdb_result), intent(in) :: res
       integer :: col, row
       logical :: r
-      if (c_associated(res%internal_data)) then
+      r = .false.
+      if (c_associated(res%internal_data)) &
         r = duckdb_value_is_null_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
-      else
-        r = .false.
-      endif
     end function duckdb_value_is_null
 
     ! =========================================================================
@@ -2546,7 +2544,6 @@ module duckdb
       character(len=*) :: schema
       character(len=*) :: table
       type(duckdb_appender) :: out_appender
-
       res = duckdb_appender_create_(connection, trim(schema)//c_null_char, &
         trim(table)//c_null_char, out_appender)
     end function duckdb_appender_create
@@ -2565,49 +2562,49 @@ module duckdb
     function duckdb_append_bool(appender, value) result(res)
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender) :: appender
-      logical :: value 
+      logical :: value
       res = duckdb_append_bool_(appender, logical(value, kind=c_bool))
     end function duckdb_append_bool
 
     function duckdb_append_int8(appender, value) result(res)
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender) :: appender
-      integer(kind=int8) :: value 
+      integer(kind=int8) :: value
       res = duckdb_append_int8_(appender, int(value, kind=c_int8_t))
     end function duckdb_append_int8
 
     function duckdb_append_int16(appender, value) result(res)
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender) :: appender
-      integer(kind=int16) :: value 
+      integer(kind=int16) :: value
       res = duckdb_append_int16_(appender, int(value, kind=c_int16_t))
     end function duckdb_append_int16
 
     function duckdb_append_int32(appender, value) result(res)
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender) :: appender
-      integer :: value 
+      integer :: value
       res = duckdb_append_int32_(appender, int(value, kind=c_int32_t))
     end function duckdb_append_int32
 
     function duckdb_append_int64(appender, value) result(res)
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender) :: appender
-      integer(kind=int64) :: value 
+      integer(kind=int64) :: value
       res = duckdb_append_int64_(appender, int(value, kind=c_int64_t))
     end function duckdb_append_int64
 
     function duckdb_append_float(appender, value) result(res)
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender) :: appender
-      real(kind=real32) :: value 
+      real(kind=real32) :: value
       res = duckdb_append_float_(appender, real(value, kind=c_float))
     end function duckdb_append_float
 
     function duckdb_append_double(appender, value) result(res)
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender) :: appender
-      real(kind=real64) :: value 
+      real(kind=real64) :: value
       res = duckdb_append_double_(appender, real(value, kind=c_double))
     end function duckdb_append_double
 
