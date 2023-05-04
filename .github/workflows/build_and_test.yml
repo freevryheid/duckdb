@@ -39,7 +39,7 @@ jobs:
         sudo mv *.h *.hpp /usr/local/include/
         sudo mv *.so /usr/local/lib/
       env:
-        DUCKDB_LIB: https://github.com/duckdb/duckdb/releases/download/v0.7.1/libduckdb-linux-i386.zip
+        DUCKDB_LIB: https://github.com/duckdb/duckdb/releases/download/v0.7.1/libduckdb-linux-amd64.zip
 
     - name: Build and test on Ubuntu
       if: contains(matrix.os, 'ubuntu')
