@@ -1,0 +1,48 @@
+name: Build and Test
+
+on: 
+  push: 
+    branches: main
+  pull_request: 
+
+jobs: 
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy: 
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        toolchain: 
+        - {compiler: gcc, version: 11}
+        - {compiler: intel-classic, version: '2021.9'}
+
+    steps: 
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - uses: awvwgk/setup-fortran@v1
+      with: 
+        compiler: ${{ matrix.toolchain.compiler }}
+        version: ${{ matrix.toolchain.version }}
+
+    - uses: fortran-lang/setup-fpm@v5
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install dependencies ubuntu
+      if: contains(matrix.os, 'ubuntu')
+      run: |
+        sudo apt-get update
+        sudo wget $DUCKDB_LIB
+        sudo unzip $(basename ${DUCKDB_LIB})
+        sudo mv *.h *.hpp /usr/local/include/
+        sudo mv *.so /usr/local/lib/
+      env:
+        DUCKDB_LIB: https://github.com/duckdb/duckdb/releases/download/v0.7.1/libduckdb-linux-i386.zip
+
+    - name: Build and test on Ubuntu
+      if: contains(matrix.os, 'ubuntu')
+      run: |
+        $FC --version
+        export FPM_FC=$FC
+        fpm test
