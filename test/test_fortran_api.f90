@@ -20,7 +20,9 @@ module test_fortran_api
         new_unittest("basic-string-test", test_scalar_string),    &
         new_unittest("basic-bool-test", test_boolean),            &
         new_unittest("basic-insert-test", test_multiple_insert),  &
-        new_unittest("basic-errors-test", test_error_conditions)  &
+        new_unittest("basic-errors-test", test_error_conditions), &
+        new_unittest("basic-blobs-test", test_blob_columns),      &
+        new_unittest("basic-decimal-test", test_decimal_columns)  &
         ]
 
     end subroutine collect_fortran_api
@@ -34,8 +36,6 @@ module test_fortran_api
       integer(kind=int64), pointer :: data_out
       type(c_ptr) :: data_in
 
-      ! print *, new_line('a') // "duckdb library " // duckdb_library_version() // new_line('a')
-
       ! Open data in in-memory mode
       call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
       if (allocated(error)) return
@@ -43,12 +43,17 @@ module test_fortran_api
       call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
       if (allocated(error)) return
 
+      call check(error, duckdb_query(conn, "SET default_null_order='nulls_first'", &
+        ddb_result) == duckdbsuccess)
+      if (allocated(error)) return
+
       call check(error, &
         duckdb_query(conn, "SELECT CAST(42 AS BIGINT);", ddb_result) == duckdbsuccess, &
         "query database")
       if (allocated(error)) return
 
-      call check(error, duckdb_column_type(ddb_result, 0) == duckdb_type_bigint, "database column type")
+      call check(error, duckdb_column_type(ddb_result, 0) == duckdb_type_bigint, &
+        "database column type")
       if (allocated(error)) return
 
       ! **DEPRECATED**: Prefer using `duckdb_result_get_chunk` instead
@@ -73,7 +78,10 @@ module test_fortran_api
       call check(error, duckdb_value_int64(ddb_result, 0, 0) == 42, "col 0 row 0 value")
       if (allocated(error)) return
 
-      ! Out of range
+      call check(error, .not. duckdb_value_is_null(ddb_result, 0, 0), "col 0 row 0 not null")
+      if (allocated(error)) return
+
+      ! Out of range fetch 
       call check(error, duckdb_value_int64(ddb_result, 1, 0) == 0, "col 1 row 0 value")
       if (allocated(error)) return
 
@@ -363,4 +371,84 @@ module test_fortran_api
 
     end subroutine test_error_conditions
 
+    subroutine test_blob_columns(error)
+
+      type(error_type), allocatable, intent(out) :: error
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: conn
+      type(duckdb_result) :: result = duckdb_result()
+
+      ! Open data in in-memory mode
+      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+      if (allocated(error)) return
+
+      call check(error, duckdb_connect(db, conn) == duckdbsuccess)
+      if (allocated(error)) return
+
+      call check(error, &
+        duckdb_query(conn, "CREATE TABLE blobs(b BLOB)", &
+        result) == duckdbsuccess, "blob table create error.")
+      if (allocated(error)) return
+
+      call check(error, &
+        duckdb_query(conn, "INSERT INTO blobs VALUES ('hello\\x12world'), ('\\x00'), (NULL)", &
+        result) == duckdbsuccess, "blob table insert error.")
+      if (allocated(error)) return
+
+      call check(error, &
+        duckdb_query(conn, "SELECT * FROM blobs", result) == duckdbsuccess, &
+        "blob table select error.")
+      if (allocated(error)) return     
+      
+      call check(error, .not. duckdb_value_is_null(result, 0, 0), "result(0,0) is null")
+      if (allocated(error)) return     
+      
+      block 
+        type(duckdb_blob) :: blob 
+        blob = duckdb_value_blob(result, 0, 0)
+        call check(error, blob%size == 11, "Blob size mismatch")
+        if (allocated(error)) return 
+      end block
+    end subroutine test_blob_columns
+
+    subroutine test_decimal_columns(error)
+
+      type(error_type), allocatable, intent(out) :: error
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: conn
+      type(duckdb_result) :: result = duckdb_result()
+
+      ! Open data in in-memory mode
+      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+      if (allocated(error)) return
+
+      call check(error, duckdb_connect(db, conn) == duckdbsuccess)
+      if (allocated(error)) return
+
+      call check(error, &
+        duckdb_query(conn, "CREATE TABLE decimals(dec DECIMAL(18, 4) NULL)", &
+        result) == duckdbsuccess, "decimal table create error.")
+      if (allocated(error)) return
+
+      call check(error, &
+        duckdb_query(conn, "INSERT INTO decimals VALUES (NULL), (12.3)", &
+        result) == duckdbsuccess, "decimal table insert error.")
+      if (allocated(error)) return
+
+      call check(error, &
+        duckdb_query(conn, "SELECT * FROM decimals ORDER BY dec", result) == duckdbsuccess, &
+        "decimal table select error.")
+      if (allocated(error)) return     
+      
+      call check(error, duckdb_value_is_null(result, 0, 0), "result(0,0) is null")
+      if (allocated(error)) return     
+      
+      block 
+        type(duckdb_decimal) :: decimal 
+        decimal = duckdb_value_decimal(result, 0, 1)
+        print*, duckdb_decimal_to_double(decimal)
+        call check(error, duckdb_decimal_to_double(decimal) == 12.3, "Decimal value mismatch")
+        if (allocated(error)) return 
+      end block
+    end subroutine test_decimal_columns    
 end module test_fortran_api
