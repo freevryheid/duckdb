@@ -387,53 +387,112 @@ contains
       "Appender not destroyed successfully.")
     if (allocated(error)) return
 
-    ! result = tester.Query("SELECT * FROM many_types");
-    ! REQUIRE_NO_FAIL(*result);
-    ! REQUIRE(result->Fetch<bool>(0, 0) == true);
-    ! REQUIRE(result->Fetch<int8_t>(1, 0) == 1);
-    ! REQUIRE(result->Fetch<int16_t>(2, 0) == 1);
-    ! REQUIRE(result->Fetch<int64_t>(3, 0) == 1);
-    ! REQUIRE(result->Fetch<uint8_t>(4, 0) == 1);
-    ! REQUIRE(result->Fetch<uint16_t>(5, 0) == 1);
-    ! REQUIRE(result->Fetch<uint32_t>(6, 0) == 1);
-    ! REQUIRE(result->Fetch<uint64_t>(7, 0) == 1);
-    ! REQUIRE(result->Fetch<float>(8, 0) == 0.5f);
-    ! REQUIRE(result->Fetch<double>(9, 0) == 0.5);
-    ! REQUIRE(result->Fetch<string>(10, 0) == "hello");
+    result = duckdb_result()
+    call check(error, duckdb_query(con, "SELECT * FROM many_types", result) == duckdbsuccess)
+    if (allocated(error)) return 
+
+    call check(error, duckdb_value_boolean(result, 0, 0) .eqv. .true., "error retrieving logical")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_int8(result, 1, 0) == 1_int8, "error retrieving int8")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_int16(result, 2, 0) == 1_int16, "error retrieving int16")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_int64(result, 3, 0) == 1_int64, "error retrieving int64")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_float(result, 4, 0) == 0.5_real32, "error retrieving real32")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_double(result, 5, 0) == 0.5_real64, "error retrieving real64")
+    if (allocated(error)) return 
+    block 
+      use util, only: c_f_str_ptr
+      type(c_ptr) :: tmp
+      character(len=:), allocatable :: val
+      type(duckdb_string) :: s
+
+      s = duckdb_value_string(result, 6, 0) 
+      val = "NULL"
+      if (c_associated(s%data)) call c_f_str_ptr(s%data, val)
+      call check(error, val == "hello world", "error retrieving string")
+      if (allocated(error)) return 
+    end block
   
-    ! auto blob = duckdb_value_blob(&result->InternalResult(), 11, 0);
-    ! REQUIRE(blob.size == blob_len);
-    ! REQUIRE(memcmp(blob.data, blob_data, blob_len) == 0);
-    ! duckdb_free(blob.data);
-    ! REQUIRE(duckdb_value_int32(&result->InternalResult(), 11, 0) == 0);
+    ! FIXME Failing test
+    block 
+      type(duckdb_blob) :: blob 
+
+      blob = duckdb_value_blob(result, 7, 0)
+      call check(error, blob%size == blob_data%size, "error retrieving blob size")
+      if (allocated(error)) return 
+      call check(error, c_associated(blob%data, blob_data%data), "error retrieving blob data")
+      if (allocated(error)) return
+      call duckdb_free(blob%data)
+    end block
+
+    call check(error, duckdb_value_int32(result, 7, 0) == 0)
+    if (allocated(error)) return 
   
-    ! auto date = result->Fetch<duckdb_date_struct>(12, 0);
-    ! REQUIRE(date.year == 1992);
-    ! REQUIRE(date.month == 9);
-    ! REQUIRE(date.day == 3);
+    block 
+      type(duckdb_date_struct) :: date 
+      date = duckdb_from_date(duckdb_value_date(result, 8, 0))
+      call check(error, date%year == 1992)
+      if (allocated(error)) return 
+      call check(error, date%month == 9)
+      if (allocated(error)) return 
+      call check(error, date%day == 3)
+      if (allocated(error)) return 
+    end block 
   
-    ! auto time = result->Fetch<duckdb_time_struct>(13, 0);
-    ! REQUIRE(time.hour == 12);
-    ! REQUIRE(time.min == 22);
-    ! REQUIRE(time.sec == 33);
-    ! REQUIRE(time.micros == 1234);
+    block 
+      type(duckdb_time_struct) :: time 
+      time = duckdb_from_time(duckdb_value_time(result, 9, 0))
+      call check(error, time%hour == 12, "hour")
+      if (allocated(error)) return 
+      call check(error, time%min == 22, "min")
+      if (allocated(error)) return 
+      call check(error, time%sec == 33, "sec")
+      if (allocated(error)) return 
+      call check(error, time%micros == 1234, "micros")
+      if (allocated(error)) return 
+    end block 
   
-    ! auto timestamp = result->Fetch<duckdb_timestamp_struct>(14, 0);
-    ! REQUIRE(timestamp.date.year == 1992);
-    ! REQUIRE(timestamp.date.month == 9);
-    ! REQUIRE(timestamp.date.day == 3);
-    ! REQUIRE(timestamp.time.hour == 12);
-    ! REQUIRE(timestamp.time.min == 22);
-    ! REQUIRE(timestamp.time.sec == 33);
-    ! REQUIRE(timestamp.time.micros == 1234);
+    block 
+      type(duckdb_timestamp_struct) :: timestamp 
+      timestamp = duckdb_from_timestamp(duckdb_value_timestamp(result, 10, 0))
+      call check(error, timestamp%date%year == 1992)
+      if (allocated(error)) return 
+      call check(error, timestamp%date%month == 9)
+      if (allocated(error)) return 
+      call check(error, timestamp%date%day == 3)
+      if (allocated(error)) return 
+      call check(error, timestamp%time%hour == 12)
+      if (allocated(error)) return 
+      call check(error, timestamp%time%min == 22)
+      if (allocated(error)) return 
+      call check(error, timestamp%time%sec == 33)
+      if (allocated(error)) return 
+      call check(error, timestamp%time%micros == 1234)
+      if (allocated(error)) return 
+    end block 
   
-    ! interval = result->Fetch<duckdb_interval>(15, 0);
-    ! REQUIRE(interval.months == 3);
-    ! REQUIRE(interval.days == 0);
-    ! REQUIRE(interval.micros == 0);
+    block 
+      type(duckdb_interval) :: interval 
+      interval = duckdb_value_interval(result, 11, 0)
+      call check(error, interval%months == 3)
+      if (allocated(error)) return 
+      call check(error, interval%days == 0)
+      if (allocated(error)) return 
+      call check(error, interval%micros == 0)
+      if (allocated(error)) return 
+    end block 
   
-    ! auto hugeint = result->Fetch<duckdb_hugeint>(16, 0);
-    ! REQUIRE(duckdb_hugeint_to_double(hugeint) == 27);
+    ! FIXME failing test
+    block 
+      real(kind=real64) :: hugeint 
+      hugeint = duckdb_hugeint_to_double(duckdb_value_hugeint(result, 12, 0))
+      print*, hugeint
+      call check(error, hugeint == 27.0_real64)
+      if (allocated(error)) return
+    end block 
   
     ! REQUIRE(result->IsNull(0, 1));
     ! REQUIRE(result->IsNull(1, 1));
