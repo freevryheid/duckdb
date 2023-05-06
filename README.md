@@ -9,7 +9,19 @@ fortran bindings to duckdb c api
   - [x] Simple In-Memory DB Start Up and Shutdown
   - [x] Multiple In-Memory DB Start Up and Shutdown
 - [ ] **test_capi.cpp**
-  - [ ] Basic test of C API (_Part implemented_)
+  - [x] Basic test of C API
+  - [x] Test scalar NULL
+  - [x] Test scalar string
+  - [x] Test boolean
+  - [x] Test multiple insert
+  - [x] Test various error conditions
+  - [x] Test integer columns 
+  - [x] Test real/double columns 
+  - [x] Test date columns 
+  - [ ] Test time columns
+  - [x] Test blob columns
+  - [ ] Test boolean columns
+  - [ ] Test decimal columns 
   - [ ] Test different types of C API
   - [ ] Test errors in C API
   - [ ] Test C API config

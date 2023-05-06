@@ -22,6 +22,8 @@ module test_fortran_api
         new_unittest("basic-insert-test", test_multiple_insert),  &
         new_unittest("basic-errors-test", test_error_conditions), &
         new_unittest("basic-integers-test", test_integer_columns),&
+        new_unittest("basic-real-test", test_real_columns),       &
+        new_unittest("basic-date-test", test_date_columns),       &
         new_unittest("basic-blobs-test", test_blob_columns),      &
         new_unittest("basic-decimal-test", test_decimal_columns)  &
         ]
@@ -370,6 +372,7 @@ module test_fortran_api
       ! call check(error, .not. c_associated(duckdb_column_data(result, 0)))
       ! if (allocated(error)) return
 
+      call duckdb_destroy_result(res)
     end subroutine test_error_conditions
 
     subroutine test_integer_columns(error)
@@ -428,16 +431,16 @@ module test_fortran_api
         call check(error, duckdb_value_int64(result, 0, 0) == 0, &
           trim(types(i))//": 0 int64")
         if (allocated(error)) return        
-        call check(error, duckdb_hugeint_to_double(duckdb_value_hugeint(result, 0, 0)) == 0, &
-          trim(types(i))//": 0 hugeint")
+        call check(error, duckdb_hugeint_to_double(duckdb_value_hugeint(result, 0, 0)), &
+          0.0_real64, trim(types(i))//": 0 hugeint")
         if (allocated(error)) return        
-        call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)) == "", &
-          trim(types(i))//": 0 string")
+        call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)) &
+          == "", trim(types(i))//": 0 string")
         if (allocated(error)) return
-        call check(error, duckdb_value_float(result, 0, 0) == 0.0_real32, &
+        call check(error, duckdb_value_float(result, 0, 0), 0.0_real32, &
           trim(types(i))//": 0 float")
         if (allocated(error)) return
-        call check(error, duckdb_value_double(result, 0, 0) == 0.0_real64, &
+        call check(error, duckdb_value_double(result, 0, 0), 0.0_real64, &
           trim(types(i))//": 0 double")
         if (allocated(error)) return
 
@@ -461,17 +464,17 @@ module test_fortran_api
           ! hi = duckdb_value_hugeint_(result, 0_c_int64_t, 1_c_int64_t)
           hi = duckdb_value_hugeint(result, 0, 1)
           print*, types(i), hi%lower, hi%upper, duckdb_hugeint_to_double(hi)
-          call check(error, duckdb_hugeint_to_double(hi) == 1, &
+          call check(error, duckdb_hugeint_to_double(hi), 1.0_real64, &
             trim(types(i))//": 1 hugeint")
           if (allocated(error)) return        
         end block 
         call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 1)) == "1", &
           trim(types(i))//": 1 string")
         if (allocated(error)) return
-        call check(error, duckdb_value_float(result, 0, 1) == 1.0_real32, &
+        call check(error, duckdb_value_float(result, 0, 1), 1.0_real32, &
           trim(types(i))//": 1 float")
         if (allocated(error)) return
-        call check(error, duckdb_value_double(result, 0, 1) == 1.0_real64, &
+        call check(error, duckdb_value_double(result, 0, 1), 1.0_real64, &
           trim(types(i))//": 1 double")
         if (allocated(error)) return
 
@@ -480,8 +483,184 @@ module test_fortran_api
         if (allocated(error)) return        
       enddo
 
+      call duckdb_destroy_result(result)
+      call duckdb_disconnect(conn)
+      call duckdb_close(db)
+      
     end subroutine test_integer_columns
 
+    subroutine test_real_columns(error)
+
+      type(error_type), allocatable, intent(out) :: error
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: conn
+      type(duckdb_result) :: result = duckdb_result()
+
+      character(len=6) :: types(2)
+      integer :: i
+
+      ! Open data in in-memory mode
+      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "SET default_null_order='nulls_first'", &
+        result) == duckdbsuccess, "null order query")
+      if (allocated(error)) return
+
+      types = ["REAL  ",  "DOUBLE"]
+
+      do i = 1, size(types,1)
+        ! create the table and insert values
+        call check(error, duckdb_query(conn, "BEGIN TRANSACTION", &
+          result) == duckdbsuccess, "begin transaction")
+        if (allocated(error)) return
+
+        call check(error, duckdb_query(conn, "CREATE TABLE doubles(i "//trim(types(i))//")", &
+          result) == duckdbsuccess, "create "//trim(types(i))//" table")
+        if (allocated(error)) return
+
+        call check(error, duckdb_query(conn, "INSERT INTO doubles VALUES (1), (NULL)", &
+          result) == duckdbsuccess, "insert "//trim(types(i))//" values")
+        if (allocated(error)) return
+
+        call check(error, duckdb_query(conn, "SELECT * FROM doubles ORDER BY i", &
+          result) == duckdbsuccess, "select "//trim(types(i))//" values")
+        if (allocated(error)) return
+
+        call check(error, duckdb_value_is_null(result, 0, 0), &
+          trim(types(i))//": 0 null")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int8(result, 0, 0) == 0, &
+          trim(types(i))//": 0 int8")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int16(result, 0, 0) == 0, &
+          trim(types(i))//": 0 int16")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int32(result, 0, 0) == 0, &
+          trim(types(i))//": 0 int32")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int64(result, 0, 0) == 0, &
+          trim(types(i))//": 0 int64")
+        if (allocated(error)) return           
+        call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)) == "", &
+          trim(types(i))//": 0 string")
+        if (allocated(error)) return
+        call check(error, duckdb_value_float(result, 0, 0), 0.0_real32, &
+          trim(types(i))//": 0 float")
+        if (allocated(error)) return
+        call check(error, duckdb_value_double(result, 0, 0), 0.0_real64, &
+          trim(types(i))//": 0 double")
+        if (allocated(error)) return
+
+        call check(error, .not. duckdb_value_is_null(result, 0, 1), &
+          trim(types(i))//": 1 null")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int8(result, 0, 1) == 1, &
+          trim(types(i))//": 1 int8")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int16(result, 0, 1) == 1, &
+          trim(types(i))//": 1 int16")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int32(result, 0, 1) == 1, &
+          trim(types(i))//": 1 int32")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int64(result, 0, 1) == 1, &
+          trim(types(i))//": 1 int64")
+        if (allocated(error)) return      
+        call check(error, duckdb_value_float(result, 0, 1), 1.0_real32, &
+          trim(types(i))//": 1 float")
+        if (allocated(error)) return
+        call check(error, duckdb_value_double(result, 0, 1), 1.0_real64, &
+          trim(types(i))//": 1 double")
+        if (allocated(error)) return
+
+        call check(error, duckdb_query(conn, "ROLLBACK", &
+          result) == duckdbsuccess, trim(types(i))//" rollback")
+        if (allocated(error)) return        
+      enddo
+
+      call duckdb_destroy_result(result)
+      call duckdb_disconnect(conn)
+      call duckdb_close(db)
+
+    end subroutine test_real_columns
+
+    subroutine test_date_columns(error)
+
+      type(error_type), allocatable, intent(out) :: error
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: conn
+      type(duckdb_result) :: result = duckdb_result()
+
+      type(duckdb_date_struct) :: date
+
+      ! Open data in in-memory mode
+      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "SET default_null_order='nulls_first'", &
+        result) == duckdbsuccess, "null order query")
+      if (allocated(error)) return
+
+      ! create the table and insert values
+      call check(error, duckdb_query(conn, "BEGIN TRANSACTION", &
+        result) == duckdbsuccess, "begin transaction")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "CREATE TABLE dates(d DATE)", &
+        result) == duckdbsuccess, "create dates table")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, &
+        "INSERT INTO dates VALUES ('1992-09-20'), (NULL), ('30000-09-20')", &
+        result) == duckdbsuccess, "insert date values")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "SELECT * FROM dates ORDER BY d", &
+        result) == duckdbsuccess, "select dates values")
+      if (allocated(error)) return
+
+      call check(error, duckdb_value_is_null(result, 0, 0), &
+        "dates: 0 null")
+      if (allocated(error)) return      
+      date = duckdb_from_date(duckdb_value_date(result, 0, 1))
+      call check(error, date%year == 1992, "dates: 1 year")
+      if (allocated(error)) return      
+      call check(error, date%month == 9, "dates: 1 month")
+      if (allocated(error)) return    
+      call check(error, date%day == 20, "dates: 1 day")
+      if (allocated(error)) return                         
+      call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 1)), &
+        "1992-09-20", "dates: 1 string")
+      if (allocated(error)) return
+      date = duckdb_from_date(duckdb_value_date(result, 0, 2))
+      call check(error, date%year == 30000, "dates: 2 year")
+      if (allocated(error)) return      
+      call check(error, date%month == 9, "dates: 2 month")
+      if (allocated(error)) return    
+      call check(error, date%day == 20, "dates: 2 day")
+      if (allocated(error)) return    
+      call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 2)), &
+        "30000-09-20", "dates: 2 string")
+
+      call duckdb_destroy_result(result)
+      call duckdb_disconnect(conn)
+      call duckdb_close(db)
+
+    end subroutine test_date_columns
+
+    subroutine test_time_columns(error)
+
+      type(error_type), allocatable, intent(out) :: error
+
+    end subroutine test_time_columns
+    
     subroutine test_blob_columns(error)
 
       type(error_type), allocatable, intent(out) :: error
@@ -520,6 +699,11 @@ module test_fortran_api
         call check(error, blob%size == 11, "Blob size mismatch")
         if (allocated(error)) return 
       end block
+
+      call duckdb_destroy_result(result)
+      call duckdb_disconnect(conn)
+      call duckdb_close(db)
+
     end subroutine test_blob_columns
 
     subroutine test_decimal_columns(error)
@@ -558,8 +742,14 @@ module test_fortran_api
         type(duckdb_decimal) :: decimal 
         decimal = duckdb_value_decimal(result, 0, 1)
         print*, duckdb_decimal_to_double(decimal)
-        call check(error, duckdb_decimal_to_double(decimal) == 12.3, "Decimal value mismatch")
+        call check(error, duckdb_decimal_to_double(decimal), 12.3_real64, &
+          "Decimal value mismatch")
         if (allocated(error)) return 
       end block
+
+      call duckdb_destroy_result(result)
+      call duckdb_disconnect(conn)
+      call duckdb_close(db)
+
     end subroutine test_decimal_columns    
 end module test_fortran_api
