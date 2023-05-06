@@ -21,6 +21,7 @@ module test_fortran_api
         new_unittest("basic-bool-test", test_boolean),            &
         new_unittest("basic-insert-test", test_multiple_insert),  &
         new_unittest("basic-errors-test", test_error_conditions), &
+        new_unittest("basic-integers-test", test_integer_columns),&
         new_unittest("basic-blobs-test", test_blob_columns),      &
         new_unittest("basic-decimal-test", test_decimal_columns)  &
         ]
@@ -370,6 +371,110 @@ module test_fortran_api
       ! if (allocated(error)) return
 
     end subroutine test_error_conditions
+
+    subroutine test_integer_columns(error)
+
+      type(error_type), allocatable, intent(out) :: error
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: conn
+      type(duckdb_result) :: result = duckdb_result()
+
+      character(len=8) :: types(5)
+      integer :: i
+
+      ! Open data in in-memory mode
+      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "SET default_null_order='nulls_first'", &
+        result) == duckdbsuccess, "null order query")
+      if (allocated(error)) return
+
+      types = ["TINYINT ",  "SMALLINT",  "INTEGER ",  "BIGINT  ", "HUGEINT "]
+
+      do i = 1, size(types,1)
+        ! create the table and insert values
+        call check(error, duckdb_query(conn, "BEGIN TRANSACTION", &
+          result) == duckdbsuccess, "begin transaction")
+        if (allocated(error)) return
+
+        call check(error, duckdb_query(conn, "CREATE TABLE integers(i "//trim(types(i))//")", &
+          result) == duckdbsuccess, "create "//trim(types(i))//" table")
+        if (allocated(error)) return
+
+        call check(error, duckdb_query(conn, "INSERT INTO integers VALUES (1), (NULL)", &
+          result) == duckdbsuccess, "insert "//trim(types(i))//" values")
+        if (allocated(error)) return
+
+        call check(error, duckdb_query(conn, "SELECT * FROM integers ORDER BY i", &
+          result) == duckdbsuccess, "select "//trim(types(i))//" values")
+        if (allocated(error)) return
+
+        call check(error, duckdb_value_is_null(result, 0, 0), &
+          trim(types(i))//": 0 null")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int8(result, 0, 0) == 0, &
+          trim(types(i))//": 0 int8")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int16(result, 0, 0) == 0, &
+          trim(types(i))//": 0 int16")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int32(result, 0, 0) == 0, &
+          trim(types(i))//": 0 int32")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int64(result, 0, 0) == 0, &
+          trim(types(i))//": 0 int64")
+        if (allocated(error)) return        
+        call check(error, duckdb_hugeint_to_double(duckdb_value_hugeint(result, 0, 0)) == 0, &
+          trim(types(i))//": 0 hugeint")
+        if (allocated(error)) return        
+        call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)) == "", &
+          trim(types(i))//": 0 string")
+        if (allocated(error)) return
+        call check(error, duckdb_value_float(result, 0, 0) == 0.0_real32, &
+          trim(types(i))//": 0 float")
+        if (allocated(error)) return
+        call check(error, duckdb_value_double(result, 0, 0) == 0.0_real64, &
+          trim(types(i))//": 0 double")
+        if (allocated(error)) return
+
+        call check(error, .not. duckdb_value_is_null(result, 0, 1), &
+          trim(types(i))//": 1 null")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int8(result, 0, 1) == 1, &
+          trim(types(i))//": 1 int8")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int16(result, 0, 1) == 1, &
+          trim(types(i))//": 1 int16")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int32(result, 0, 1) == 1, &
+          trim(types(i))//": 1 int32")
+        if (allocated(error)) return        
+        call check(error, duckdb_value_int64(result, 0, 1) == 1, &
+          trim(types(i))//": 1 int64")
+        if (allocated(error)) return        
+        ! call check(error, duckdb_hugeint_to_double(duckdb_value_hugeint(result, 0, 1)) == 1, &
+        !   trim(types(i))//": 1 hugeint")
+        if (allocated(error)) return        
+        call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 1)) == "1", &
+          trim(types(i))//": 1 string")
+        if (allocated(error)) return
+        call check(error, duckdb_value_float(result, 0, 1) == 1.0_real32, &
+          trim(types(i))//": 1 float")
+        if (allocated(error)) return
+        call check(error, duckdb_value_double(result, 0, 1) == 1.0_real64, &
+          trim(types(i))//": 1 double")
+        if (allocated(error)) return
+
+        call check(error, duckdb_query(conn, "ROLLBACK", &
+          result) == duckdbsuccess, trim(types(i))//" rollback")
+        if (allocated(error)) return        
+      enddo
+
+    end subroutine test_integer_columns
 
     subroutine test_blob_columns(error)
 
