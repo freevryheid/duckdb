@@ -165,9 +165,9 @@ contains
     call check(error, abs(duckdb_value_double(result, 1, 0) - 4.2_real64) < 1e-3)
     if (allocated(error)) return 
 
-    ! FIXME duckdb_value_string returns a duckdb_string. Should we return a character array?
-    ! call check(error, duckdb_value_string(result, 2, 0) == "Hello, World")
-    ! if (allocated(error)) return 
+    call check(error, duckdb_string_to_character(duckdb_value_string(result, 2, 0)) &
+      == "Hello, World")
+    if (allocated(error)) return 
 
     status = duckdb_appender_destroy(appender)
     call check(error, status == duckdbsuccess)
@@ -404,14 +404,8 @@ contains
     call check(error, duckdb_value_double(result, 5, 0) == 0.5_real64, "error retrieving real64")
     if (allocated(error)) return 
     block 
-      use util, only: c_f_str_ptr
-      type(c_ptr) :: tmp
       character(len=:), allocatable :: val
-      type(duckdb_string) :: s
-
-      s = duckdb_value_string(result, 6, 0) 
-      val = "NULL"
-      if (c_associated(s%data)) call c_f_str_ptr(s%data, val)
+      val = duckdb_string_to_character(duckdb_value_string(result, 6, 0))
       call check(error, val == "hello world", "error retrieving string")
       if (allocated(error)) return 
     end block
@@ -534,9 +528,8 @@ contains
     if (allocated(error)) return 
     call check(error, duckdb_value_double(result, 5, 1) == 0)
     if (allocated(error)) return 
-    ! FIXME same problem as above with returning a string
-    ! call check(error, duckdb_value_string(result, 6, 1) == "")
-    ! if (allocated(error)) return 
+    call check(error, duckdb_string_to_character(duckdb_value_string(result, 6, 1)) == "")
+    if (allocated(error)) return 
 
     block 
       type(duckdb_blob) :: blob 
@@ -672,8 +665,8 @@ contains
       /= duckdberror, "Could not run query.")
     if (allocated(error)) return
 
-    ! FIXME value string return type
-    ! call check(error, duckdb_value_string(result, 0, 0) == "2022-04-09 15:56:37.544")
-    ! if (allocated(error)) return
+    call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)) &
+      == "2022-04-09 15:56:37.544")
+    if (allocated(error)) return
   end subroutine test_append_timestamp
 end module test_appender

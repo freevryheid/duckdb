@@ -129,6 +129,7 @@ module duckdb
   public :: duckdb_double_to_hugeint
   public :: duckdb_decimal_to_double
   public :: duckdb_double_to_decimal
+  public :: duckdb_string_to_character
 
   public :: duckdb_prepare
   public :: duckdb_destroy_prepare
@@ -2106,6 +2107,13 @@ module duckdb
         r = duckdb_value_is_null_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
     end function duckdb_value_is_null
 
+    function duckdb_string_to_character(str) result(res)
+      type(duckdb_string) :: str 
+      character(len=:), allocatable :: res
+      res = ""
+      if (c_associated(str%data)) &
+        call c_f_str_ptr(str%data, res)
+    end function duckdb_string_to_character
     ! =========================================================================
     ! Helpers
     ! =========================================================================
