@@ -455,10 +455,16 @@ module test_fortran_api
         if (allocated(error)) return        
         call check(error, duckdb_value_int64(result, 0, 1) == 1, &
           trim(types(i))//": 1 int64")
-        if (allocated(error)) return        
-        ! call check(error, duckdb_hugeint_to_double(duckdb_value_hugeint(result, 0, 1)) == 1, &
-        !   trim(types(i))//": 1 hugeint")
-        if (allocated(error)) return        
+        if (allocated(error)) return      
+        block   
+          type(duckdb_hugeint) :: hi 
+          ! hi = duckdb_value_hugeint_(result, 0_c_int64_t, 1_c_int64_t)
+          hi = duckdb_value_hugeint(result, 0, 1)
+          print*, types(i), hi%lower, hi%upper, duckdb_hugeint_to_double(hi)
+          call check(error, duckdb_hugeint_to_double(hi) == 1, &
+            trim(types(i))//": 1 hugeint")
+          if (allocated(error)) return        
+        end block 
         call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 1)) == "1", &
           trim(types(i))//": 1 string")
         if (allocated(error)) return
