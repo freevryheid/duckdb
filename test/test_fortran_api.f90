@@ -8,6 +8,11 @@ module test_fortran_api
   implicit none
   private
   public :: collect_fortran_api
+
+  interface require_hugeint_eq
+    module procedure hugeint_equals_hugeint, hugeint_members_equal
+  end interface
+
   contains
 
     subroutine collect_fortran_api(testsuite)
@@ -869,20 +874,266 @@ module test_fortran_api
         "decimal table select error.")
       if (allocated(error)) return     
       
-      call check(error, duckdb_value_is_null(result, 0, 0), "result(0,0) is null")
+      call check(error, duckdb_value_is_null(result, 0, 0), "decimal: 0 null")
       if (allocated(error)) return     
       
       block 
         type(duckdb_decimal) :: decimal 
         decimal = duckdb_value_decimal(result, 0, 1)
         call check(error, duckdb_decimal_to_double(decimal), 12.3_real64, &
-          "Decimal value mismatch")
+          "Decimal: 1 mismatch")
         if (allocated(error)) return 
       end block
+
+      call check(error, duckdb_query(conn, &
+        "SELECT &
+        &1.2::DECIMAL(4,1),&
+        &100.3::DECIMAL(9,1),&
+        &-320938.4298::DECIMAL(18,4),&
+        &49082094824.904820482094::DECIMAL(30,12),&
+        &NULL::DECIMAL", &
+        result) == duckdbsuccess, &
+        "decimal: select error.")
+      if (allocated(error)) return  
+
+      call check(error, duckdb_decimal_to_double(duckdb_value_decimal(result, 0, 0)), &
+        1.2_real64, &
+        "Decimal: 0 mismatch")
+      if (allocated(error)) return 
+      call check(error, duckdb_decimal_to_double(duckdb_value_decimal(result, 1, 0)), &
+        100.3_real64, &
+        "Decimal: 1 mismatch")
+      if (allocated(error)) return
+      call check(error, duckdb_decimal_to_double(duckdb_value_decimal(result, 2, 0)), &
+        -320938.4298_real64, &
+        "Decimal: 2 mismatch")
+      if (allocated(error)) return
+      call check(error, duckdb_decimal_to_double(duckdb_value_decimal(result, 3, 0)), &
+        49082094824.904820482094_real64, &
+        "Decimal: 3 mismatch")
+      if (allocated(error)) return
+      call check(error, duckdb_decimal_to_double(duckdb_value_decimal(result, 4, 0)), &
+        0.0_real64, &
+        "Decimal: 4 mismatch")
+      if (allocated(error)) return
+
+      call check(error, .not. duckdb_value_is_null(result, 0, 0), &
+        "Decimal: 0 null")
+      if (allocated(error)) return
+      call check(error, .not. duckdb_value_is_null(result, 1, 0), &
+        "Decimal: 1 null")
+      if (allocated(error)) return
+      call check(error, .not. duckdb_value_is_null(result, 2, 0), &
+        "Decimal: 2 null")
+      if (allocated(error)) return
+      call check(error, .not. duckdb_value_is_null(result, 3, 0), &
+        "Decimal: 3 null")
+      if (allocated(error)) return
+      call check(error, duckdb_value_is_null(result, 4, 0), &
+        "Decimal: 4 not null")
+      if (allocated(error)) return
+
+      call check(error, duckdb_value_boolean(result, 0, 0), &
+        .true., &
+        "Decimal: 0 false")
+      if (allocated(error)) return
+      call check(error, duckdb_value_boolean(result, 1, 0), &
+        .true., &
+        "Decimal: 1 false")
+      if (allocated(error)) return
+      call check(error, duckdb_value_boolean(result, 2, 0), &
+        .true., &
+        "Decimal: 2 false")
+      if (allocated(error)) return
+      call check(error, duckdb_value_boolean(result, 3, 0), &
+        .true., &
+        "Decimal: 3 false")
+      if (allocated(error)) return
+      call check(error, duckdb_value_boolean(result, 4, 0), &
+        .false., &
+        "Decimal: 0 true")
+      if (allocated(error)) return
+
+      call check(error, duckdb_value_int8(result, 0, 0), &
+        1_int8, &
+        "Decimal: 0 cast to int8")
+      if (allocated(error)) return      
+      call check(error, duckdb_value_int8(result, 1, 0), &
+        100_int8, &
+        "Decimal: 1 cast to int8")
+      if (allocated(error)) return
+      call check(error, duckdb_value_int8(result, 2, 0), &
+        0_int8, & ! overflow
+        "Decimal: 2 cast to int8")
+      if (allocated(error)) return  
+      call check(error, duckdb_value_int8(result, 3, 0), &
+        0_int8, & ! overflow
+        "Decimal: 3 cast to int8")
+      if (allocated(error)) return
+      call check(error, duckdb_value_int8(result, 4, 0), &
+        0_int8, &
+        "Decimal: 4 cast to int8")
+      if (allocated(error)) return
+
+      call check(error, duckdb_value_int16(result, 0, 0), &
+        1_int16, &
+        "Decimal: 0 cast to int16")
+      if (allocated(error)) return      
+      call check(error, duckdb_value_int16(result, 1, 0), &
+        100_int16, &
+        "Decimal: 1 cast to int16")
+      if (allocated(error)) return
+      call check(error, duckdb_value_int16(result, 2, 0), &
+        0_int16, & ! overflow
+        "Decimal: 2 cast to int16")
+      if (allocated(error)) return  
+      call check(error, duckdb_value_int16(result, 3, 0), &
+        0_int16, & ! overflow
+        "Decimal: 3 cast to int16")
+      if (allocated(error)) return
+      call check(error, duckdb_value_int16(result, 4, 0), &
+        0_int16, &
+        "Decimal: 4 cast to int16")
+      if (allocated(error)) return
+
+      call check(error, duckdb_value_int32(result, 0, 0), &
+        1_int32, &
+        "Decimal: 0 cast to int32")
+      if (allocated(error)) return      
+      call check(error, duckdb_value_int32(result, 1, 0), &
+        100_int32, &
+        "Decimal: 1 cast to int32")
+      if (allocated(error)) return
+      call check(error, duckdb_value_int32(result, 2, 0), &
+        -320938_int32, &
+        "Decimal: 2 cast to int32")
+      if (allocated(error)) return  
+      call check(error, duckdb_value_int32(result, 3, 0), &
+        0_int32, & ! overflow
+        "Decimal: 3 cast to int32")
+      if (allocated(error)) return
+      call check(error, duckdb_value_int32(result, 4, 0), &
+        0_int32, &
+        "Decimal: 4 cast to int32")
+      if (allocated(error)) return
+
+      call check(error, duckdb_value_int64(result, 0, 0), &
+        1_int64, &
+        "Decimal: 0 cast to int64")
+      if (allocated(error)) return      
+      call check(error, duckdb_value_int64(result, 1, 0), &
+        100_int64, &
+        "Decimal: 1 cast to int64")
+      if (allocated(error)) return
+      call check(error, duckdb_value_int64(result, 2, 0), &
+        -320938_int64, &
+        "Decimal: 2 cast to int64")
+      if (allocated(error)) return  
+      call check(error, duckdb_value_int64(result, 3, 0), &
+        49082094825_int64, & ! ceiling
+        "Decimal: 3 cast to int64")
+      if (allocated(error)) return
+      call check(error, duckdb_value_int64(result, 4, 0), &
+        0_int64, &
+        "Decimal: 4 cast to int64")
+      if (allocated(error)) return
+
+      call check(error, require_hugeint_eq(duckdb_value_hugeint(result, 0, 0), &
+        1_int64, 0_int64), "Decimal: 0 cast to hugeint")
+      if (allocated(error)) return      
+      call check(error, require_hugeint_eq(duckdb_value_hugeint(result, 1, 0), &
+        100_int64, 0_int64), "Decimal: 1 cast to hugeint")
+      if (allocated(error)) return
+      ! call check(error, require_hugeint_eq(duckdb_value_hugeint(result, 2, 0), &
+      !   18446744073709230678_int64, -1_int64), "Decimal: 2 cast to hugeint")
+      ! if (allocated(error)) return  
+      call check(error, require_hugeint_eq(duckdb_value_hugeint(result, 3, 0), &
+        49082094825_int64, 0_int64), "Decimal: 3 cast to hugeint")
+        if (allocated(error)) return
+      call check(error, require_hugeint_eq(duckdb_value_hugeint(result, 4, 0), &
+        0_int64, 0_int64), "Decimal: 4 cast to hugeint")
+      if (allocated(error)) return
+
+      call check(error, duckdb_value_float(result, 0, 0), &
+        1.2_real32, &
+        "Decimal: 0 cast to float")
+      if (allocated(error)) return      
+      call check(error, duckdb_value_float(result, 1, 0), &
+        100.3_real32, &
+        "Decimal: 1 cast to float")
+      if (allocated(error)) return
+      call check(error, floor(duckdb_value_float(result, 2, 0)), &
+        -320939, &
+        "Decimal: 2 cast to float")
+      if (allocated(error)) return  
+      call check(error, int(duckdb_value_float(result, 3, 0), kind=int64), &
+        49082093568_int64, &
+        "Decimal: 3 cast to float")
+      if (allocated(error)) return
+      call check(error, duckdb_value_float(result, 4, 0), &
+        0.0_real32, &
+        "Decimal: 4 cast to float")
+      if (allocated(error)) return
+
+      call check(error, duckdb_value_double(result, 0, 0), &
+        1.2_real64, &
+        "Decimal: 0 cast to double")
+      if (allocated(error)) return      
+      call check(error, duckdb_value_double(result, 1, 0), &
+        100.3_real64, &
+        "Decimal: 1 cast to double")
+      if (allocated(error)) return
+      call check(error, duckdb_value_double(result, 2, 0), &
+        -320938.4298_real64, &
+        "Decimal: 2 cast to double")
+      if (allocated(error)) return  
+      call check(error, duckdb_value_double(result, 3, 0), &
+        49082094824.904820482094_real64, & 
+        "Decimal: 3 cast to double")
+      if (allocated(error)) return
+      call check(error, duckdb_value_double(result, 4, 0), &
+        0.0_real64, &
+        "Decimal: 4 cast to double")
+      if (allocated(error)) return
+
+      call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)), &
+        "1.2", &
+        "Decimal: 0 cast to string")
+      if (allocated(error)) return      
+      call check(error, duckdb_string_to_character(duckdb_value_string(result, 1, 0)), &
+        "100.3", &
+        "Decimal: 1 cast to string")
+      if (allocated(error)) return
+      call check(error, duckdb_string_to_character(duckdb_value_string(result, 2, 0)), &
+        "-320938.4298", &
+        "Decimal: 2 cast to string")
+      if (allocated(error)) return  
+      call check(error, duckdb_string_to_character(duckdb_value_string(result, 3, 0)), &
+        "49082094824.904820482094", & 
+        "Decimal: 3 cast to string")
+      if (allocated(error)) return
+      call check(error, duckdb_string_to_character(duckdb_value_string(result, 4, 0)), &
+        "", &
+        "Decimal: 4 cast to string")
+      if (allocated(error)) return
 
       call duckdb_destroy_result(result)
       call duckdb_disconnect(conn)
       call duckdb_close(db)
 
-    end subroutine test_decimal_columns    
+    end subroutine test_decimal_columns   
+    
+    logical function hugeint_equals_hugeint(left, right) result(res)
+      type(duckdb_hugeint), intent(in) :: left, right
+      res = left%lower == right%lower .and. left%upper == right%upper
+    end function hugeint_equals_hugeint
+
+    logical function hugeint_members_equal(left, lower, upper) result(res)
+      type(duckdb_hugeint), intent(in) :: left
+      integer(kind=int64), intent(in) :: lower, upper 
+      type(duckdb_hugeint) :: temp 
+      temp%lower = int(lower, kind=c_int64_t)
+      temp%upper = int(upper, kind=c_int64_t)
+      res = hugeint_equals_hugeint(left, temp)
+    end function hugeint_members_equal
 end module test_fortran_api

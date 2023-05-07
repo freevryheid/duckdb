@@ -18,11 +18,10 @@ fortran bindings to duckdb c api
   - [x] Test integer columns 
   - [x] Test real/double columns 
   - [x] Test date columns 
-  - [ ] Test time columns
+  - [x] Test time columns
   - [x] Test blob columns
-  - [ ] Test boolean columns
-  - [ ] Test decimal columns 
-  - [ ] Test different types of C API
+  - [x] Test boolean columns
+  - [x] Test decimal columns 
   - [ ] Test errors in C API
   - [ ] Test C API config
   - [ ] Issue #2058: Cleanup after execution of invalid SQL statement causes segmentation fault

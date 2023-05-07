@@ -1991,7 +1991,6 @@ module duckdb
       integer :: col, row
       type(duckdb_hugeint) :: r
       r = duckdb_hugeint()
-      ! print *, c_associated(res%internal_data), col, row
       if (c_associated(res%internal_data)) &
         r = duckdb_value_hugeint_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
     end function duckdb_value_hugeint
