@@ -24,6 +24,7 @@ module test_fortran_api
         new_unittest("basic-integers-test", test_integer_columns),&
         new_unittest("basic-real-test", test_real_columns),       &
         new_unittest("basic-date-test", test_date_columns),       &
+        new_unittest("basic-time-test", test_time_columns),       &
         new_unittest("basic-blobs-test", test_blob_columns),      &
         new_unittest("basic-decimal-test", test_decimal_columns)  &
         ]
@@ -658,9 +659,69 @@ module test_fortran_api
     subroutine test_time_columns(error)
 
       type(error_type), allocatable, intent(out) :: error
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: conn
+      type(duckdb_result) :: result = duckdb_result()
+
+      type(duckdb_time_struct) :: time_val
+
+      ! Open data in in-memory mode
+      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "SET default_null_order='nulls_first'", &
+        result) == duckdbsuccess, "null order query")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "CREATE TABLE times(d TIME)", &
+        result) == duckdbsuccess, "create times table")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, &
+        "INSERT INTO times VALUES ('12:00:30.1234'), (NULL), ('02:30:01')", &
+        result) == duckdbsuccess, "insert time values")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "SELECT * FROM times ORDER BY d", &
+        result) == duckdbsuccess, "select time values")
+      if (allocated(error)) return
+
+      call check(error, duckdb_value_is_null(result, 0, 0), &
+        "time: 0 null")
+      if (allocated(error)) return  
+      time_val = duckdb_from_time(duckdb_value_time(result, 0, 1))
+      call check(error, time_val%hour == 2, "time: 1 hour")
+      if (allocated(error)) return      
+      call check(error, time_val%min == 30, "time: 1 min")
+      if (allocated(error)) return    
+      call check(error, time_val%sec == 1, "time: 1 sec")
+      if (allocated(error)) return  
+      call check(error, time_val%micros == 0, "time: 1 micros")
+      if (allocated(error)) return                         
+      call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 1)), &
+      '02:30:01', "time: 1 string")
+      if (allocated(error)) return
+      time_val = duckdb_from_time(duckdb_value_time(result, 0, 2))
+      call check(error, time_val%hour == 12, "time: 2 hour")
+      if (allocated(error)) return      
+      call check(error, time_val%min == 0, "time: 2 min")
+      if (allocated(error)) return    
+      call check(error, time_val%sec == 30, "time: 2 sec")
+      if (allocated(error)) return  
+      call check(error, time_val%micros == 123400, "time: 2 micros")
+      if (allocated(error)) return                         
+      call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 2)), &
+      '12:00:30.1234', "time: 2 string")
+
+      call duckdb_destroy_result(result)
+      call duckdb_disconnect(conn)
+      call duckdb_close(db)
 
     end subroutine test_time_columns
-    
+
     subroutine test_blob_columns(error)
 
       type(error_type), allocatable, intent(out) :: error
