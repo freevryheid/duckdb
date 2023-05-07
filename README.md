@@ -9,8 +9,19 @@ fortran bindings to duckdb c api
   - [x] Simple In-Memory DB Start Up and Shutdown
   - [x] Multiple In-Memory DB Start Up and Shutdown
 - [ ] **test_capi.cpp**
-  - [ ] Basic test of C API (_Part implemented_)
-  - [ ] Test different types of C API
+  - [x] Basic test of C API
+  - [x] Test scalar NULL
+  - [x] Test scalar string
+  - [x] Test boolean
+  - [x] Test multiple insert
+  - [x] Test various error conditions
+  - [x] Test integer columns 
+  - [x] Test real/double columns 
+  - [x] Test date columns 
+  - [x] Test time columns
+  - [x] Test blob columns
+  - [x] Test boolean columns
+  - [x] Test decimal columns 
   - [ ] Test errors in C API
   - [ ] Test C API config
   - [ ] Issue #2058: Cleanup after execution of invalid SQL statement causes segmentation fault

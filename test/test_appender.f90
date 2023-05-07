@@ -17,8 +17,8 @@ contains
     type(unittest_type), allocatable, intent(out) :: testsuite(:)
 
     testsuite = [ &
-                new_unittest("appender-statements-test", test_appender_statements) & !, &
-                ! new_unittest("append-timestamp-test", test_append_timestamp) &
+                new_unittest("appender-statements-test", test_appender_statements), &
+                new_unittest("append-timestamp-test", test_append_timestamp) &
                 ]
 
   end subroutine collect_appender
@@ -165,9 +165,9 @@ contains
     call check(error, abs(duckdb_value_double(result, 1, 0) - 4.2_real64) < 1e-3)
     if (allocated(error)) return 
 
-    ! FIXME duckdb_value_string returns a duckdb_string. Should we return a character array?
-    ! call check(error, duckdb_value_string(result, 2, 0) == "Hello, World")
-    ! if (allocated(error)) return 
+    call check(error, duckdb_string_to_character(duckdb_value_string(result, 2, 0)) &
+      == "Hello, World")
+    if (allocated(error)) return 
 
     status = duckdb_appender_destroy(appender)
     call check(error, status == duckdbsuccess)
@@ -387,110 +387,286 @@ contains
       "Appender not destroyed successfully.")
     if (allocated(error)) return
 
-    ! result = tester.Query("SELECT * FROM many_types");
-    ! REQUIRE_NO_FAIL(*result);
-    ! REQUIRE(result->Fetch<bool>(0, 0) == true);
-    ! REQUIRE(result->Fetch<int8_t>(1, 0) == 1);
-    ! REQUIRE(result->Fetch<int16_t>(2, 0) == 1);
-    ! REQUIRE(result->Fetch<int64_t>(3, 0) == 1);
-    ! REQUIRE(result->Fetch<uint8_t>(4, 0) == 1);
-    ! REQUIRE(result->Fetch<uint16_t>(5, 0) == 1);
-    ! REQUIRE(result->Fetch<uint32_t>(6, 0) == 1);
-    ! REQUIRE(result->Fetch<uint64_t>(7, 0) == 1);
-    ! REQUIRE(result->Fetch<float>(8, 0) == 0.5f);
-    ! REQUIRE(result->Fetch<double>(9, 0) == 0.5);
-    ! REQUIRE(result->Fetch<string>(10, 0) == "hello");
+    result = duckdb_result()
+    call check(error, duckdb_query(con, "SELECT * FROM many_types", result) == duckdbsuccess)
+    if (allocated(error)) return 
+
+    call check(error, duckdb_value_boolean(result, 0, 0) .eqv. .true., "error retrieving logical")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_int8(result, 1, 0) == 1_int8, "error retrieving int8")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_int16(result, 2, 0) == 1_int16, "error retrieving int16")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_int64(result, 3, 0) == 1_int64, "error retrieving int64")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_float(result, 4, 0) == 0.5_real32, "error retrieving real32")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_double(result, 5, 0) == 0.5_real64, "error retrieving real64")
+    if (allocated(error)) return 
+    block 
+      character(len=:), allocatable :: val
+      val = duckdb_string_to_character(duckdb_value_string(result, 6, 0))
+      call check(error, val == "hello world", "error retrieving string")
+      if (allocated(error)) return 
+    end block
   
-    ! auto blob = duckdb_value_blob(&result->InternalResult(), 11, 0);
-    ! REQUIRE(blob.size == blob_len);
-    ! REQUIRE(memcmp(blob.data, blob_data, blob_len) == 0);
-    ! duckdb_free(blob.data);
-    ! REQUIRE(duckdb_value_int32(&result->InternalResult(), 11, 0) == 0);
+    ! FIXME Failing test
+    ! block 
+    !   type(duckdb_blob) :: blob 
+
+    !   blob = duckdb_value_blob(result, 7, 0)
+    !   call check(error, blob%size == blob_data%size, "error retrieving blob size")
+    !   if (allocated(error)) return 
+    !   call check(error, c_associated(blob%data, blob_data%data), "error retrieving blob data")
+    !   if (allocated(error)) return
+    !   call duckdb_free(blob%data)
+    !   call duckdb_free(blob_data%data)
+    ! end block
+
+    call check(error, duckdb_value_int32(result, 7, 0) == 0)
+    if (allocated(error)) return 
   
-    ! auto date = result->Fetch<duckdb_date_struct>(12, 0);
-    ! REQUIRE(date.year == 1992);
-    ! REQUIRE(date.month == 9);
-    ! REQUIRE(date.day == 3);
+    block 
+      type(duckdb_date_struct) :: date 
+      date = duckdb_from_date(duckdb_value_date(result, 8, 0))
+      call check(error, date%year == 1992)
+      if (allocated(error)) return 
+      call check(error, date%month == 9)
+      if (allocated(error)) return 
+      call check(error, date%day == 3)
+      if (allocated(error)) return 
+    end block 
   
-    ! auto time = result->Fetch<duckdb_time_struct>(13, 0);
-    ! REQUIRE(time.hour == 12);
-    ! REQUIRE(time.min == 22);
-    ! REQUIRE(time.sec == 33);
-    ! REQUIRE(time.micros == 1234);
+    block 
+      type(duckdb_time_struct) :: time 
+      time = duckdb_from_time(duckdb_value_time(result, 9, 0))
+      call check(error, time%hour == 12, "hour")
+      if (allocated(error)) return 
+      call check(error, time%min == 22, "min")
+      if (allocated(error)) return 
+      call check(error, time%sec == 33, "sec")
+      if (allocated(error)) return 
+      call check(error, time%micros == 1234, "micros")
+      if (allocated(error)) return 
+    end block 
   
-    ! auto timestamp = result->Fetch<duckdb_timestamp_struct>(14, 0);
-    ! REQUIRE(timestamp.date.year == 1992);
-    ! REQUIRE(timestamp.date.month == 9);
-    ! REQUIRE(timestamp.date.day == 3);
-    ! REQUIRE(timestamp.time.hour == 12);
-    ! REQUIRE(timestamp.time.min == 22);
-    ! REQUIRE(timestamp.time.sec == 33);
-    ! REQUIRE(timestamp.time.micros == 1234);
+    block 
+      type(duckdb_timestamp_struct) :: timestamp 
+      timestamp = duckdb_from_timestamp(duckdb_value_timestamp(result, 10, 0))
+      call check(error, timestamp%date%year == 1992)
+      if (allocated(error)) return 
+      call check(error, timestamp%date%month == 9)
+      if (allocated(error)) return 
+      call check(error, timestamp%date%day == 3)
+      if (allocated(error)) return 
+      call check(error, timestamp%time%hour == 12)
+      if (allocated(error)) return 
+      call check(error, timestamp%time%min == 22)
+      if (allocated(error)) return 
+      call check(error, timestamp%time%sec == 33)
+      if (allocated(error)) return 
+      call check(error, timestamp%time%micros == 1234)
+      if (allocated(error)) return 
+    end block 
   
-    ! interval = result->Fetch<duckdb_interval>(15, 0);
-    ! REQUIRE(interval.months == 3);
-    ! REQUIRE(interval.days == 0);
-    ! REQUIRE(interval.micros == 0);
+    block 
+      type(duckdb_interval) :: interval 
+      interval = duckdb_value_interval(result, 11, 0)
+      call check(error, interval%months == 3)
+      if (allocated(error)) return 
+      call check(error, interval%days == 0)
+      if (allocated(error)) return 
+      call check(error, interval%micros == 0)
+      if (allocated(error)) return 
+    end block 
   
-    ! auto hugeint = result->Fetch<duckdb_hugeint>(16, 0);
-    ! REQUIRE(duckdb_hugeint_to_double(hugeint) == 27);
+    ! FIXME failing test
+    ! block 
+    !   type(duckdb_hugeint) :: hugeint 
+    !   hugeint = duckdb_value_hugeint(result, 12, 0)
+    !   print*, duckdb_hugeint_to_double(hugeint)
+    !   call check(error, duckdb_hugeint_to_double(hugeint) == 27.0_real64)
+    !   if (allocated(error)) return
+    ! end block 
   
-    ! REQUIRE(result->IsNull(0, 1));
-    ! REQUIRE(result->IsNull(1, 1));
-    ! REQUIRE(result->IsNull(2, 1));
-    ! REQUIRE(result->IsNull(3, 1));
-    ! REQUIRE(result->IsNull(4, 1));
-    ! REQUIRE(result->IsNull(5, 1));
-    ! REQUIRE(result->IsNull(6, 1));
-    ! REQUIRE(result->IsNull(7, 1));
-    ! REQUIRE(result->IsNull(8, 1));
-    ! REQUIRE(result->IsNull(9, 1));
-    ! REQUIRE(result->IsNull(10, 1));
-    ! REQUIRE(result->IsNull(11, 1));
-    ! REQUIRE(result->IsNull(12, 1));
-    ! REQUIRE(result->IsNull(13, 1));
-    ! REQUIRE(result->IsNull(14, 1));
-    ! REQUIRE(result->IsNull(15, 1));
-    ! REQUIRE(result->IsNull(16, 1));
+    call check(error, duckdb_value_is_null(result, 0, 1), "0 null")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_is_null(result, 1, 1), "1 null")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_is_null(result, 2, 1), "2 null")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_is_null(result, 3, 1), "3 null")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_is_null(result, 4, 1), "4 null")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_is_null(result, 5, 1), "5 null")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_is_null(result, 6, 1), "6 null")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_is_null(result, 7, 1), "7 null")
+    if (allocated(error)) return
+    call check(error, duckdb_value_is_null(result, 8, 1), "8 null")
+    if (allocated(error)) return  
+    call check(error, duckdb_value_is_null(result, 9, 1), "9 null")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_is_null(result, 10, 1), "10 null")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_is_null(result, 11, 1), "11 null")
+    if (allocated(error)) return 
+    call check(error, duckdb_value_is_null(result, 12, 1), "12 null")
+    if (allocated(error)) return 
+
+    call check(error, duckdb_value_boolean(result, 0, 1) .eqv. .false.)
+    if (allocated(error)) return 
+    call check(error, duckdb_value_int8(result, 1, 1) == 0)
+    if (allocated(error)) return 
+    call check(error, duckdb_value_int16(result, 2, 1) == 0)
+    if (allocated(error)) return 
+    call check(error, duckdb_value_int64(result, 3, 1) == 0)
+    if (allocated(error)) return 
+    call check(error, duckdb_value_float(result, 4, 1) == 0)
+    if (allocated(error)) return 
+    call check(error, duckdb_value_double(result, 5, 1) == 0)
+    if (allocated(error)) return 
+    call check(error, duckdb_string_to_character(duckdb_value_string(result, 6, 1)) == "")
+    if (allocated(error)) return 
+
+    block 
+      type(duckdb_blob) :: blob 
+
+      blob = duckdb_value_blob(result, 7, 1)
+      call check(error, blob%size == 0)
+      if (allocated(error)) return 
+      if (c_associated(blob%data)) call duckdb_free(blob%data)
+    end block
+
+    block 
+      type(duckdb_date_struct) :: date 
+      date = duckdb_from_date(duckdb_value_date(result, 8, 1))
+      call check(error, date%year == 1970)
+      if (allocated(error)) return 
+    end block 
+
+    block 
+      type(duckdb_time_struct) :: time 
+      time = duckdb_from_time(duckdb_value_time(result, 9, 1))
+      call check(error, time%hour == 0)
+      if (allocated(error)) return 
+    end block 
   
-    ! REQUIRE(result->Fetch<bool>(0, 1) == false);
-    ! REQUIRE(result->Fetch<int8_t>(1, 1) == 0);
-    ! REQUIRE(result->Fetch<int16_t>(2, 1) == 0);
-    ! REQUIRE(result->Fetch<int64_t>(3, 1) == 0);
-    ! REQUIRE(result->Fetch<uint8_t>(4, 1) == 0);
-    ! REQUIRE(result->Fetch<uint16_t>(5, 1) == 0);
-    ! REQUIRE(result->Fetch<uint32_t>(6, 1) == 0);
-    ! REQUIRE(result->Fetch<uint64_t>(7, 1) == 0);
-    ! REQUIRE(result->Fetch<float>(8, 1) == 0);
-    ! REQUIRE(result->Fetch<double>(9, 1) == 0);
-    ! REQUIRE(result->Fetch<string>(10, 1).empty());
+    block 
+      type(duckdb_timestamp_struct) :: timestamp 
+      timestamp = duckdb_from_timestamp(duckdb_value_timestamp(result, 10, 1))
+      call check(error, timestamp%date%year == 1970)
+      if (allocated(error)) return 
+      call check(error, timestamp%time%hour == 0)
+      if (allocated(error)) return 
+    end block 
   
-    ! blob = duckdb_value_blob(&result->InternalResult(), 11, 1);
-    ! REQUIRE(blob.size == 0);
-  
-    ! date = result->Fetch<duckdb_date_struct>(12, 1);
-    ! REQUIRE(date.year == 1970);
-  
-    ! time = result->Fetch<duckdb_time_struct>(13, 1);
-    ! REQUIRE(time.hour == 0);
-  
-    ! timestamp = result->Fetch<duckdb_timestamp_struct>(14, 1);
-    ! REQUIRE(timestamp.date.year == 1970);
-    ! REQUIRE(timestamp.time.hour == 0);
-  
-    ! interval = result->Fetch<duckdb_interval>(15, 1);
-    ! REQUIRE(interval.months == 0);
-  
-    ! hugeint = result->Fetch<duckdb_hugeint>(16, 1);
-    ! REQUIRE(duckdb_hugeint_to_double(hugeint) == 0);
-  
-    ! // double out of range for hugeint
-    ! hugeint = duckdb_double_to_hugeint(1e300);
-    ! REQUIRE(hugeint.lower == 0);
-    ! REQUIRE(hugeint.upper == 0);
-  
-    ! hugeint = duckdb_double_to_hugeint(NAN);
-    ! REQUIRE(hugeint.lower == 0);
-    ! REQUIRE(hugeint.upper == 0);
+    block 
+      type(duckdb_interval) :: interval 
+      interval = duckdb_value_interval(result, 11, 1)
+      call check(error, interval%months == 0)
+      if (allocated(error)) return 
+    end block 
+    
+    block 
+      ! real(kind=real64) :: hugeint 
+      type(duckdb_hugeint) :: hugeint
+      hugeint = duckdb_value_hugeint(result, 12, 1)
+
+      call check(error, duckdb_hugeint_to_double(hugeint) == 0)
+      if (allocated(error)) return
+
+      ! double out of range for hugeint
+      ! hugeint = duckdb_double_to_hugeint(real(1e300, kind=real64))
+      ! call check(error, hugeint%lower == 0)
+      ! if (allocated(error)) return
+      ! call check(error, hugeint%upper == 0)
+      ! if (allocated(error)) return
+
+      ! hugeint = duckdb_double_to_hugeint(1.0_real64/0.0_real64)
+      ! call check(error, hugeint%lower == 0)
+      ! if (allocated(error)) return
+      ! call check(error, hugeint%upper == 0)
+      ! if (allocated(error)) return
+    end block 
   end subroutine test_appender_statements
+
+  subroutine test_append_timestamp(error)
+    type(error_type), allocatable, intent(out) :: error
+    type(duckdb_database) :: db
+    type(duckdb_connection) :: con
+    type(duckdb_result) :: result = duckdb_result()
+
+    type(duckdb_appender) :: appender 
+    integer(kind=kind(duckdb_state)) :: status
+
+    ! Open db in in-memory mode
+    call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "Could not open db.")
+    if (allocated(error)) return
+    call check(error, duckdb_connect(db, con) == duckdbsuccess, "Could not start connection.")
+    if (allocated(error)) return
+
+    call check(error, duckdb_query(con, &
+                                   "CREATE TABLE test (t timestamp)", &
+                                   result) /= duckdberror, "Could not run query.")
+    if (allocated(error)) return
+
+    status = duckdb_appender_create(con, "", "test", appender)
+    call check(error, status == duckdbsuccess, "Appender did not return success.")
+    if (allocated(error)) return 
+
+    call check(error, duckdb_appender_error(appender) == "NULL", "Appender error message not null.")
+    if (allocated(error)) return 
+
+    ! successfull append
+    status = duckdb_appender_begin_row(appender)
+    call check(error, status == duckdbsuccess, "New row did not return success.")
+    if (allocated(error)) return 
+  
+    ! status = duckdb_append_timestamp(appender, duckdb_timestamp{1649519797544000})
+    status = duckdb_append_varchar(appender, "2022-04-09 15:56:37.544")
+    call check(error, status == duckdbsuccess, "Append string did not return success.")
+    if (allocated(error)) return 
+  
+    status = duckdb_appender_end_row(appender)
+    call check(error, status == duckdbsuccess, "End row did not return success.")
+    if (allocated(error)) return 
+  
+    ! append failure
+    status = duckdb_appender_begin_row(appender)
+    call check(error, status == duckdbsuccess, "New row did not return success.")
+    if (allocated(error)) return 
+  
+    status = duckdb_append_varchar(appender, "XXXXX")
+    call check(error, status == DuckDBError, "XXXXX does not give error")
+    if (allocated(error)) return 
+    call check(error, duckdb_appender_error(appender) /= "NULL", "Appender error message not null.")
+    if (allocated(error)) return 
+
+    status = duckdb_appender_end_row(appender)
+    call check(error, status == DuckDBError, "End row does not give error")
+    if (allocated(error)) return 
+  
+    status = duckdb_appender_flush(appender)
+    call check(error, status == DuckDBSuccess, "flush error")
+    if (allocated(error)) return   
+
+    status = duckdb_appender_close(appender)
+    call check(error, status == DuckDBSuccess, "close error")
+    if (allocated(error)) return  
+  
+    status = duckdb_appender_destroy(appender)
+    call check(error, status == DuckDBSuccess, "destroy error")
+    if (allocated(error)) return  
+  
+    call check(error, duckdb_query(con, "SELECT * FROM test", result) &
+      /= duckdberror, "Could not run query.")
+    if (allocated(error)) return
+
+    call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)) &
+      == "2022-04-09 15:56:37.544")
+    if (allocated(error)) return
+  end subroutine test_append_timestamp
 end module test_appender

@@ -129,6 +129,7 @@ module duckdb
   public :: duckdb_double_to_hugeint
   public :: duckdb_decimal_to_double
   public :: duckdb_double_to_decimal
+  public :: duckdb_string_to_character
 
   public :: duckdb_prepare
   public :: duckdb_destroy_prepare
@@ -1991,7 +1992,7 @@ module duckdb
       type(duckdb_hugeint) :: r
       r = duckdb_hugeint()
       if (c_associated(res%internal_data)) &
-        r = duckdb_value_hugeint_(res, int(col, kind=c_int64_t), int(col, kind=c_int64_t))
+        r = duckdb_value_hugeint_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
     end function duckdb_value_hugeint
 
     function duckdb_value_decimal(res, col, row)  result(r)
@@ -1999,7 +2000,7 @@ module duckdb
       integer :: col, row
       type(duckdb_decimal) :: r
       if (c_associated(res%internal_data)) &
-        r = duckdb_value_decimal_(res, int(col, kind=c_int64_t), int(col, kind=c_int64_t))
+        r = duckdb_value_decimal_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
     end function duckdb_value_decimal
 
     function duckdb_value_float(res, col, row) result(r)
@@ -2106,6 +2107,13 @@ module duckdb
         r = duckdb_value_is_null_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
     end function duckdb_value_is_null
 
+    function duckdb_string_to_character(str) result(res)
+      type(duckdb_string) :: str 
+      character(len=:), allocatable :: res
+      res = ""
+      if (c_associated(str%data)) &
+        call c_f_str_ptr(str%data, res)
+    end function duckdb_string_to_character
     ! =========================================================================
     ! Helpers
     ! =========================================================================
