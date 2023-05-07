@@ -26,6 +26,7 @@ module test_fortran_api
         new_unittest("basic-date-test", test_date_columns),       &
         new_unittest("basic-time-test", test_time_columns),       &
         new_unittest("basic-blobs-test", test_blob_columns),      &
+        new_unittest("basic-boolean-test", test_boolean_columns), &
         new_unittest("basic-decimal-test", test_decimal_columns)  &
         ]
 
@@ -462,9 +463,7 @@ module test_fortran_api
         if (allocated(error)) return      
         block   
           type(duckdb_hugeint) :: hi 
-          ! hi = duckdb_value_hugeint_(result, 0_c_int64_t, 1_c_int64_t)
           hi = duckdb_value_hugeint(result, 0, 1)
-          print*, types(i), hi%lower, hi%upper, duckdb_hugeint_to_double(hi)
           call check(error, duckdb_hugeint_to_double(hi), 1.0_real64, &
             trim(types(i))//": 1 hugeint")
           if (allocated(error)) return        
@@ -767,6 +766,58 @@ module test_fortran_api
 
     end subroutine test_blob_columns
 
+    subroutine test_boolean_columns(error)
+
+      type(error_type), allocatable, intent(out) :: error
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: conn
+      type(duckdb_result) :: result = duckdb_result()
+
+      type(duckdb_time_struct) :: time_val
+
+      ! Open data in in-memory mode
+      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "SET default_null_order='nulls_first'", &
+        result) == duckdbsuccess, "null order query")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "CREATE TABLE booleans(b BOOLEAN)", &
+        result) == duckdbsuccess, "create boolean table")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, &
+        "INSERT INTO booleans VALUES (42 > 60), (42 > 20), (42 > NULL)", &
+        result) == duckdbsuccess, "insert boolean values")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "SELECT * FROM booleans ORDER BY b", &
+        result) == duckdbsuccess, "select boolean values")
+      if (allocated(error)) return
+
+      call check(error, duckdb_value_is_null(result, 0, 0), &
+        "boolean: 0 null")
+      if (allocated(error)) return  
+      call check(error, .not. duckdb_value_boolean(result, 0, 0), "boolean: 1")
+      if (allocated(error)) return      
+      call check(error, .not. duckdb_value_boolean(result, 0, 1), "boolean: 2")
+      if (allocated(error)) return 
+      call check(error, duckdb_value_boolean(result, 0, 2), "boolean: 3")
+      if (allocated(error)) return                        
+      call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 2)), &
+      "true", "boolean: 3 string")
+      if (allocated(error)) return
+
+      call duckdb_destroy_result(result)
+      call duckdb_disconnect(conn)
+      call duckdb_close(db)
+
+    end subroutine test_boolean_columns
+
     subroutine test_decimal_columns(error)
 
       type(error_type), allocatable, intent(out) :: error
@@ -802,7 +853,6 @@ module test_fortran_api
       block 
         type(duckdb_decimal) :: decimal 
         decimal = duckdb_value_decimal(result, 0, 1)
-        print*, duckdb_decimal_to_double(decimal)
         call check(error, duckdb_decimal_to_double(decimal), 12.3_real64, &
           "Decimal value mismatch")
         if (allocated(error)) return 
