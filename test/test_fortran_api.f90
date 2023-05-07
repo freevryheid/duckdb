@@ -729,10 +729,14 @@ module test_fortran_api
       type(duckdb_result) :: result = duckdb_result()
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
       if (allocated(error)) return
 
-      call check(error, duckdb_connect(db, conn) == duckdbsuccess)
+      call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "SET default_null_order='nulls_first'", &
+        result) == duckdbsuccess, "null order query")
       if (allocated(error)) return
 
       call check(error, &
@@ -741,7 +745,8 @@ module test_fortran_api
       if (allocated(error)) return
 
       call check(error, &
-        duckdb_query(conn, "INSERT INTO blobs VALUES ('hello\\x12world'), ('\\x00'), (NULL)", &
+        duckdb_query(conn, &
+        "INSERT INTO blobs VALUES ('hello\x12world'), ('\x00'), (NULL)", &
         result) == duckdbsuccess, "blob table insert error.")
       if (allocated(error)) return
 
@@ -755,10 +760,27 @@ module test_fortran_api
       
       block 
         type(duckdb_blob) :: blob 
+        character(len=11), pointer :: tmp 
         blob = duckdb_value_blob(result, 0, 0)
         call check(error, blob%size == 11, "Blob size mismatch")
-        if (allocated(error)) return 
+        if (allocated(error)) return
+        ! FIXME how to do this in fortran? 
+        ! REQUIRE(memcmp(blob.data, "hello\012world", 11));
+        call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)), &
+        'hello\x12world', "blob value mismatch")
+        if (allocated(error)) return
+        call check(error, duckdb_value_is_null(result, 0, 2), "blob null value")
+        if (allocated(error)) return
+        blob = duckdb_value_blob(result, 0, 2)
+        call check(error, .not. c_associated(blob%data), "blob null value pointer")
+        if (allocated(error)) return
+        call check(error, blob%size == 0, "blob null value size")
+        if (allocated(error)) return        
       end block
+
+      call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 1)), &
+        '\x00', "null character mismatch")
+      if (allocated(error)) return
 
       call duckdb_destroy_result(result)
       call duckdb_disconnect(conn)
