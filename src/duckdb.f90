@@ -1991,8 +1991,9 @@ module duckdb
       integer :: col, row
       type(duckdb_hugeint) :: r
       r = duckdb_hugeint()
+      ! print *, c_associated(res%internal_data), col, row
       if (c_associated(res%internal_data)) &
-        r = duckdb_value_hugeint_(res, int(col, kind=c_int64_t), int(col, kind=c_int64_t))
+        r = duckdb_value_hugeint_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
     end function duckdb_value_hugeint
 
     function duckdb_value_decimal(res, col, row)  result(r)
@@ -2000,7 +2001,7 @@ module duckdb
       integer :: col, row
       type(duckdb_decimal) :: r
       if (c_associated(res%internal_data)) &
-        r = duckdb_value_decimal_(res, int(col, kind=c_int64_t), int(col, kind=c_int64_t))
+        r = duckdb_value_decimal_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
     end function duckdb_value_decimal
 
     function duckdb_value_float(res, col, row) result(r)
