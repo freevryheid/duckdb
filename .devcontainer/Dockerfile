@@ -1,7 +1,7 @@
-FROM --platform=linux/amd64 ubuntu:latest
+FROM ubuntu:latest
 
 ARG FPM_BIN="https://github.com/fortran-lang/fpm/releases/download/v0.7.0/fpm-0.7.0-linux-x86_64"
-ARG DUCKDB_DISTR="https://github.com/duckdb/duckdb/releases/download/v0.7.1/libduckdb-linux-amd64.zip"
+ARG DUCKDB_DISTR="https://github.com/duckdb/duckdb/releases/download/v0.7.1/libduckdb-linux-aarch64.zip"
 
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install --no-install-recommends \
@@ -10,7 +10,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive && \
     unzip \
     python3-pip \ 
     wget \
-    gfortran-11
+    gfortran-11 \
+    valgrind
 
 RUN pip3 install --no-input fortls fprettify
 
