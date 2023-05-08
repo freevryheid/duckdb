@@ -1157,7 +1157,19 @@ module test_fortran_api
       if (allocated(error)) return
       call check(error, .not. c_associated(stmt%prep), "uninitialised statement")
       if (allocated(error)) return
-  
+
+      call check(error, duckdb_prepare(conn, "SELECT * from INVALID_TABLE", stmt), &
+        duckdberror, "prepare with invalid query")
+      if (allocated(error)) return
+      call check(error, duckdb_prepare_error(stmt) /= "", "empty prepare error")
+      if (allocated(error)) return
+
+      stmt = duckdb_prepared_statement()
+      call check(error, duckdb_prepare_error(stmt) == "", "non empty prepare error")
+      if (allocated(error)) return    
+        
+      call duckdb_destroy_prepare(stmt)
+
     end subroutine test_errors
 
     logical function hugeint_equals_hugeint(left, right) result(res)
