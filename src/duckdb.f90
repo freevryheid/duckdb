@@ -7,7 +7,7 @@ module duckdb
   public :: duckdb_database
   public :: duckdb_connection
 
-  ! public ::  duckdb_prepared_statement
+  public ::  duckdb_prepared_statement
   ! public :: duckdb_extracted_statements
   ! public :: duckdb_pending_result
   public :: duckdb_appender
@@ -431,12 +431,12 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API duckdb_state duckdb_open(const char *path, duckdb_database *out_database);
-    function duckdb_open(path, out_database) bind(c, name='duckdb_open') result(res)
-      import :: duckdb_state, c_ptr, duckdb_database
+    function duckdb_open_(path, out_database) bind(c, name='duckdb_open') result(res)
+      import :: duckdb_state, c_char, duckdb_database
       integer(kind(duckdb_state)) :: res
-      type(c_ptr), value :: path
+      character(kind=c_char), value :: path
       type(duckdb_database) :: out_database
-    end function duckdb_open
+    end function duckdb_open_
 
     ! DUCKDB_API duckdb_state duckdb_open_ext(const char *path, duckdb_database *out_database, duckdb_config config,char **out_error);
     ! TODO
@@ -1811,7 +1811,13 @@ module duckdb
     ! =========================================================================
     ! Open/Connect
     ! =========================================================================
-
+    function duckdb_open(path, out_database) result(res)
+      integer(kind(duckdb_state)) :: res
+      character(len=*) :: path 
+      type(duckdb_database) :: out_database
+      res = duckdb_open_(path//c_null_char, out_database)
+    end function duckdb_open
+    
     function duckdb_library_version() result(res)
       character(len=:), allocatable :: res
       type(c_ptr) :: tmp
