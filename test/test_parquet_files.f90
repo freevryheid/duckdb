@@ -26,7 +26,7 @@ end subroutine collect_parquet_files
     integer :: i, j, nc, nr
 
     ! Open data in in-memory mode
-    call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+    call check(error, duckdb_open("", db) == duckdbsuccess)
     if (allocated(error)) return
 
     call check(error, duckdb_connect(db, con) == duckdbsuccess)

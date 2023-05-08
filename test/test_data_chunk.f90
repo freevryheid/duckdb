@@ -44,7 +44,7 @@ subroutine test_chunks(error)
   logical :: is_valid
 
   ! Open db in in-memory mode
-  call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+  call check(error, duckdb_open("", db) == duckdbsuccess)
   if (allocated(error)) return
 
   call check(error, duckdb_connect(db, con) == duckdbsuccess)
@@ -183,7 +183,7 @@ subroutine test_data_chunk_api(error)
   integer(kind=int64) :: col1_validity, col2_validity
 
   ! Open db in in-memory mode
-  call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+  call check(error, duckdb_open("", db) == duckdbsuccess)
   if (allocated(error)) return
 
   call check(error, duckdb_connect(db, con) == duckdbsuccess)
