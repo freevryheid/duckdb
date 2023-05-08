@@ -32,7 +32,8 @@ module test_fortran_api
         new_unittest("basic-time-test", test_time_columns),       &
         new_unittest("basic-blobs-test", test_blob_columns),      &
         new_unittest("basic-boolean-test", test_boolean_columns), &
-        new_unittest("basic-decimal-test", test_decimal_columns)  &
+        new_unittest("basic-decimal-test", test_decimal_columns), &
+        new_unittest("basic-api-error-test", test_errors)         &
         ]
 
     end subroutine collect_fortran_api
@@ -1129,7 +1130,8 @@ module test_fortran_api
       type(duckdb_database) :: db
       type(duckdb_connection) :: conn, con_null
       type(duckdb_result) :: result = duckdb_result()
-      type(duckdb_prepared_statement) :: stmt
+      type(duckdb_prepared_statement) :: stmt = duckdb_prepared_statement()
+      type(duckdb_arrow) :: out_arrow
 
       ! cannot open database in random directory
       call check(error, duckdb_open("/this/directory/should/not/exist/hopefully", db), &
@@ -1167,9 +1169,46 @@ module test_fortran_api
       stmt = duckdb_prepared_statement()
       call check(error, duckdb_prepare_error(stmt) == "", "non empty prepare error")
       if (allocated(error)) return    
-        
+
       call duckdb_destroy_prepare(stmt)
 
+      call check(error, duckdb_bind_boolean(stmt, 0, .true.), &
+        duckdberror, "bind success")
+      if (allocated(error)) return    
+      call check(error, duckdb_execute_prepared(stmt, result), &
+        duckdberror, "execute prepared success")
+      if (allocated(error)) return    
+
+      call duckdb_destroy_prepare(stmt)
+
+      ! fail to query arrow
+      call check(error, duckdb_query_arrow(conn, "SELECT * from INVALID_TABLE", out_arrow), &
+        duckdberror, "invalid query arrow success")
+      if (allocated(error)) return    
+      call check(error, duckdb_query_arrow_error(out_arrow) /= "NULL", "NULL error message")
+      if (allocated(error)) return    
+
+      call duckdb_destroy_arrow(out_arrow)
+
+      ! various edge cases/nullptrs
+      ! REQUIRE(duckdb_query_arrow_schema(out_arrow, nullptr) == DuckDBSuccess);
+      ! REQUIRE(duckdb_query_arrow_array(out_arrow, nullptr) == DuckDBSuccess);
+
+      ! // default duckdb_value_date on invalid date
+      ! result = tester.Query("SELECT 1, true, 'a'");
+      ! REQUIRE_NO_FAIL(*result);
+      ! duckdb_date_struct d = result->Fetch<duckdb_date_struct>(0, 0);
+      ! REQUIRE(d.year == 1970);
+      ! REQUIRE(d.month == 1);
+      ! REQUIRE(d.day == 1);
+      ! d = result->Fetch<duckdb_date_struct>(1, 0);
+      ! REQUIRE(d.year == 1970);
+      ! REQUIRE(d.month == 1);
+      ! REQUIRE(d.day == 1);
+      ! d = result->Fetch<duckdb_date_struct>(2, 0);
+      ! REQUIRE(d.year == 1970);
+      ! REQUIRE(d.month == 1);
+      ! REQUIRE(d.day == 1);
     end subroutine test_errors
 
     logical function hugeint_equals_hugeint(left, right) result(res)

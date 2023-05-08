@@ -11,7 +11,7 @@ module duckdb
   ! public :: duckdb_extracted_statements
   ! public :: duckdb_pending_result
   public :: duckdb_appender
-  ! public :: duckdb_arrow
+  public :: duckdb_arrow
   ! public :: duckdb_arrow_schema
   ! public :: duckdb_config
   ! public :: duckdb_arrow_array
@@ -161,7 +161,7 @@ module duckdb
   ! public :: duckdb_bind_string ! helper function to wrap duckdb_bind_varchar_length
   ! public :: duckdb_bind_blob ! the way it should work
   public :: duckdb_bind_null
-  ! public :: duckdb_execute_prepared
+  public :: duckdb_execute_prepared
   ! public :: duckdb_execute_prepared_arrow
 
   public :: duckdb_data_chunk_get_size
@@ -231,6 +231,10 @@ module duckdb
   public :: duckdb_append_blob
   public :: duckdb_append_null
   public :: duckdb_append_data_chunk
+
+  public :: duckdb_query_arrow 
+  public :: duckdb_query_arrow_error
+  public :: duckdb_destroy_arrow
 
   public :: STANDARD_VECTOR_SIZE
 
@@ -1080,6 +1084,12 @@ module duckdb
     end function duckdb_bind_null_
 
     ! DUCKDB_API duckdb_state duckdb_execute_prepared(duckdb_prepared_statement prepared_statement, duckdb_result *out_result);
+    function duckdb_execute_prepared(prepared_statement, out_result) bind(c, name='duckdb_execute_prepared') result(res)
+      import :: duckdb_state, duckdb_prepared_statement, duckdb_result
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_prepared_statement), value :: prepared_statement
+      type(duckdb_result) :: out_result
+    end function duckdb_execute_prepared
 
     ! DUCKDB_API duckdb_state duckdb_execute_prepared_arrow(duckdb_prepared_statement prepared_statement, duckdb_arrow *out_result);
 
@@ -1767,6 +1777,13 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API duckdb_state duckdb_query_arrow(duckdb_connection connection, const char *query, duckdb_arrow *out_result);
+    function duckdb_query_arrow_(connection, query, out_result) bind(c, name='duckdb_query_arrow') result(res)
+      import :: duckdb_state, duckdb_connection, duckdb_arrow, c_char
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_connection), value :: connection
+      character(kind=c_char) :: query
+      type(duckdb_arrow) :: out_result
+    end function duckdb_query_arrow_
 
     ! DUCKDB_API duckdb_state duckdb_query_arrow_schema(duckdb_arrow result, duckdb_arrow_schema *out_schema);
 
@@ -1779,8 +1796,17 @@ module duckdb
     ! DUCKDB_API idx_t duckdb_arrow_rows_changed(duckdb_arrow result);
 
     ! DUCKDB_API const char *duckdb_query_arrow_error(duckdb_arrow result);
+    function duckdb_query_arrow_error_(result) bind(c, name='duckdb_query_arrow_error') result(err)
+      import :: c_ptr, duckdb_arrow
+      type(c_ptr) :: err
+      type(duckdb_arrow), value :: result
+    end function duckdb_query_arrow_error_
 
     ! DUCKDB_API void duckdb_destroy_arrow(duckdb_arrow *result);
+    subroutine duckdb_destroy_arrow(result) bind(c, name='duckdb_destroy_arrow')
+      import :: duckdb_arrow
+      type(duckdb_arrow) :: result
+    end subroutine duckdb_destroy_arrow
 
     ! =========================================================================
     ! Threading Information
@@ -2641,7 +2667,24 @@ module duckdb
     ! =========================================================================
     ! Arrow Interface
     ! =========================================================================
+    function duckdb_query_arrow(connection, query, out_result) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_connection), value :: connection
+      character(len=*) :: query
+      type(duckdb_arrow) :: out_result
+      res = duckdb_query_arrow_(connection, query//c_null_char, out_result)
+    end function duckdb_query_arrow
 
+    function duckdb_query_arrow_error(res) result(err)
+      character(len=:), allocatable :: err
+      type(c_ptr) :: tmp
+      type(duckdb_arrow) :: res
+      err = "NULL"
+      if (c_associated(res%arrw)) then
+        tmp = duckdb_query_arrow_error_(res)
+        if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
+      end if
+    end function duckdb_query_arrow_error
     ! =========================================================================
     ! Threading Information
     ! =========================================================================
