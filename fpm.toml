@@ -1,14 +1,9 @@
 name = "duckdb"
 version = "0.1.0"
-license = "license"
+license = "MIT"
 author = "Andre Smit"
 maintainer = "freevryheid@gmail.com"
 copyright = "Copyright 2023, Andre Smit"
-
-executable = [
-  { name = "main", main = "main.f90"},
-  { name = "test", main = "test.c"}
-]
 
 [build]
 link = ["duckdb"]
@@ -21,4 +16,5 @@ library = false
 
 [dev-dependencies]
 test-drive.git = "https://github.com/fortran-lang/test-drive"
-test-drive.tag = "v0.4.0"
+# stdlib = { git="https://github.com/fortran-lang/stdlib", branch="stdlib-fpm" }
+
