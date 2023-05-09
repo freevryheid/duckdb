@@ -18,7 +18,7 @@ contains
     type(error_type), allocatable, intent(out) :: error
     type(duckdb_database) :: database
     type(duckdb_connection) :: connection
-    call check(error, duckdb_open(c_null_ptr, database) == duckdbsuccess)
+    call check(error, duckdb_open("", database) == duckdbsuccess)
     if (allocated(error)) return
     call check(error, duckdb_connect(database, connection) == duckdbsuccess)
     if (allocated(error)) return
@@ -32,7 +32,7 @@ contains
     type(duckdb_connection) :: connection(100)
     integer :: i, j
     do i = 1, 10
-      call check(error, duckdb_open(c_null_ptr, database(i)) == duckdbsuccess)
+      call check(error, duckdb_open("", database(i)) == duckdbsuccess)
       if (allocated(error)) return
       do j = 1, 10
         call check(error, duckdb_connect(database(i), connection((i - 1)*10 + j)) == duckdbsuccess)

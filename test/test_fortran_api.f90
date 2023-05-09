@@ -32,7 +32,8 @@ module test_fortran_api
         new_unittest("basic-time-test", test_time_columns),       &
         new_unittest("basic-blobs-test", test_blob_columns),      &
         new_unittest("basic-boolean-test", test_boolean_columns), &
-        new_unittest("basic-decimal-test", test_decimal_columns)  &
+        new_unittest("basic-decimal-test", test_decimal_columns), &
+        new_unittest("basic-api-error-test", test_errors)         &
         ]
 
     end subroutine collect_fortran_api
@@ -47,7 +48,7 @@ module test_fortran_api
       type(c_ptr) :: data_in
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      call check(error, duckdb_open("", db) == duckdbsuccess, "open database")
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
@@ -112,7 +113,7 @@ module test_fortran_api
       type(duckdb_result) :: ddb_result = duckdb_result()
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+      call check(error, duckdb_open("", db) == duckdbsuccess)
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess)
@@ -150,7 +151,7 @@ module test_fortran_api
       character(len=:), pointer :: str
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+      call check(error, duckdb_open("", db) == duckdbsuccess)
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess)
@@ -194,7 +195,7 @@ module test_fortran_api
       type(duckdb_result) :: ddb_result = duckdb_result()
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+      call check(error, duckdb_open("", db) == duckdbsuccess)
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess)
@@ -272,7 +273,7 @@ module test_fortran_api
       type(duckdb_result) :: ddb_result = duckdb_result()
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+      call check(error, duckdb_open("", db) == duckdbsuccess)
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess)
@@ -393,7 +394,7 @@ module test_fortran_api
       integer :: i
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      call check(error, duckdb_open("", db) == duckdbsuccess, "open database")
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
@@ -505,7 +506,7 @@ module test_fortran_api
       integer :: i
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      call check(error, duckdb_open("", db) == duckdbsuccess, "open database")
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
@@ -603,7 +604,7 @@ module test_fortran_api
       type(duckdb_date_struct) :: date
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      call check(error, duckdb_open("", db) == duckdbsuccess, "open database")
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
@@ -670,7 +671,7 @@ module test_fortran_api
       type(duckdb_time_struct) :: time_val
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      call check(error, duckdb_open("", db) == duckdbsuccess, "open database")
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
@@ -734,7 +735,7 @@ module test_fortran_api
       type(duckdb_result) :: result = duckdb_result()
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      call check(error, duckdb_open("", db) == duckdbsuccess, "open database")
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
@@ -803,7 +804,7 @@ module test_fortran_api
       type(duckdb_time_struct) :: time_val
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "open database")
+      call check(error, duckdb_open("", db) == duckdbsuccess, "open database")
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
@@ -853,7 +854,7 @@ module test_fortran_api
       type(duckdb_result) :: result = duckdb_result()
 
       ! Open data in in-memory mode
-      call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess)
+      call check(error, duckdb_open("", db) == duckdbsuccess)
       if (allocated(error)) return
 
       call check(error, duckdb_connect(db, conn) == duckdbsuccess)
@@ -1123,6 +1124,93 @@ module test_fortran_api
 
     end subroutine test_decimal_columns   
     
+    subroutine test_errors(error)
+
+      type(error_type), allocatable, intent(out) :: error
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: conn, con_null
+      type(duckdb_result) :: result = duckdb_result()
+      type(duckdb_prepared_statement) :: stmt = duckdb_prepared_statement()
+      type(duckdb_arrow) :: out_arrow
+
+      ! cannot open database in random directory
+      call check(error, duckdb_open("/this/directory/should/not/exist/hopefully", db), &
+        duckdberror, "can open db in nonexisting path")
+      if (allocated(error)) return
+      call check(error, duckdb_open("", db), &
+        duckdbsuccess, "cannot open in memory db")
+      if (allocated(error)) return
+      call check(error, duckdb_connect(db, conn) == duckdbsuccess, "connect database")
+      if (allocated(error)) return
+
+      call check(error, duckdb_query(conn, "SELEC * FROM TABLE", result), &
+        duckdberror, "syntax error in query")
+      if (allocated(error)) return
+      call check(error, duckdb_query(conn, "SELECT * FROM TABLE", result), &
+        duckdberror, "bind error in query")
+      if (allocated(error)) return
+
+      ! fail prepare API calls
+      call check(error, duckdb_prepare(con_null, "SELECT 42", stmt), &
+        duckdberror, "prepare with null connection")
+      if (allocated(error)) return
+      call check(error, duckdb_prepare(conn, "", stmt), &
+        duckdberror, "prepare with empty query")
+      if (allocated(error)) return
+      call check(error, .not. c_associated(stmt%prep), "uninitialised statement")
+      if (allocated(error)) return
+
+      call check(error, duckdb_prepare(conn, "SELECT * from INVALID_TABLE", stmt), &
+        duckdberror, "prepare with invalid query")
+      if (allocated(error)) return
+      call check(error, duckdb_prepare_error(stmt) /= "", "empty prepare error")
+      if (allocated(error)) return
+
+      stmt = duckdb_prepared_statement()
+      call check(error, duckdb_prepare_error(stmt) == "", "non empty prepare error")
+      if (allocated(error)) return    
+
+      call duckdb_destroy_prepare(stmt)
+
+      call check(error, duckdb_bind_boolean(stmt, 0, .true.), &
+        duckdberror, "bind success")
+      if (allocated(error)) return    
+      call check(error, duckdb_execute_prepared(stmt, result), &
+        duckdberror, "execute prepared success")
+      if (allocated(error)) return    
+
+      call duckdb_destroy_prepare(stmt)
+
+      ! fail to query arrow
+      call check(error, duckdb_query_arrow(conn, "SELECT * from INVALID_TABLE", out_arrow), &
+        duckdberror, "invalid query arrow success")
+      if (allocated(error)) return    
+      call check(error, duckdb_query_arrow_error(out_arrow) /= "NULL", "NULL error message")
+      if (allocated(error)) return    
+
+      call duckdb_destroy_arrow(out_arrow)
+
+      ! various edge cases/nullptrs
+      ! REQUIRE(duckdb_query_arrow_schema(out_arrow, nullptr) == DuckDBSuccess);
+      ! REQUIRE(duckdb_query_arrow_array(out_arrow, nullptr) == DuckDBSuccess);
+
+      ! // default duckdb_value_date on invalid date
+      ! result = tester.Query("SELECT 1, true, 'a'");
+      ! REQUIRE_NO_FAIL(*result);
+      ! duckdb_date_struct d = result->Fetch<duckdb_date_struct>(0, 0);
+      ! REQUIRE(d.year == 1970);
+      ! REQUIRE(d.month == 1);
+      ! REQUIRE(d.day == 1);
+      ! d = result->Fetch<duckdb_date_struct>(1, 0);
+      ! REQUIRE(d.year == 1970);
+      ! REQUIRE(d.month == 1);
+      ! REQUIRE(d.day == 1);
+      ! d = result->Fetch<duckdb_date_struct>(2, 0);
+      ! REQUIRE(d.year == 1970);
+      ! REQUIRE(d.month == 1);
+      ! REQUIRE(d.day == 1);
+    end subroutine test_errors
+
     logical function hugeint_equals_hugeint(left, right) result(res)
       type(duckdb_hugeint), intent(in) :: left, right
       res = left%lower == right%lower .and. left%upper == right%upper

@@ -41,7 +41,7 @@ contains
     type(duckdb_blob) :: blob_data
 
     ! Open db in in-memory mode
-    call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "Could not open db.")
+    call check(error, duckdb_open("", db) == duckdbsuccess, "Could not open db.")
     if (allocated(error)) return
     call check(error, duckdb_connect(db, con) == duckdbsuccess, "Could not start connection.")
     if (allocated(error)) return
@@ -603,7 +603,7 @@ contains
     integer(kind=kind(duckdb_state)) :: status
 
     ! Open db in in-memory mode
-    call check(error, duckdb_open(c_null_ptr, db) == duckdbsuccess, "Could not open db.")
+    call check(error, duckdb_open("", db) == duckdbsuccess, "Could not open db.")
     if (allocated(error)) return
     call check(error, duckdb_connect(db, con) == duckdbsuccess, "Could not start connection.")
     if (allocated(error)) return

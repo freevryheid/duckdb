@@ -22,7 +22,7 @@ fortran bindings to duckdb c api
   - [x] Test blob columns
   - [x] Test boolean columns
   - [x] Test decimal columns 
-  - [ ] Test errors in C API
+  - [x] Test errors in C API
   - [ ] Test C API config
   - [ ] Issue #2058: Cleanup after execution of invalid SQL statement causes segmentation fault
   - [ ] Decimal -> Double casting issue
@@ -38,8 +38,8 @@ fortran bindings to duckdb c api
   - [ ] Test Table Function named parameters in C API
 - [ ] **test_capi_appender.cpp**
   - [ ] Test appending into DECIMAL in C API
-  - [ ] Test appender statements in C API
-  - [ ] Test append timestamp in C API
+  - [x] Test appender statements in C API
+  - [x] Test append timestamp in C API
 - [ ] **test_capi_arrow.cpp**
   - [ ] Test arrow in C API
 - [ ] **test_capi_complex_types.cpp**
