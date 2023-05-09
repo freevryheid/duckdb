@@ -33,7 +33,8 @@ module test_fortran_api
         new_unittest("basic-blobs-test", test_blob_columns),      &
         new_unittest("basic-boolean-test", test_boolean_columns), &
         new_unittest("basic-decimal-test", test_decimal_columns), &
-        new_unittest("basic-api-error-test", test_errors)         &
+        new_unittest("basic-api-error-test", test_errors),        &
+        new_unittest("basic-api-config-test", test_api_config)    &
         ]
 
     end subroutine collect_fortran_api
@@ -1233,6 +1234,45 @@ module test_fortran_api
       end block
 
     end subroutine test_errors
+
+    subroutine test_api_config(error)
+
+      type(error_type), allocatable, intent(out) :: error
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: conn
+      type(duckdb_result) :: result = duckdb_result()
+      type(duckdb_config) :: config
+      integer :: config_count, i
+
+      character(len=:), allocatable :: name, description
+
+      ! Enumerate config options
+      config_count = duckdb_config_count()
+      do i = 0, config_count - 1
+        call check(error, duckdb_get_config_flag(i, name, description) == duckdbsuccess, "get config flag")
+        if (allocated(error)) return
+        call check(error, len_trim(name) > 0, "config name")
+        if (allocated(error)) return
+        call check(error, len_trim(description) > 0, "config description")
+        if (allocated(error)) return
+      enddo
+
+      ! test config creation
+      call check(error, duckdb_create_config(config) == duckdbsuccess, "config creation")
+      if (allocated(error)) return
+
+      call check(error, duckdb_set_config(config, "access_mode", "invalid_access_mode") &
+        == duckdberror, "access_mode invalid creation")
+      if (allocated(error)) return
+      call check(error, duckdb_set_config(config, "access_mode", "read_only") &
+        == duckdbsuccess, "access_mode valid creation")
+      if (allocated(error)) return
+      call check(error, duckdb_set_config(config, "aaaa_invalidoption", "read_only") &
+        == duckdberror, "invalid option name")
+      if (allocated(error)) return 
+    
+
+    end subroutine test_api_config
 
     logical function hugeint_equals_hugeint(left, right) result(res)
       type(duckdb_hugeint), intent(in) :: left, right
