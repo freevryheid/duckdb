@@ -12,9 +12,9 @@ module duckdb
   ! public :: duckdb_pending_result
   public :: duckdb_appender
   public :: duckdb_arrow
-  ! public :: duckdb_arrow_schema
+  public :: duckdb_arrow_schema
   ! public :: duckdb_config
-  ! public :: duckdb_arrow_array
+  public :: duckdb_arrow_array
 
   public :: duckdb_logical_type
   public :: duckdb_data_chunk
@@ -233,6 +233,8 @@ module duckdb
   public :: duckdb_append_data_chunk
 
   public :: duckdb_query_arrow 
+  public :: duckdb_query_arrow_schema 
+  public :: duckdb_query_arrow_array
   public :: duckdb_query_arrow_error
   public :: duckdb_destroy_arrow
 
@@ -1786,8 +1788,20 @@ module duckdb
     end function duckdb_query_arrow_
 
     ! DUCKDB_API duckdb_state duckdb_query_arrow_schema(duckdb_arrow result, duckdb_arrow_schema *out_schema);
+    function duckdb_query_arrow_schema(result, out_schema) bind(c, name='duckdb_query_arrow_schema') result(res)
+      import :: duckdb_state, duckdb_arrow, duckdb_arrow_schema
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_arrow), value :: result
+      type(duckdb_arrow_schema) :: out_schema
+    end function duckdb_query_arrow_schema
 
     ! DUCKDB_API duckdb_state duckdb_query_arrow_array(duckdb_arrow result, duckdb_arrow_array *out_array);
+    function duckdb_query_arrow_array(result, out_array) bind(c, name='duckdb_query_arrow_array') result(res)
+      import :: duckdb_state, duckdb_arrow, duckdb_arrow_array
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_arrow), value :: result
+      type(duckdb_arrow_array) :: out_array
+    end function duckdb_query_arrow_array
 
     ! DUCKDB_API idx_t duckdb_arrow_column_count(duckdb_arrow result);
 
@@ -2198,8 +2212,8 @@ module duckdb
       character(len=*) :: query
       character(len=:), allocatable :: sql
       type(duckdb_prepared_statement) :: out_prepared_statement
-      sql = query // c_null_char ! convert to c string
-      res = duckdb_prepare_(connection, sql, out_prepared_statement)
+      ! sql = query // c_null_char ! convert to c string
+      res = duckdb_prepare_(connection, query//c_null_char, out_prepared_statement)
     end function duckdb_prepare
 
     function duckdb_prepare_error(ps) result(err)

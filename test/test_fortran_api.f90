@@ -1167,7 +1167,7 @@ module test_fortran_api
       if (allocated(error)) return
 
       stmt = duckdb_prepared_statement()
-      call check(error, duckdb_prepare_error(stmt) == "", "non empty prepare error")
+      call check(error, duckdb_prepare_error(stmt) == "NULL", "non empty prepare error")
       if (allocated(error)) return    
 
       call duckdb_destroy_prepare(stmt)
@@ -1191,24 +1191,47 @@ module test_fortran_api
       call duckdb_destroy_arrow(out_arrow)
 
       ! various edge cases/nullptrs
-      ! REQUIRE(duckdb_query_arrow_schema(out_arrow, nullptr) == DuckDBSuccess);
-      ! REQUIRE(duckdb_query_arrow_array(out_arrow, nullptr) == DuckDBSuccess);
+      block 
+        type(duckdb_arrow_schema) :: schema_uninitialised
+        call check(error, duckdb_query_arrow_schema(out_arrow, schema_uninitialised) == duckdbsuccess, "error on arrow schema")
+        if (allocated(error)) return    
+      end block 
 
-      ! // default duckdb_value_date on invalid date
-      ! result = tester.Query("SELECT 1, true, 'a'");
-      ! REQUIRE_NO_FAIL(*result);
-      ! duckdb_date_struct d = result->Fetch<duckdb_date_struct>(0, 0);
-      ! REQUIRE(d.year == 1970);
-      ! REQUIRE(d.month == 1);
-      ! REQUIRE(d.day == 1);
-      ! d = result->Fetch<duckdb_date_struct>(1, 0);
-      ! REQUIRE(d.year == 1970);
-      ! REQUIRE(d.month == 1);
-      ! REQUIRE(d.day == 1);
-      ! d = result->Fetch<duckdb_date_struct>(2, 0);
-      ! REQUIRE(d.year == 1970);
-      ! REQUIRE(d.month == 1);
-      ! REQUIRE(d.day == 1);
+      block 
+        type(duckdb_arrow_array) :: array_uninitialised
+        call check(error, duckdb_query_arrow_array(out_arrow, array_uninitialised) == duckdbsuccess, "error on arrow array")
+        if (allocated(error)) return   
+      end block
+
+      ! default duckdb_value_date on invalid date
+      call check(error, duckdb_query(conn, "SELECT 1, true, 'a'", result), &
+        duckdberror, "invalid date query")
+      if (allocated(error)) return
+      block 
+        type(duckdb_date_struct) :: d 
+        d = duckdb_from_date(duckdb_value_date(result, 0, 0))
+        call check(error, d%year == 1970, "year of invalid date")
+        if (allocated(error)) return        
+        call check(error, d%month == 1, "month of invalid date")
+        if (allocated(error)) return        
+        call check(error, d%day == 1, "day of invalid date")
+        if (allocated(error)) return
+        d = duckdb_from_date(duckdb_value_date(result, 1, 0))
+        call check(error, d%year == 1970, "year of invalid date 2")
+        if (allocated(error)) return        
+        call check(error, d%month == 1, "month of invalid date 2")
+        if (allocated(error)) return        
+        call check(error, d%day == 1, "day of invalid date 2")
+        if (allocated(error)) return        
+        d = duckdb_from_date(duckdb_value_date(result, 2, 0))
+        call check(error, d%year == 1970, "year of invalid date 3")
+        if (allocated(error)) return        
+        call check(error, d%month == 1, "month of invalid date 3")
+        if (allocated(error)) return        
+        call check(error, d%day == 1, "day of invalid date 3")
+        if (allocated(error)) return        
+      end block
+
     end subroutine test_errors
 
     logical function hugeint_equals_hugeint(left, right) result(res)
