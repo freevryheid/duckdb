@@ -1244,7 +1244,7 @@ module test_fortran_api
       type(duckdb_config) :: config
       integer :: config_count, i
 
-      character(len=:), allocatable :: name, description
+      character(len=:), allocatable :: name, description, error_msg
 
       ! Enumerate config options
       config_count = duckdb_config_count()
@@ -1271,7 +1271,16 @@ module test_fortran_api
         == duckdberror, "invalid option name")
       if (allocated(error)) return 
     
+      ! cannot open an in-memory database in read-only mode
+      error_msg = ""
+      call check(error, duckdb_open_ext(":memory:", db, config, error_msg) &
+        == duckdberror, "can open read only, in memory db")
+      if (allocated(error)) return 
 
+      call check(error, len_trim(error_msg) > 0, "empty error message")
+      if (allocated(error)) return    
+      
+      
     end subroutine test_api_config
 
     logical function hugeint_equals_hugeint(left, right) result(res)

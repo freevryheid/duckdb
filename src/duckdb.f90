@@ -75,6 +75,7 @@ module duckdb
   public :: duckdbsuccess
   public :: duckdberror
   public :: duckdb_open
+  public :: duckdb_open_ext
   public :: duckdb_close
   public :: duckdb_connect
   public :: duckdb_disconnect
@@ -445,7 +446,14 @@ module duckdb
     end function duckdb_open_
 
     ! DUCKDB_API duckdb_state duckdb_open_ext(const char *path, duckdb_database *out_database, duckdb_config config,char **out_error);
-    ! TODO
+    function duckdb_open_ext_(path, out_database, config, out_error) bind(c, name='duckdb_open_ext') result(res)
+      import :: duckdb_state, c_char, duckdb_database, duckdb_config, c_ptr
+      integer(kind(duckdb_state)) :: res
+      character(kind=c_char) :: path
+      type(duckdb_database) :: out_database
+      type(duckdb_config), value :: config
+      type(c_ptr) :: out_error
+    end function duckdb_open_ext_
 
     ! DUCKDB_API void duckdb_close(duckdb_database *database);
     subroutine duckdb_close(database) bind(c, name='duckdb_close')
@@ -1871,7 +1879,21 @@ module duckdb
       type(duckdb_database) :: out_database
       res = duckdb_open_(path//c_null_char, out_database)
     end function duckdb_open
-    
+
+    function duckdb_open_ext(path, out_database, config, out_error) result(res)
+      integer(kind(duckdb_state)) :: res
+      character(len=*) :: path
+      type(duckdb_database) :: out_database
+      type(duckdb_config) :: config
+      type(c_ptr) :: tmp_error
+      character(len=:), allocatable :: out_error
+      tmp_error = c_null_ptr
+      res = duckdb_open_ext_(path//c_null_char, out_database, config, tmp_error)
+      if (c_associated(tmp_error)) then 
+        call c_f_str_ptr(tmp_error, out_error)
+      endif
+    end function duckdb_open_ext
+
     function duckdb_library_version() result(res)
       character(len=:), allocatable :: res
       type(c_ptr) :: tmp
