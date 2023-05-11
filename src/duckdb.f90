@@ -2741,6 +2741,7 @@ module duckdb
       character(len=*) :: val
       character(len=:), allocatable :: cval
       cval = val // c_null_char ! convert to c string
+      res = duckdberror 
       if (c_associated(appender%appn)) &
         res = duckdb_append_varchar_(appender, cval)
     end function duckdb_append_varchar
