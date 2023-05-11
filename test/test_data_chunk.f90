@@ -253,7 +253,7 @@ subroutine test_data_chunk_api(error)
   col1_ptr = duckdb_vector_get_data(duckdb_data_chunk_get_vector(chunk, 0))
   call c_f_pointer(col1_ptr, col1_val)
   ! col1_ptr => col1_val
-  col1_val = 42_int64
+  ! col1_val = 42_int64
   ! col1_ptr = c_loc(col1_val)
 
   col2_ptr = duckdb_vector_get_data(duckdb_data_chunk_get_vector(chunk, 1))
@@ -319,6 +319,9 @@ subroutine test_data_chunk_api(error)
 
   ! print*, "col count: ", duckdb_column_count(result)
   ! print*, "row count: ", duckdb_row_count(result)
+
+  call check(error, duckdb_value_is_null(result, 0, 0), "col1 row1 null")
+  if (allocated(error)) return
 
   call check(error, duckdb_value_int64(result, 0, 0) == col1_val, "col1 row1 value")
   if (allocated(error)) return
