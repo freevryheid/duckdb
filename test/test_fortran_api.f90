@@ -92,7 +92,7 @@ module test_fortran_api
       call check(error, .not. duckdb_value_is_null(ddb_result, 0, 0), "col 0 row 0 not null")
       if (allocated(error)) return
 
-      ! Out of range fetch 
+      ! Out of range fetch
       call check(error, duckdb_value_int64(ddb_result, 1, 0) == 0, "col 1 row 0 value")
       if (allocated(error)) return
 
@@ -426,22 +426,22 @@ module test_fortran_api
 
         call check(error, duckdb_value_is_null(result, 0, 0), &
           trim(types(i))//": 0 null")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int8(result, 0, 0) == 0, &
           trim(types(i))//": 0 int8")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int16(result, 0, 0) == 0, &
           trim(types(i))//": 0 int16")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int32(result, 0, 0) == 0, &
           trim(types(i))//": 0 int32")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int64(result, 0, 0) == 0, &
           trim(types(i))//": 0 int64")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_hugeint_to_double(duckdb_value_hugeint(result, 0, 0)), &
           0.0_real64, trim(types(i))//": 0 hugeint")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)) &
           == "", trim(types(i))//": 0 string")
         if (allocated(error)) return
@@ -454,26 +454,26 @@ module test_fortran_api
 
         call check(error, .not. duckdb_value_is_null(result, 0, 1), &
           trim(types(i))//": 1 null")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int8(result, 0, 1) == 1, &
           trim(types(i))//": 1 int8")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int16(result, 0, 1) == 1, &
           trim(types(i))//": 1 int16")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int32(result, 0, 1) == 1, &
           trim(types(i))//": 1 int32")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int64(result, 0, 1) == 1, &
           trim(types(i))//": 1 int64")
-        if (allocated(error)) return      
-        block   
-          type(duckdb_hugeint) :: hi 
+        if (allocated(error)) return
+        block
+          type(duckdb_hugeint) :: hi
           hi = duckdb_value_hugeint(result, 0, 1)
           call check(error, duckdb_hugeint_to_double(hi), 1.0_real64, &
             trim(types(i))//": 1 hugeint")
-          if (allocated(error)) return        
-        end block 
+          if (allocated(error)) return
+        end block
         call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 1)) == "1", &
           trim(types(i))//": 1 string")
         if (allocated(error)) return
@@ -486,13 +486,13 @@ module test_fortran_api
 
         call check(error, duckdb_query(conn, "ROLLBACK", &
           result) == duckdbsuccess, trim(types(i))//" rollback")
-        if (allocated(error)) return        
+        if (allocated(error)) return
       enddo
 
       call duckdb_destroy_result(result)
       call duckdb_disconnect(conn)
       call duckdb_close(db)
-      
+
     end subroutine test_integer_columns
 
     subroutine test_real_columns(error)
@@ -538,19 +538,19 @@ module test_fortran_api
 
         call check(error, duckdb_value_is_null(result, 0, 0), &
           trim(types(i))//": 0 null")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int8(result, 0, 0) == 0, &
           trim(types(i))//": 0 int8")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int16(result, 0, 0) == 0, &
           trim(types(i))//": 0 int16")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int32(result, 0, 0) == 0, &
           trim(types(i))//": 0 int32")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int64(result, 0, 0) == 0, &
           trim(types(i))//": 0 int64")
-        if (allocated(error)) return           
+        if (allocated(error)) return
         call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)) == "", &
           trim(types(i))//": 0 string")
         if (allocated(error)) return
@@ -563,19 +563,19 @@ module test_fortran_api
 
         call check(error, .not. duckdb_value_is_null(result, 0, 1), &
           trim(types(i))//": 1 null")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int8(result, 0, 1) == 1, &
           trim(types(i))//": 1 int8")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int16(result, 0, 1) == 1, &
           trim(types(i))//": 1 int16")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int32(result, 0, 1) == 1, &
           trim(types(i))//": 1 int32")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, duckdb_value_int64(result, 0, 1) == 1, &
           trim(types(i))//": 1 int64")
-        if (allocated(error)) return      
+        if (allocated(error)) return
         call check(error, duckdb_value_float(result, 0, 1), 1.0_real32, &
           trim(types(i))//": 1 float")
         if (allocated(error)) return
@@ -585,7 +585,7 @@ module test_fortran_api
 
         call check(error, duckdb_query(conn, "ROLLBACK", &
           result) == duckdbsuccess, trim(types(i))//" rollback")
-        if (allocated(error)) return        
+        if (allocated(error)) return
       enddo
 
       call duckdb_destroy_result(result)
@@ -634,24 +634,24 @@ module test_fortran_api
 
       call check(error, duckdb_value_is_null(result, 0, 0), &
         "dates: 0 null")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       date = duckdb_from_date(duckdb_value_date(result, 0, 1))
       call check(error, date%year == 1992, "dates: 1 year")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, date%month == 9, "dates: 1 month")
-      if (allocated(error)) return    
+      if (allocated(error)) return
       call check(error, date%day == 20, "dates: 1 day")
-      if (allocated(error)) return                         
+      if (allocated(error)) return
       call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 1)), &
         "1992-09-20", "dates: 1 string")
       if (allocated(error)) return
       date = duckdb_from_date(duckdb_value_date(result, 0, 2))
       call check(error, date%year == 30000, "dates: 2 year")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, date%month == 9, "dates: 2 month")
-      if (allocated(error)) return    
+      if (allocated(error)) return
       call check(error, date%day == 20, "dates: 2 day")
-      if (allocated(error)) return    
+      if (allocated(error)) return
       call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 2)), &
         "30000-09-20", "dates: 2 string")
 
@@ -696,28 +696,28 @@ module test_fortran_api
 
       call check(error, duckdb_value_is_null(result, 0, 0), &
         "time: 0 null")
-      if (allocated(error)) return  
+      if (allocated(error)) return
       time_val = duckdb_from_time(duckdb_value_time(result, 0, 1))
       call check(error, time_val%hour == 2, "time: 1 hour")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, time_val%min == 30, "time: 1 min")
-      if (allocated(error)) return    
+      if (allocated(error)) return
       call check(error, time_val%sec == 1, "time: 1 sec")
-      if (allocated(error)) return  
+      if (allocated(error)) return
       call check(error, time_val%micros == 0, "time: 1 micros")
-      if (allocated(error)) return                         
+      if (allocated(error)) return
       call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 1)), &
       '02:30:01', "time: 1 string")
       if (allocated(error)) return
       time_val = duckdb_from_time(duckdb_value_time(result, 0, 2))
       call check(error, time_val%hour == 12, "time: 2 hour")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, time_val%min == 0, "time: 2 min")
-      if (allocated(error)) return    
+      if (allocated(error)) return
       call check(error, time_val%sec == 30, "time: 2 sec")
-      if (allocated(error)) return  
+      if (allocated(error)) return
       call check(error, time_val%micros == 123400, "time: 2 micros")
-      if (allocated(error)) return                         
+      if (allocated(error)) return
       call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 2)), &
       '12:00:30.1234', "time: 2 string")
 
@@ -759,18 +759,18 @@ module test_fortran_api
       call check(error, &
         duckdb_query(conn, "SELECT * FROM blobs", result) == duckdbsuccess, &
         "blob table select error.")
-      if (allocated(error)) return     
-      
+      if (allocated(error)) return
+
       call check(error, .not. duckdb_value_is_null(result, 0, 0), "result(0,0) is null")
-      if (allocated(error)) return     
-      
-      block 
-        type(duckdb_blob) :: blob 
-        character(len=11), pointer :: tmp 
+      if (allocated(error)) return
+
+      block
+        type(duckdb_blob) :: blob
+        character(len=11), pointer :: tmp
         blob = duckdb_value_blob(result, 0, 0)
         call check(error, blob%size == 11, "Blob size mismatch")
         if (allocated(error)) return
-        ! FIXME how to do this in fortran? 
+        ! FIXME how to do this in fortran?
         ! REQUIRE(memcmp(blob.data, "hello\012world", 11));
         call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)), &
         'hello\x12world', "blob value mismatch")
@@ -781,7 +781,7 @@ module test_fortran_api
         call check(error, .not. c_associated(blob%data), "blob null value pointer")
         if (allocated(error)) return
         call check(error, blob%size == 0, "blob null value size")
-        if (allocated(error)) return        
+        if (allocated(error)) return
       end block
 
       call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 1)), &
@@ -829,13 +829,13 @@ module test_fortran_api
 
       call check(error, duckdb_value_is_null(result, 0, 0), &
         "boolean: 0 null")
-      if (allocated(error)) return  
+      if (allocated(error)) return
       call check(error, .not. duckdb_value_boolean(result, 0, 0), "boolean: 1")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, .not. duckdb_value_boolean(result, 0, 1), "boolean: 2")
-      if (allocated(error)) return 
+      if (allocated(error)) return
       call check(error, duckdb_value_boolean(result, 0, 2), "boolean: 3")
-      if (allocated(error)) return                        
+      if (allocated(error)) return
       call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 2)), &
       "true", "boolean: 3 string")
       if (allocated(error)) return
@@ -873,17 +873,17 @@ module test_fortran_api
       call check(error, &
         duckdb_query(conn, "SELECT * FROM decimals ORDER BY dec", result) == duckdbsuccess, &
         "decimal table select error.")
-      if (allocated(error)) return     
-      
+      if (allocated(error)) return
+
       call check(error, duckdb_value_is_null(result, 0, 0), "decimal: 0 null")
-      if (allocated(error)) return     
-      
-      block 
-        type(duckdb_decimal) :: decimal 
+      if (allocated(error)) return
+
+      block
+        type(duckdb_decimal) :: decimal
         decimal = duckdb_value_decimal(result, 0, 1)
         call check(error, duckdb_decimal_to_double(decimal), 12.3_real64, &
           "Decimal: 1 mismatch")
-        if (allocated(error)) return 
+        if (allocated(error)) return
       end block
 
       call check(error, duckdb_query(conn, &
@@ -895,12 +895,12 @@ module test_fortran_api
         &NULL::DECIMAL", &
         result) == duckdbsuccess, &
         "decimal: select error.")
-      if (allocated(error)) return  
+      if (allocated(error)) return
 
       call check(error, duckdb_decimal_to_double(duckdb_value_decimal(result, 0, 0)), &
         1.2_real64, &
         "Decimal: 0 mismatch")
-      if (allocated(error)) return 
+      if (allocated(error)) return
       call check(error, duckdb_decimal_to_double(duckdb_value_decimal(result, 1, 0)), &
         100.3_real64, &
         "Decimal: 1 mismatch")
@@ -958,7 +958,7 @@ module test_fortran_api
       call check(error, duckdb_value_int8(result, 0, 0), &
         1_int8, &
         "Decimal: 0 cast to int8")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, duckdb_value_int8(result, 1, 0), &
         100_int8, &
         "Decimal: 1 cast to int8")
@@ -966,7 +966,7 @@ module test_fortran_api
       call check(error, duckdb_value_int8(result, 2, 0), &
         0_int8, & ! overflow
         "Decimal: 2 cast to int8")
-      if (allocated(error)) return  
+      if (allocated(error)) return
       call check(error, duckdb_value_int8(result, 3, 0), &
         0_int8, & ! overflow
         "Decimal: 3 cast to int8")
@@ -979,7 +979,7 @@ module test_fortran_api
       call check(error, duckdb_value_int16(result, 0, 0), &
         1_int16, &
         "Decimal: 0 cast to int16")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, duckdb_value_int16(result, 1, 0), &
         100_int16, &
         "Decimal: 1 cast to int16")
@@ -987,7 +987,7 @@ module test_fortran_api
       call check(error, duckdb_value_int16(result, 2, 0), &
         0_int16, & ! overflow
         "Decimal: 2 cast to int16")
-      if (allocated(error)) return  
+      if (allocated(error)) return
       call check(error, duckdb_value_int16(result, 3, 0), &
         0_int16, & ! overflow
         "Decimal: 3 cast to int16")
@@ -1000,7 +1000,7 @@ module test_fortran_api
       call check(error, duckdb_value_int32(result, 0, 0), &
         1_int32, &
         "Decimal: 0 cast to int32")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, duckdb_value_int32(result, 1, 0), &
         100_int32, &
         "Decimal: 1 cast to int32")
@@ -1008,7 +1008,7 @@ module test_fortran_api
       call check(error, duckdb_value_int32(result, 2, 0), &
         -320938_int32, &
         "Decimal: 2 cast to int32")
-      if (allocated(error)) return  
+      if (allocated(error)) return
       call check(error, duckdb_value_int32(result, 3, 0), &
         0_int32, & ! overflow
         "Decimal: 3 cast to int32")
@@ -1021,7 +1021,7 @@ module test_fortran_api
       call check(error, duckdb_value_int64(result, 0, 0), &
         1_int64, &
         "Decimal: 0 cast to int64")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, duckdb_value_int64(result, 1, 0), &
         100_int64, &
         "Decimal: 1 cast to int64")
@@ -1029,7 +1029,7 @@ module test_fortran_api
       call check(error, duckdb_value_int64(result, 2, 0), &
         -320938_int64, &
         "Decimal: 2 cast to int64")
-      if (allocated(error)) return  
+      if (allocated(error)) return
       call check(error, duckdb_value_int64(result, 3, 0), &
         49082094825_int64, & ! ceiling
         "Decimal: 3 cast to int64")
@@ -1041,13 +1041,13 @@ module test_fortran_api
 
       call check(error, require_hugeint_eq(duckdb_value_hugeint(result, 0, 0), &
         1_int64, 0_int64), "Decimal: 0 cast to hugeint")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, require_hugeint_eq(duckdb_value_hugeint(result, 1, 0), &
         100_int64, 0_int64), "Decimal: 1 cast to hugeint")
       if (allocated(error)) return
       ! call check(error, require_hugeint_eq(duckdb_value_hugeint(result, 2, 0), &
       !   18446744073709230678_int64, -1_int64), "Decimal: 2 cast to hugeint")
-      ! if (allocated(error)) return  
+      ! if (allocated(error)) return
       call check(error, require_hugeint_eq(duckdb_value_hugeint(result, 3, 0), &
         49082094825_int64, 0_int64), "Decimal: 3 cast to hugeint")
         if (allocated(error)) return
@@ -1058,7 +1058,7 @@ module test_fortran_api
       call check(error, duckdb_value_float(result, 0, 0), &
         1.2_real32, &
         "Decimal: 0 cast to float")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, duckdb_value_float(result, 1, 0), &
         100.3_real32, &
         "Decimal: 1 cast to float")
@@ -1066,7 +1066,7 @@ module test_fortran_api
       call check(error, floor(duckdb_value_float(result, 2, 0)), &
         -320939, &
         "Decimal: 2 cast to float")
-      if (allocated(error)) return  
+      if (allocated(error)) return
       call check(error, int(duckdb_value_float(result, 3, 0), kind=int64), &
         49082093568_int64, &
         "Decimal: 3 cast to float")
@@ -1079,7 +1079,7 @@ module test_fortran_api
       call check(error, duckdb_value_double(result, 0, 0), &
         1.2_real64, &
         "Decimal: 0 cast to double")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, duckdb_value_double(result, 1, 0), &
         100.3_real64, &
         "Decimal: 1 cast to double")
@@ -1087,9 +1087,9 @@ module test_fortran_api
       call check(error, duckdb_value_double(result, 2, 0), &
         -320938.4298_real64, &
         "Decimal: 2 cast to double")
-      if (allocated(error)) return  
+      if (allocated(error)) return
       call check(error, duckdb_value_double(result, 3, 0), &
-        49082094824.904820482094_real64, & 
+        49082094824.904820482094_real64, &
         "Decimal: 3 cast to double")
       if (allocated(error)) return
       call check(error, duckdb_value_double(result, 4, 0), &
@@ -1100,7 +1100,7 @@ module test_fortran_api
       call check(error, duckdb_string_to_character(duckdb_value_string(result, 0, 0)), &
         "1.2", &
         "Decimal: 0 cast to string")
-      if (allocated(error)) return      
+      if (allocated(error)) return
       call check(error, duckdb_string_to_character(duckdb_value_string(result, 1, 0)), &
         "100.3", &
         "Decimal: 1 cast to string")
@@ -1108,9 +1108,9 @@ module test_fortran_api
       call check(error, duckdb_string_to_character(duckdb_value_string(result, 2, 0)), &
         "-320938.4298", &
         "Decimal: 2 cast to string")
-      if (allocated(error)) return  
+      if (allocated(error)) return
       call check(error, duckdb_string_to_character(duckdb_value_string(result, 3, 0)), &
-        "49082094824.904820482094", & 
+        "49082094824.904820482094", &
         "Decimal: 3 cast to string")
       if (allocated(error)) return
       call check(error, duckdb_string_to_character(duckdb_value_string(result, 4, 0)), &
@@ -1122,15 +1122,16 @@ module test_fortran_api
       call duckdb_disconnect(conn)
       call duckdb_close(db)
 
-    end subroutine test_decimal_columns   
-    
+    end subroutine test_decimal_columns
+
     subroutine test_errors(error)
+      ! from ../duckdb/test/api/capi/test_capi.cpp
 
       type(error_type), allocatable, intent(out) :: error
       type(duckdb_database) :: db
       type(duckdb_connection) :: conn, con_null
       type(duckdb_result) :: result = duckdb_result()
-      type(duckdb_prepared_statement) :: stmt = duckdb_prepared_statement()
+      type(duckdb_prepared_statement) :: stmt != duckdb_prepared_statement()
       type(duckdb_arrow) :: out_arrow
 
       ! cannot open database in random directory
@@ -1154,39 +1155,50 @@ module test_fortran_api
       call check(error, duckdb_prepare(con_null, "SELECT 42", stmt), &
         duckdberror, "prepare with null connection")
       if (allocated(error)) return
+
       call check(error, duckdb_prepare(conn, "", stmt), &
         duckdberror, "prepare with empty query")
       if (allocated(error)) return
-      call check(error, .not. c_associated(stmt%prep), "uninitialised statement")
+
+      ! REQUIRE(stmt != nullptr);
+      ! call check(error, .not. c_associated(stmt%prep), "uninitialised statement")
+      call check(error, c_associated(stmt%prep), "uninitialised statement")
       if (allocated(error)) return
 
       call check(error, duckdb_prepare(conn, "SELECT * from INVALID_TABLE", stmt), &
         duckdberror, "prepare with invalid query")
       if (allocated(error)) return
+
+      ! print *, duckdb_prepare_error(stmt)
       call check(error, duckdb_prepare_error(stmt) /= "", "empty prepare error")
       if (allocated(error)) return
 
       stmt = duckdb_prepared_statement()
+
+      ! print *, duckdb_prepare_error(stmt)
       call check(error, duckdb_prepare_error(stmt) == "", "non empty prepare error")
-      if (allocated(error)) return    
+      if (allocated(error)) return
 
       call duckdb_destroy_prepare(stmt)
 
       call check(error, duckdb_bind_boolean(stmt, 0, .true.), &
         duckdberror, "bind success")
-      if (allocated(error)) return    
+      if (allocated(error)) return
+
       call check(error, duckdb_execute_prepared(stmt, result), &
         duckdberror, "execute prepared success")
-      if (allocated(error)) return    
+      if (allocated(error)) return
+
+
 
       call duckdb_destroy_prepare(stmt)
 
       ! fail to query arrow
       call check(error, duckdb_query_arrow(conn, "SELECT * from INVALID_TABLE", out_arrow), &
         duckdberror, "invalid query arrow success")
-      if (allocated(error)) return    
+      if (allocated(error)) return
       call check(error, duckdb_query_arrow_error(out_arrow) /= "NULL", "NULL error message")
-      if (allocated(error)) return    
+      if (allocated(error)) return
 
       call duckdb_destroy_arrow(out_arrow)
 
@@ -1218,8 +1230,8 @@ module test_fortran_api
 
     logical function hugeint_members_equal(left, lower, upper) result(res)
       type(duckdb_hugeint), intent(in) :: left
-      integer(kind=int64), intent(in) :: lower, upper 
-      type(duckdb_hugeint) :: temp 
+      integer(kind=int64), intent(in) :: lower, upper
+      type(duckdb_hugeint) :: temp
       temp%lower = int(lower, kind=c_int64_t)
       temp%upper = int(upper, kind=c_int64_t)
       res = hugeint_equals_hugeint(left, temp)
