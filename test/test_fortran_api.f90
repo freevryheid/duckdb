@@ -1156,7 +1156,7 @@ module test_fortran_api
       call check(error, duckdb_prepare(con_null, "SELECT 42", stmt), &
         duckdberror, "prepare with null connection")
       if (allocated(error)) return
-
+      
       call check(error, duckdb_prepare(conn, "", stmt), &
         duckdberror, "prepare with empty query")
       if (allocated(error)) return
@@ -1173,7 +1173,7 @@ module test_fortran_api
       ! print *, duckdb_prepare_error(stmt)
       call check(error, duckdb_prepare_error(stmt) /= "", "empty prepare error")
       if (allocated(error)) return
-
+      
       stmt = duckdb_prepared_statement()
 
       ! print *, duckdb_prepare_error(stmt)
@@ -1185,12 +1185,10 @@ module test_fortran_api
       call check(error, duckdb_bind_boolean(stmt, 0, .true.), &
         duckdberror, "bind success")
       if (allocated(error)) return
-
+      
       call check(error, duckdb_execute_prepared(stmt, result), &
         duckdberror, "execute prepared success")
       if (allocated(error)) return
-
-
 
       call duckdb_destroy_prepare(stmt)
 
@@ -1202,11 +1200,13 @@ module test_fortran_api
       if (allocated(error)) return
 
       call duckdb_destroy_arrow(out_arrow)
-
+      
       ! various edge cases/nullptrs
       block 
         type(duckdb_arrow_schema) :: schema_uninitialised
-        call check(error, duckdb_query_arrow_schema(out_arrow, schema_uninitialised) == duckdbsuccess, "error on arrow schema")
+
+        call check(error, duckdb_query_arrow_schema(out_arrow, schema_uninitialised) &
+          == duckdbsuccess, "error on arrow schema")
         if (allocated(error)) return    
       end block 
 
@@ -1215,7 +1215,7 @@ module test_fortran_api
         call check(error, duckdb_query_arrow_array(out_arrow, array_uninitialised) == duckdbsuccess, "error on arrow array")
         if (allocated(error)) return   
       end block
-
+      
       ! default duckdb_value_date on invalid date
       call check(error, duckdb_query(conn, "SELECT 1, true, 'a'", result), &
         duckdberror, "invalid date query")
@@ -1244,7 +1244,7 @@ module test_fortran_api
         call check(error, d%day == 1, "day of invalid date 3")
         if (allocated(error)) return        
       end block
-
+      
     end subroutine test_errors
 
     subroutine test_api_config(error)
@@ -1291,7 +1291,6 @@ module test_fortran_api
 
       call check(error, len_trim(error_msg) > 0, "empty error message")
       if (allocated(error)) return    
-      
       
     end subroutine test_api_config
 
