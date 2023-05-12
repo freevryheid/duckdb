@@ -33,7 +33,8 @@ module test_fortran_api
         new_unittest("basic-blobs-test", test_blob_columns),      &
         new_unittest("basic-boolean-test", test_boolean_columns), &
         new_unittest("basic-decimal-test", test_decimal_columns), &
-        new_unittest("basic-api-error-test", test_errors)         &
+        new_unittest("basic-api-error-test", test_errors),        &
+        new_unittest("basic-api-config-test", test_api_config)    &
         ]
 
     end subroutine collect_fortran_api
@@ -1155,7 +1156,7 @@ module test_fortran_api
       call check(error, duckdb_prepare(con_null, "SELECT 42", stmt), &
         duckdberror, "prepare with null connection")
       if (allocated(error)) return
-
+      
       call check(error, duckdb_prepare(conn, "", stmt), &
         duckdberror, "prepare with empty query")
       if (allocated(error)) return
@@ -1172,7 +1173,7 @@ module test_fortran_api
       ! print *, duckdb_prepare_error(stmt)
       call check(error, duckdb_prepare_error(stmt) /= "", "empty prepare error")
       if (allocated(error)) return
-
+      
       stmt = duckdb_prepared_statement()
 
       ! print *, duckdb_prepare_error(stmt)
@@ -1184,12 +1185,10 @@ module test_fortran_api
       call check(error, duckdb_bind_boolean(stmt, 0, .true.), &
         duckdberror, "bind success")
       if (allocated(error)) return
-
+      
       call check(error, duckdb_execute_prepared(stmt, result), &
         duckdberror, "execute prepared success")
       if (allocated(error)) return
-
-
 
       call duckdb_destroy_prepare(stmt)
 
@@ -1201,27 +1200,100 @@ module test_fortran_api
       if (allocated(error)) return
 
       call duckdb_destroy_arrow(out_arrow)
-
+      
       ! various edge cases/nullptrs
-      ! REQUIRE(duckdb_query_arrow_schema(out_arrow, nullptr) == DuckDBSuccess);
-      ! REQUIRE(duckdb_query_arrow_array(out_arrow, nullptr) == DuckDBSuccess);
+      ! block 
+      !   type(duckdb_arrow_schema) :: schema_uninitialised
+      ! Memory error here. In the cpp implmentation it is supposed to pass despite the 
+      ! weird setup. 
+      !   call check(error, duckdb_query_arrow_schema(out_arrow, schema_uninitialised) &
+      !     == duckdbsuccess, "error on arrow schema")
+      !   if (allocated(error)) return    
+      ! end block 
 
-      ! // default duckdb_value_date on invalid date
-      ! result = tester.Query("SELECT 1, true, 'a'");
-      ! REQUIRE_NO_FAIL(*result);
-      ! duckdb_date_struct d = result->Fetch<duckdb_date_struct>(0, 0);
-      ! REQUIRE(d.year == 1970);
-      ! REQUIRE(d.month == 1);
-      ! REQUIRE(d.day == 1);
-      ! d = result->Fetch<duckdb_date_struct>(1, 0);
-      ! REQUIRE(d.year == 1970);
-      ! REQUIRE(d.month == 1);
-      ! REQUIRE(d.day == 1);
-      ! d = result->Fetch<duckdb_date_struct>(2, 0);
-      ! REQUIRE(d.year == 1970);
-      ! REQUIRE(d.month == 1);
-      ! REQUIRE(d.day == 1);
+      ! block 
+      !   type(duckdb_arrow_array) :: array_uninitialised
+      !   call check(error, duckdb_query_arrow_array(out_arrow, array_uninitialised) == duckdbsuccess, "error on arrow array")
+      !   if (allocated(error)) return   
+      ! end block
+      
+      ! default duckdb_value_date on invalid date
+      call check(error, duckdb_query(conn, "SELECT 1, true, 'a'", result), &
+        duckdbsuccess, "invalid date query")
+      if (allocated(error)) return
+      block 
+        type(duckdb_date_struct) :: d 
+        d = duckdb_from_date(duckdb_value_date(result, 0, 0))
+        call check(error, d%year == 1970, "year of invalid date")
+        if (allocated(error)) return        
+        call check(error, d%month == 1, "month of invalid date")
+        if (allocated(error)) return        
+        call check(error, d%day == 1, "day of invalid date")
+        if (allocated(error)) return
+        d = duckdb_from_date(duckdb_value_date(result, 1, 0))
+        call check(error, d%year == 1970, "year of invalid date 2")
+        if (allocated(error)) return        
+        call check(error, d%month == 1, "month of invalid date 2")
+        if (allocated(error)) return        
+        call check(error, d%day == 1, "day of invalid date 2")
+        if (allocated(error)) return        
+        d = duckdb_from_date(duckdb_value_date(result, 2, 0))
+        call check(error, d%year == 1970, "year of invalid date 3")
+        if (allocated(error)) return        
+        call check(error, d%month == 1, "month of invalid date 3")
+        if (allocated(error)) return        
+        call check(error, d%day == 1, "day of invalid date 3")
+        if (allocated(error)) return        
+      end block
+      
     end subroutine test_errors
+
+    subroutine test_api_config(error)
+
+      type(error_type), allocatable, intent(out) :: error
+      type(duckdb_database) :: db
+      type(duckdb_connection) :: conn
+      type(duckdb_result) :: result = duckdb_result()
+      type(duckdb_config) :: config
+      integer :: config_count, i
+
+      character(len=:), allocatable :: name, description, error_msg
+
+      ! Enumerate config options
+      config_count = duckdb_config_count()
+      do i = 0, config_count - 1
+        call check(error, duckdb_get_config_flag(i, name, description) == duckdbsuccess, "get config flag")
+        if (allocated(error)) return
+        call check(error, len_trim(name) > 0, "config name")
+        if (allocated(error)) return
+        call check(error, len_trim(description) > 0, "config description")
+        if (allocated(error)) return
+      enddo
+
+      ! test config creation
+      call check(error, duckdb_create_config(config) == duckdbsuccess, "config creation")
+      if (allocated(error)) return
+
+      call check(error, duckdb_set_config(config, "access_mode", "invalid_access_mode") &
+        == duckdberror, "access_mode invalid creation")
+      if (allocated(error)) return
+      call check(error, duckdb_set_config(config, "access_mode", "read_only") &
+        == duckdbsuccess, "access_mode valid creation")
+      if (allocated(error)) return
+      call check(error, duckdb_set_config(config, "aaaa_invalidoption", "read_only") &
+        == duckdberror, "invalid option name")
+      if (allocated(error)) return 
+    
+      ! cannot open an in-memory database in read-only mode
+      error_msg = ""
+      call check(error, duckdb_open_ext(":memory:", db, config, error_msg) &
+        == duckdberror, "can open read only, in memory db")
+      if (allocated(error)) return 
+
+      call check(error, len_trim(error_msg) > 0, "empty error message")
+      if (allocated(error)) return    
+      
+    end subroutine test_api_config
 
     logical function hugeint_equals_hugeint(left, right) result(res)
       type(duckdb_hugeint), intent(in) :: left, right

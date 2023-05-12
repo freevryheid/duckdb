@@ -12,9 +12,9 @@ module duckdb
   ! public :: duckdb_pending_result
   public :: duckdb_appender
   public :: duckdb_arrow
-  ! public :: duckdb_arrow_schema
-  ! public :: duckdb_config
-  ! public :: duckdb_arrow_array
+  public :: duckdb_arrow_schema
+  public :: duckdb_config
+  public :: duckdb_arrow_array
 
   public :: duckdb_logical_type
   public :: duckdb_data_chunk
@@ -75,14 +75,15 @@ module duckdb
   public :: duckdbsuccess
   public :: duckdberror
   public :: duckdb_open
+  public :: duckdb_open_ext
   public :: duckdb_close
   public :: duckdb_connect
   public :: duckdb_disconnect
 
   public :: duckdb_create_config
   public :: duckdb_config_count
-  ! public :: duckdb_get_config_flag
-  ! public :: duckdb_set_config
+  public :: duckdb_get_config_flag
+  public :: duckdb_set_config
   public :: duckdb_destroy_config
   public :: duckdb_query
   public :: duckdb_destroy_result
@@ -232,7 +233,9 @@ module duckdb
   public :: duckdb_append_null
   public :: duckdb_append_data_chunk
 
-  public :: duckdb_query_arrow
+  public :: duckdb_query_arrow 
+  public :: duckdb_query_arrow_schema 
+  public :: duckdb_query_arrow_array
   public :: duckdb_query_arrow_error
   public :: duckdb_destroy_arrow
 
@@ -438,12 +441,19 @@ module duckdb
     function duckdb_open_(path, out_database) bind(c, name='duckdb_open') result(res)
       import :: duckdb_state, c_char, duckdb_database
       integer(kind(duckdb_state)) :: res
-      character(kind=c_char), value :: path
+      character(kind=c_char) :: path
       type(duckdb_database) :: out_database
     end function duckdb_open_
 
     ! DUCKDB_API duckdb_state duckdb_open_ext(const char *path, duckdb_database *out_database, duckdb_config config,char **out_error);
-    ! TODO
+    function duckdb_open_ext_(path, out_database, config, out_error) bind(c, name='duckdb_open_ext') result(res)
+      import :: duckdb_state, c_char, duckdb_database, duckdb_config, c_ptr
+      integer(kind(duckdb_state)) :: res
+      character(kind=c_char) :: path
+      type(duckdb_database) :: out_database
+      type(duckdb_config), value :: config
+      type(c_ptr) :: out_error
+    end function duckdb_open_ext_
 
     ! DUCKDB_API void duckdb_close(duckdb_database *database);
     subroutine duckdb_close(database) bind(c, name='duckdb_close')
@@ -490,8 +500,22 @@ module duckdb
     end function duckdb_config_count_
 
     ! DUCKDB_API duckdb_state duckdb_get_config_flag(size_t index, const char **out_name, const char **out_description);
+    function duckdb_get_config_flag_(index, out_name, out_description) bind(c, name='duckdb_get_config_flag') result(res)
+      import :: duckdb_state, c_size_t, c_ptr
+      integer(kind(duckdb_state)) :: res
+      integer(kind=c_size_t), value :: index
+      type(c_ptr) :: out_name
+      type(c_ptr) :: out_description
+    end function duckdb_get_config_flag_
 
     ! DUCKDB_API duckdb_state duckdb_set_config(duckdb_config config, const char *name, const char *option);
+    function duckdb_set_config_(config, name, option) bind(c, name='duckdb_set_config') result(res)
+      import :: duckdb_state, duckdb_config, c_char
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_config), value :: config
+      character(c_char) :: name
+      character(c_char) :: option
+    end function duckdb_set_config_
 
     ! DUCKDB_API void duckdb_destroy_config(duckdb_config *config);
     subroutine duckdb_destroy_config(config) bind(c, name='duckdb_destroy_config')
@@ -1786,8 +1810,20 @@ module duckdb
     end function duckdb_query_arrow_
 
     ! DUCKDB_API duckdb_state duckdb_query_arrow_schema(duckdb_arrow result, duckdb_arrow_schema *out_schema);
+    function duckdb_query_arrow_schema(result, out_schema) bind(c, name='duckdb_query_arrow_schema') result(res)
+      import :: duckdb_state, duckdb_arrow, duckdb_arrow_schema
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_arrow), value :: result
+      type(duckdb_arrow_schema) :: out_schema
+    end function duckdb_query_arrow_schema
 
     ! DUCKDB_API duckdb_state duckdb_query_arrow_array(duckdb_arrow result, duckdb_arrow_array *out_array);
+    function duckdb_query_arrow_array(result, out_array) bind(c, name='duckdb_query_arrow_array') result(res)
+      import :: duckdb_state, duckdb_arrow, duckdb_arrow_array
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_arrow), value :: result
+      type(duckdb_arrow_array) :: out_array
+    end function duckdb_query_arrow_array
 
     ! DUCKDB_API idx_t duckdb_arrow_column_count(duckdb_arrow result);
 
@@ -1844,6 +1880,20 @@ module duckdb
       res = duckdb_open_(path//c_null_char, out_database)
     end function duckdb_open
 
+    function duckdb_open_ext(path, out_database, config, out_error) result(res)
+      integer(kind(duckdb_state)) :: res
+      character(len=*) :: path
+      type(duckdb_database) :: out_database
+      type(duckdb_config) :: config
+      type(c_ptr) :: tmp_error
+      character(len=:), allocatable :: out_error
+      tmp_error = c_null_ptr
+      res = duckdb_open_ext_(path//c_null_char, out_database, config, tmp_error)
+      if (c_associated(tmp_error)) then 
+        call c_f_str_ptr(tmp_error, out_error)
+      endif
+    end function duckdb_open_ext
+
     function duckdb_library_version() result(res)
       character(len=:), allocatable :: res
       type(c_ptr) :: tmp
@@ -1860,6 +1910,27 @@ module duckdb
       res = int(duckdb_config_count_())
     end function duckdb_config_count
 
+    function duckdb_get_config_flag(index, out_name, out_description) result(res)
+      integer(kind(duckdb_state)) :: res
+      integer :: index
+      type(c_ptr) :: tmp_name
+      type(c_ptr) :: tmp_description
+      character(len=:), allocatable :: out_name
+      character(len=:), allocatable :: out_description
+      out_name=""
+      out_description=""
+      res = duckdb_get_config_flag_(int(index, kind=c_size_t), tmp_name, tmp_description)
+      if (c_associated(tmp_name)) call c_f_str_ptr(tmp_name, out_name)
+      if (c_associated(tmp_description)) call c_f_str_ptr(tmp_description, out_description)
+    end function duckdb_get_config_flag
+
+    function duckdb_set_config(config, name, option) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_config) :: config
+      character(len=*) :: name
+      character(len=*) :: option
+      res = duckdb_set_config_(config, name//c_null_char, option//c_null_char)
+    end function duckdb_set_config
     ! =========================================================================
     ! Query Execution
     ! =========================================================================
@@ -2198,8 +2269,8 @@ module duckdb
       character(len=*) :: query
       character(len=:), allocatable :: sql
       type(duckdb_prepared_statement) :: out_prepared_statement
-      sql = query // c_null_char ! convert to c string
-      res = duckdb_prepare_(connection, sql, out_prepared_statement)
+      ! sql = query // c_null_char ! convert to c string
+      res = duckdb_prepare_(connection, query//c_null_char, out_prepared_statement)
     end function duckdb_prepare
 
     function duckdb_prepare_error(ps) result(err)
@@ -2670,6 +2741,7 @@ module duckdb
       character(len=*) :: val
       character(len=:), allocatable :: cval
       cval = val // c_null_char ! convert to c string
+      res = duckdberror 
       if (c_associated(appender%appn)) &
         res = duckdb_append_varchar_(appender, cval)
     end function duckdb_append_varchar
