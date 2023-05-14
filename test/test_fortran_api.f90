@@ -1204,8 +1204,8 @@ module test_fortran_api
       ! various edge cases/nullptrs
       ! block 
       !   type(duckdb_arrow_schema) :: schema_uninitialised
-      ! Memory error here. In the cpp implmentation it is supposed to pass despite the 
-      ! weird setup. 
+      ! ! Memory error here. In the cpp implmentation it is supposed to pass despite the 
+      ! ! weird setup. 
       !   call check(error, duckdb_query_arrow_schema(out_arrow, schema_uninitialised) &
       !     == duckdbsuccess, "error on arrow schema")
       !   if (allocated(error)) return    
@@ -1257,7 +1257,7 @@ module test_fortran_api
       type(duckdb_config) :: config
       integer :: config_count, i
 
-      character(len=:), allocatable :: name, description, error_msg
+      character(len=:), allocatable :: name, description, error_msg, dbdir
 
       ! Enumerate config options
       config_count = duckdb_config_count()
@@ -1273,7 +1273,6 @@ module test_fortran_api
       ! test config creation
       call check(error, duckdb_create_config(config) == duckdbsuccess, "config creation")
       if (allocated(error)) return
-
       call check(error, duckdb_set_config(config, "access_mode", "invalid_access_mode") &
         == duckdberror, "access_mode invalid creation")
       if (allocated(error)) return
@@ -1288,11 +1287,105 @@ module test_fortran_api
       error_msg = ""
       call check(error, duckdb_open_ext(":memory:", db, config, error_msg) &
         == duckdberror, "can open read only, in memory db")
-      if (allocated(error)) return 
-
+      if (allocated(error)) return
       call check(error, len_trim(error_msg) > 0, "empty error message")
-      if (allocated(error)) return    
-      
+      if (allocated(error)) return
+
+      dbdir = "read_only_db"
+
+      block 
+        ! Remove the file if it exists
+        logical :: iex
+        inquire(file=dbdir, exist=iex)
+        if (iex) then 
+          call system("rm "//dbdir)
+          call system("rm "//dbdir//".wal")
+        endif
+      end block
+
+      ! cannot open a database that does not exist
+      call check(error, duckdb_open_ext(dbdir, db, config, error_msg) == DuckDBError, &
+        "can open a non-existing database.")
+      if (allocated(error)) return
+      call check(error, len_trim(error_msg) > 0, "empty error message")
+      if (allocated(error)) return
+
+      block 
+        integer(kind=kind(duckdb_state)) :: res
+        type(duckdb_database) :: db
+        type(duckdb_connection) :: conn
+        type(duckdb_result) :: result
+        logical :: iex
+        ! Create the database and add some tables  
+        res = duckdb_open(dbdir, db)
+        res = duckdb_connect(db, conn)
+        res = duckdb_query(conn, "CREATE TABLE integers(i INTEGER)", result)
+        res = duckdb_query(conn, "INSERT INTO integers VALUES (42)", result)
+      end block
+
+      ! now we can connect
+      call check(error, duckdb_open_ext(dbdir, db, config, error_msg) == DuckDBSuccess, &
+        "error open existing database.")
+      if (allocated(error)) return
+
+      ! we can destroy the config right after duckdb_open
+      call duckdb_destroy_config(config)
+      ! we can spam this
+      call duckdb_destroy_config(config)
+      call duckdb_destroy_config(config)
+
+      block 
+        ! Test various invalid connection errors
+        ! type(duckdb_connection) :: null_conn
+        type(duckdb_database) :: null_db
+        ! Cannot pass a c_null_ptr to duckdb_connect in the fortran api!
+        ! call check(error, duckdb_connect(db, null_conn) == DuckDBError, "can connect to null_conn")
+        ! if (allocated(error)) return
+        call check(error, duckdb_connect(null_db, conn) == DuckDBError, "can connect to null_db")
+        if (allocated(error)) return
+      endblock
+      ! Finally the proper connection should work
+      call check(error, duckdb_connect(db, conn) == DuckDBSuccess, "connection does not work.")
+      if (allocated(error)) return
+
+      ! we can query the connection
+      call check(error, duckdb_query(conn, "SELECT 42::INT", result) == DuckDBSuccess, "cannot query read only conn")
+      if (allocated(error)) return
+      call check(error, duckdb_value_int32(result, 0, 0) == 42, "value is not 42")
+      if (allocated(error)) return
+      call duckdb_destroy_result(result)
+      call check(error, duckdb_query(conn, "SELECT i::INT FROM integers", result) == DuckDBSuccess, "second query error")
+      if (allocated(error)) return
+      call check(error, duckdb_value_int32(result, 0, 0) == 42, "second value not 42")
+      if (allocated(error)) return
+      call duckdb_destroy_result(result)
+      ! but we cannot create new tables because it is read-only
+      call check(error, duckdb_query(conn, "CREATE TABLE new_table(i INTEGER)", result) == DuckDBError, "can create table")
+      if (allocated(error)) return
+
+      call duckdb_disconnect(conn)
+      call duckdb_close(db)
+
+      ! api abuse
+      block 
+        ! Testing the api with nullptrs does not work well from fortran. all the below tests fail. 
+        ! type(duckdb_config) :: null_config
+        ! character(len=:), allocatable :: name, description
+        ! call check(error, duckdb_create_config(null_config) == DuckDBError, "create null config")
+        ! if (allocated(error)) return
+        ! call check(error, duckdb_get_config_flag(9999999, name, description) == DuckDBError, "get strange config flag")
+        ! if (allocated(error)) return
+        ! call check(error, duckdb_set_config(null_config, name, description) == DuckDBError, "set null config")
+        ! if (allocated(error)) return
+        ! call check(error, duckdb_create_config(null_config) == DuckDBError, "create null config")
+        ! if (allocated(error)) return
+        call duckdb_destroy_config(null_config)
+        call duckdb_destroy_config(null_config)
+      end block
+
+      ! Remove the database file created in this test. 
+      call system("rm "//dbdir)
+      call system("rm "//dbdir//".wal")
     end subroutine test_api_config
 
     logical function hugeint_equals_hugeint(left, right) result(res)
