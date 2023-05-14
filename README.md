@@ -8,7 +8,7 @@ fortran bindings to duckdb c api
 - [x] **test_starting_database.cpp**
   - [x] Simple In-Memory DB Start Up and Shutdown
   - [x] Multiple In-Memory DB Start Up and Shutdown
-- [ ] **test_capi.cpp**
+- [x] **test_capi.cpp**
   - [x] Basic test of C API
   - [x] Test scalar NULL
   - [x] Test scalar string
@@ -23,9 +23,9 @@ fortran bindings to duckdb c api
   - [x] Test boolean columns
   - [x] Test decimal columns 
   - [x] Test errors in C API
-  - [ ] Test C API config
-  - [ ] Issue #2058: Cleanup after execution of invalid SQL statement causes segmentation fault
-  - [ ] Decimal -> Double casting issue
+  - [x] Test C API config
+  - [x] ~~Issue #2058: Cleanup after execution of invalid SQL statement causes segmentation fault~~
+  - [x] ~~Decimal -> Double casting issue~~
 - [ ] **test_capi_data_chunk.cpp**
   - [x] Test table_info incorrect 'is_valid' value for 'dflt_value' column
   - [x] Test Logical Types C API
