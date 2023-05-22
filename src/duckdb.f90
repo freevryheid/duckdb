@@ -1784,7 +1784,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, c_ptr, c_int64_t
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(c_ptr) :: data
+      type(c_ptr), value :: data
       integer(kind=c_int64_t), value :: length
     end function duckdb_append_blob_
 
@@ -2226,6 +2226,7 @@ module duckdb
       if (c_associated(str%data)) &
         call c_f_str_ptr(str%data, res)
     end function duckdb_string_to_character
+
     ! =========================================================================
     ! Helpers
     ! =========================================================================

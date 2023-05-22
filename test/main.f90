@@ -13,13 +13,13 @@ program tester
 
   stat = 0
 
-  testsuites = [  &
+  testsuites = [ &
     new_testsuite("starting_database", collect_starting_database), &
     new_testsuite("test_fortran_api", collect_fortran_api),        &
     new_testsuite("test_parquet_files", collect_parquet_files),    &
     new_testsuite("test_data_chunk", collect_data_chunk),          &
     new_testsuite("test_appender", collect_appender)               &
-    ]
+  ]
 
   do is = 1, size(testsuites)
     write(error_unit, fmt) "Testing:", testsuites(is)%name

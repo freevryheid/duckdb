@@ -308,24 +308,45 @@ module test_fortran_api
         ddb_result) == duckdbsuccess, "select error.")
       if (allocated(error)) return
 
+      ! suspect behaviour changed with the 0.9.0 update:
+      ! [grassy@scp duckdb]$ duckdb
+      ! v0.8.0 e8e4cea5ec
+      ! Enter ".help" for usage hints.
+      ! Connected to a transient in-memory database.
+      ! Use ".open FILENAME" to reopen on a persistent database.
+      ! D CREATE TABLE test (a INTEGER, b INTEGER);
+      ! D INSERT INTO test VALUES (11, 22);
+      ! D INSERT INTO test VALUES (NULL, 21);
+      ! D INSERT INTO test VALUES (13, 22);
+      ! D SELECT a, b FROM test ORDER BY a;
+      ! ┌───────┬───────┐
+      ! │   a   │   b   │
+      ! │ int32 │ int32 │
+      ! ├───────┼───────┤
+      ! │    11 │    22 │
+      ! │    13 │    22 │
+      ! │       │    21 │
+      ! └───────┴───────┘
+      ! D .exit
+
       ! Values in the first column
-      call check(error, duckdb_value_is_null(ddb_result, 0, 0), "a(0) is not null.")
+      call check(error, duckdb_value_is_null(ddb_result, 0, 2), "a(0) is not null.")
       if (allocated(error)) return
 
-      call check(error, duckdb_value_int32(ddb_result, 0, 1) == 11, "a(1) is not 11.")
+      call check(error, duckdb_value_int32(ddb_result, 0, 0) == 11, "a(1) is not 11.")
       if (allocated(error)) return
 
-      call check(error, duckdb_value_int32(ddb_result, 0, 2) == 13, "a(2) is not 13.")
+      call check(error, duckdb_value_int32(ddb_result, 0, 1) == 13, "a(2) is not 13.")
       if (allocated(error)) return
 
       ! Values in the second column
-      call check(error, duckdb_value_int32(ddb_result, 1, 0) == 21, "b(0) is not 21.")
+      call check(error, duckdb_value_int32(ddb_result, 1, 2) == 21, "b(0) is not 21.")
       if (allocated(error)) return
 
-      call check(error, duckdb_value_int32(ddb_result, 1, 1) == 22, "b(1) is not 22.")
+      call check(error, duckdb_value_int32(ddb_result, 1, 0) == 22, "b(1) is not 22.")
       if (allocated(error)) return
 
-      call check(error, duckdb_value_int32(ddb_result, 1, 2) == 22, "b(2) is not 22.")
+      call check(error, duckdb_value_int32(ddb_result, 1, 1) == 22, "b(2) is not 22.")
       if (allocated(error)) return
 
       ! Column names
@@ -871,17 +892,36 @@ module test_fortran_api
         result) == duckdbsuccess, "decimal table insert error.")
       if (allocated(error)) return
 
+      ! result = duckdb_result()
+
       call check(error, &
         duckdb_query(conn, "SELECT * FROM decimals ORDER BY dec", result) == duckdbsuccess, &
         "decimal table select error.")
       if (allocated(error)) return
 
-      call check(error, duckdb_value_is_null(result, 0, 0), "decimal: 0 null")
+      ! running this from duckdb shows the rows are reversed compared to what the cpp test shows .
+      ! [grassy@scp duckdb]$ duckdb
+      ! v0.8.0 e8e4cea5ec
+      ! Enter ".help" for usage hints.
+      ! Connected to a transient in-memory database.
+      ! Use ".open FILENAME" to reopen on a persistent database.
+      ! D CREATE TABLE decimals(dec DECIMAL(18, 4) NULL);
+      ! D INSERT INTO decimals VALUES (NULL), (12.3);
+      ! D SELECT * FROM decimals ORDER BY dec;
+      ! ┌───────────────┐
+      ! │      dec      │
+      ! │ decimal(18,4) │
+      ! ├───────────────┤
+      ! │       12.3000 │
+      ! │               │
+      ! └───────────────┘
+
+      call check(error, duckdb_value_is_null(result, 0, 1), "decimal: 0 null")
       if (allocated(error)) return
 
       block
         type(duckdb_decimal) :: decimal
-        decimal = duckdb_value_decimal(result, 0, 1)
+        decimal = duckdb_value_decimal(result, 0, 0)
         call check(error, duckdb_decimal_to_double(decimal), 12.3_real64, &
           "Decimal: 1 mismatch")
         if (allocated(error)) return
@@ -1156,7 +1196,7 @@ module test_fortran_api
       call check(error, duckdb_prepare(con_null, "SELECT 42", stmt), &
         duckdberror, "prepare with null connection")
       if (allocated(error)) return
-      
+
       call check(error, duckdb_prepare(conn, "", stmt), &
         duckdberror, "prepare with empty query")
       if (allocated(error)) return
@@ -1173,7 +1213,7 @@ module test_fortran_api
       ! print *, duckdb_prepare_error(stmt)
       call check(error, duckdb_prepare_error(stmt) /= "", "empty prepare error")
       if (allocated(error)) return
-      
+
       stmt = duckdb_prepared_statement()
 
       ! print *, duckdb_prepare_error(stmt)
@@ -1185,7 +1225,7 @@ module test_fortran_api
       call check(error, duckdb_bind_boolean(stmt, 0, .true.), &
         duckdberror, "bind success")
       if (allocated(error)) return
-      
+
       call check(error, duckdb_execute_prepared(stmt, result), &
         duckdberror, "execute prepared success")
       if (allocated(error)) return
@@ -1200,52 +1240,52 @@ module test_fortran_api
       if (allocated(error)) return
 
       call duckdb_destroy_arrow(out_arrow)
-      
+
       ! various edge cases/nullptrs
-      ! block 
+      ! block
       !   type(duckdb_arrow_schema) :: schema_uninitialised
-      ! Memory error here. In the cpp implmentation it is supposed to pass despite the 
-      ! weird setup. 
+      ! Memory error here. In the cpp implmentation it is supposed to pass despite the
+      ! weird setup.
       !   call check(error, duckdb_query_arrow_schema(out_arrow, schema_uninitialised) &
       !     == duckdbsuccess, "error on arrow schema")
-      !   if (allocated(error)) return    
-      ! end block 
+      !   if (allocated(error)) return
+      ! end block
 
-      ! block 
+      ! block
       !   type(duckdb_arrow_array) :: array_uninitialised
       !   call check(error, duckdb_query_arrow_array(out_arrow, array_uninitialised) == duckdbsuccess, "error on arrow array")
-      !   if (allocated(error)) return   
+      !   if (allocated(error)) return
       ! end block
-      
+
       ! default duckdb_value_date on invalid date
       call check(error, duckdb_query(conn, "SELECT 1, true, 'a'", result), &
         duckdbsuccess, "invalid date query")
       if (allocated(error)) return
-      block 
-        type(duckdb_date_struct) :: d 
+      block
+        type(duckdb_date_struct) :: d
         d = duckdb_from_date(duckdb_value_date(result, 0, 0))
         call check(error, d%year == 1970, "year of invalid date")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, d%month == 1, "month of invalid date")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, d%day == 1, "day of invalid date")
         if (allocated(error)) return
         d = duckdb_from_date(duckdb_value_date(result, 1, 0))
         call check(error, d%year == 1970, "year of invalid date 2")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, d%month == 1, "month of invalid date 2")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, d%day == 1, "day of invalid date 2")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         d = duckdb_from_date(duckdb_value_date(result, 2, 0))
         call check(error, d%year == 1970, "year of invalid date 3")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, d%month == 1, "month of invalid date 3")
-        if (allocated(error)) return        
+        if (allocated(error)) return
         call check(error, d%day == 1, "day of invalid date 3")
-        if (allocated(error)) return        
+        if (allocated(error)) return
       end block
-      
+
     end subroutine test_errors
 
     subroutine test_api_config(error)
@@ -1282,17 +1322,17 @@ module test_fortran_api
       if (allocated(error)) return
       call check(error, duckdb_set_config(config, "aaaa_invalidoption", "read_only") &
         == duckdberror, "invalid option name")
-      if (allocated(error)) return 
-    
+      if (allocated(error)) return
+
       ! cannot open an in-memory database in read-only mode
       error_msg = ""
       call check(error, duckdb_open_ext(":memory:", db, config, error_msg) &
         == duckdberror, "can open read only, in memory db")
-      if (allocated(error)) return 
+      if (allocated(error)) return
 
       call check(error, len_trim(error_msg) > 0, "empty error message")
-      if (allocated(error)) return    
-      
+      if (allocated(error)) return
+
     end subroutine test_api_config
 
     logical function hugeint_equals_hugeint(left, right) result(res)
