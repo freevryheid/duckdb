@@ -233,8 +233,8 @@ module duckdb
   public :: duckdb_append_null
   public :: duckdb_append_data_chunk
 
-  public :: duckdb_query_arrow 
-  public :: duckdb_query_arrow_schema 
+  public :: duckdb_query_arrow
+  public :: duckdb_query_arrow_schema
   public :: duckdb_query_arrow_array
   public :: duckdb_query_arrow_error
   public :: duckdb_destroy_arrow
@@ -1395,12 +1395,19 @@ module duckdb
     !>    idx_t idx_in_entry = row_idx % 64;
     !>    bool is_valid = validity_mask[entry_idx] & (1 « idx_in_entry);
     !>  Alternatively, the (slower) duckdb_validity_row_is_valid function can be used.
-    function duckdb_vector_get_validity_(vector) bind(c, name='duckdb_vector_get_validity') result(res)
+    ! function duckdb_vector_get_validity_(vector) bind(c, name='duckdb_vector_get_validity') result(res)
+    !   import :: duckdb_vector, c_int64_t, c_ptr
+    !   type(duckdb_vector), value :: vector
+    !   type(c_ptr) :: res
+    !   ! integer(kind=c_int64_t) :: res
+    ! end function duckdb_vector_get_validity_
+
+    function duckdb_vector_get_validity(vector) bind(c, name='duckdb_vector_get_validity') result(res)
       import :: duckdb_vector, c_int64_t, c_ptr
       type(duckdb_vector), value :: vector
       type(c_ptr) :: res
       ! integer(kind=c_int64_t) :: res
-    end function duckdb_vector_get_validity_
+    end function duckdb_vector_get_validity
 
     ! DUCKDB_API void duckdb_vector_ensure_validity_writable(duckdb_vector vector);
     subroutine duckdb_vector_ensure_validity_writable(vector) bind(c, name='duckdb_vector_ensure_validity_writable')
@@ -1777,7 +1784,7 @@ module duckdb
       import :: duckdb_state, duckdb_appender, c_ptr, c_int64_t
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(c_ptr) :: data
+      type(c_ptr), value :: data
       integer(kind=c_int64_t), value :: length
     end function duckdb_append_blob_
 
@@ -1873,6 +1880,7 @@ module duckdb
     ! =========================================================================
     ! Open/Connect
     ! =========================================================================
+
     function duckdb_open(path, out_database) result(res)
       integer(kind(duckdb_state)) :: res
       character(len=*) :: path
@@ -1889,7 +1897,7 @@ module duckdb
       character(len=:), allocatable :: out_error
       tmp_error = c_null_ptr
       res = duckdb_open_ext_(path//c_null_char, out_database, config, tmp_error)
-      if (c_associated(tmp_error)) then 
+      if (c_associated(tmp_error)) then
         call c_f_str_ptr(tmp_error, out_error)
       endif
     end function duckdb_open_ext
@@ -1931,6 +1939,7 @@ module duckdb
       character(len=*) :: option
       res = duckdb_set_config_(config, name//c_null_char, option//c_null_char)
     end function duckdb_set_config
+
     ! =========================================================================
     ! Query Execution
     ! =========================================================================
@@ -2207,7 +2216,7 @@ module duckdb
       logical :: r
       r = .false.
       if (c_associated(res%internal_data)) &
-        r = duckdb_value_is_null_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t))
+        r = logical(duckdb_value_is_null_(res, int(col, kind=c_int64_t), int(row, kind=c_int64_t)))
     end function duckdb_value_is_null
 
     function duckdb_string_to_character(str) result(res)
@@ -2217,6 +2226,7 @@ module duckdb
       if (c_associated(str%data)) &
         call c_f_str_ptr(str%data, res)
     end function duckdb_string_to_character
+
     ! =========================================================================
     ! Helpers
     ! =========================================================================
@@ -2574,14 +2584,15 @@ module duckdb
     ! Vector Interface
     ! =========================================================================
 
-    function duckdb_vector_get_validity(vector) result(res)
-      type(duckdb_vector) :: vector
-      type(c_ptr) :: ptr
-      integer(kind=int64), pointer :: res
-      ptr = duckdb_vector_get_validity_(vector)
-      call c_f_pointer(ptr, res)
-      ! res = int(duckdb_vector_get_validity_(vector), kind=int64)
-    end function duckdb_vector_get_validity
+    ! TEST - forego the helper for now, test returning a c_ptr instead
+    ! function duckdb_vector_get_validity(vector) result(res)
+    !   type(duckdb_vector) :: vector
+    !   type(c_ptr) :: ptr
+    !   integer(kind=int64), pointer :: res
+    !   ptr = duckdb_vector_get_validity_(vector)
+    !   call c_f_pointer(ptr, res)
+    !   ! res = int(duckdb_vector_get_validity_(vector), kind=int64)
+    ! end function duckdb_vector_get_validity
 
     subroutine duckdb_vector_assign_string_element(vector, index, str)
       type(duckdb_vector) :: vector
@@ -2741,7 +2752,7 @@ module duckdb
       character(len=*) :: val
       character(len=:), allocatable :: cval
       cval = val // c_null_char ! convert to c string
-      res = duckdberror 
+      res = duckdberror
       if (c_associated(appender%appn)) &
         res = duckdb_append_varchar_(appender, cval)
     end function duckdb_append_varchar
@@ -2752,9 +2763,11 @@ module duckdb
       type(duckdb_blob) :: blob
       res = duckdb_append_blob_(appender, blob%data, blob%size)
     end function duckdb_append_blob
+
     ! =========================================================================
     ! Arrow Interface
     ! =========================================================================
+
     function duckdb_query_arrow(connection, query, out_result) result(res)
       integer(kind(duckdb_state)) :: res
       type(duckdb_connection), value :: connection
@@ -2773,6 +2786,7 @@ module duckdb
         if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
       end if
     end function duckdb_query_arrow_error
+
     ! =========================================================================
     ! Threading Information
     ! =========================================================================

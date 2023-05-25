@@ -35,14 +35,14 @@ end subroutine collect_parquet_files
     ! create a table from reading a parquet file
     call check(error, duckdb_query( &
       con, &
-      "CREATE TABLE test AS SELECT * FROM 'test.parquet';", &
+      "CREATE TABLE test AS SELECT * FROM 'data/test.parquet';", &
       result) == duckdbsuccess)
     if (allocated(error)) return
 
     ! create a table from reading a parquet file
     call check(error, duckdb_query( &
       con, &
-      "SELECT * FROM 'test.parquet';", &
+      "SELECT * FROM 'data/test.parquet';", &
       result) == duckdbsuccess)
     if (allocated(error)) return
 
@@ -68,9 +68,11 @@ end subroutine collect_parquet_files
     ! Write the out the same table to a different parquet file
     call check(error, duckdb_query( &
       con, &
-      "COPY (SELECT * FROM test) TO 'result.parquet' (FORMAT 'parquet');", &
+      "COPY (SELECT * FROM test) TO 'data/result.parquet' (FORMAT 'parquet');", &
       result) == duckdbsuccess)
     if (allocated(error)) return
+
+    ! NOTE: parquet files moved to data directory
 
     !! Later get the schema from the original and the resulting parquet and compare them
     !! But it doesn't work until when we can't read the result.

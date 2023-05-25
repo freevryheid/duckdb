@@ -15,13 +15,13 @@ fortran bindings to duckdb c api
   - [x] Test boolean
   - [x] Test multiple insert
   - [x] Test various error conditions
-  - [x] Test integer columns 
-  - [x] Test real/double columns 
-  - [x] Test date columns 
+  - [x] Test integer columns
+  - [x] Test real/double columns
+  - [x] Test date columns
   - [x] Test time columns
   - [x] Test blob columns
   - [x] Test boolean columns
-  - [x] Test decimal columns 
+  - [x] Test decimal columns
   - [x] Test errors in C API
   - [x] Test C API config
   - [x] ~~Issue #2058: Cleanup after execution of invalid SQL statement causes segmentation fault~~
@@ -67,10 +67,17 @@ fortran bindings to duckdb c api
 
 ### Setup and test
 
-Requires the c library that can be downloaded from https://github.com/duckdb/duckdb/releases
+Requires the c library that can be downloaded from https://github.com/duckdb/duckdb/releases. If you're on archlinux you can install the libraries and headers using "yay duckdb-bin", which includes the cli binary.
 
 Test with
 
 ```shell
 fpm test
+```
+
+To include this in your own projects, add this dependency to your fpm.toml:
+
+```shell
+[dependencies]
+duckdb.git = "https://github.com/freevryheid/duckdb"
 ```
