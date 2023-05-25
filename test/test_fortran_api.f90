@@ -280,6 +280,10 @@ module test_fortran_api
       call check(error, duckdb_connect(db, conn) == duckdbsuccess)
       if (allocated(error)) return
 
+      call check(error, duckdb_query(conn, "SET default_null_order='nulls_last'", &
+        ddb_result) == duckdbsuccess, "null order query")
+      if (allocated(error)) return
+
       call check(error, &
         duckdb_query(conn, "CREATE TABLE test (a INTEGER, b INTEGER);", &
         ddb_result) == duckdbsuccess, "Table creation error.")
@@ -1407,7 +1411,7 @@ module test_fortran_api
       call duckdb_close(db)
 
       ! api abuse
-      block 
+      ! block 
         ! Testing the api with nullptrs does not work well from fortran. all the below tests fail. 
         ! type(duckdb_config) :: null_config
         ! character(len=:), allocatable :: name, description
@@ -1419,9 +1423,9 @@ module test_fortran_api
         ! if (allocated(error)) return
         ! call check(error, duckdb_create_config(null_config) == DuckDBError, "create null config")
         ! if (allocated(error)) return
-        call duckdb_destroy_config(null_config)
-        call duckdb_destroy_config(null_config)
-      end block
+      !   call duckdb_destroy_config(null_config)
+      !   call duckdb_destroy_config(null_config)
+      ! end block
 
       ! Remove the database file created in this test. 
       call system("rm "//dbdir)
