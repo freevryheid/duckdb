@@ -886,6 +886,10 @@ module test_fortran_api
       call check(error, duckdb_connect(db, conn) == duckdbsuccess)
       if (allocated(error)) return
 
+      call check(error, duckdb_query(conn, "SET default_null_order='nulls_last'", &
+        result) == duckdbsuccess, "null order query")
+      if (allocated(error)) return
+
       call check(error, &
         duckdb_query(conn, "CREATE TABLE decimals(dec DECIMAL(18, 4) NULL)", &
         result) == duckdbsuccess, "decimal table create error.")
