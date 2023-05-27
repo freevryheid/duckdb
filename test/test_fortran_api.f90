@@ -45,8 +45,8 @@ module test_fortran_api
       type(duckdb_database) :: db
       type(duckdb_connection) :: conn
       type(duckdb_result) :: ddb_result = duckdb_result()
-      integer(kind=int64), pointer :: data_out
-      type(c_ptr) :: data_in
+      ! integer(kind=int64), pointer :: data_out
+      ! type(c_ptr) :: data_in
 
       ! Open data in in-memory mode
       call check(error, duckdb_open("", db) == duckdbsuccess, "open database")

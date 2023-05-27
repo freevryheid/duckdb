@@ -43,10 +43,6 @@ contains
 
     character(len=:), allocatable, target :: tmp
 
-    ! moving these into a block
-    ! type(duckdb_blob) :: blob
-    ! character(len=:), pointer :: tmp1, tmp2
-
     ! Open db in in-memory mode
     call check(error, duckdb_open("", db) == duckdbsuccess, "Could not open db.")
     if (allocated(error)) return
@@ -86,8 +82,7 @@ contains
     call check(error, status == duckdbsuccess, "Appender creation error.")
     if (allocated(error)) return
 
-    ! TODO: revisit this - NULL isn't appropriate here
-    call check(error, duckdb_appender_error(appender) == "NULL", "Appender has error message.")
+    call check(error, duckdb_appender_error(appender) == "", "Appender has error message.")
     if (allocated(error)) return
 
     status = duckdb_appender_begin_row(appender)
@@ -136,8 +131,7 @@ contains
     call check(error, status == duckdberror, "Can end row despite not enough columns.")
     if (allocated(error)) return
 
-    ! TODO: revisit this - NULL isn't appropriate here
-    call check(error, duckdb_appender_error(appender) /= "NULL")
+    call check(error, duckdb_appender_error(appender) /= "")
     if (allocated(error)) return
 
     status = duckdb_append_varchar(appender, "Hello, World")
@@ -149,8 +143,7 @@ contains
     call check(error, status == duckdberror, "duckdb_append_int32 3 should fail.")
     if (allocated(error)) return
 
-    ! TODO: revisit this - NULL isn't appropriate here
-    call check(error, duckdb_appender_error(appender) /= "NULL")
+    call check(error, duckdb_appender_error(appender) /= "")
     if (allocated(error)) return
 
     status = duckdb_appender_end_row(appender)
@@ -188,8 +181,7 @@ contains
     status = duckdb_appender_close(appender)
     call check(error, status == duckdberror)
     if (allocated(error)) return
-    ! TODO: revisit this - NULL isn't appropriate here
-    call check(error, duckdb_appender_error(appender) == "NULL")
+    call check(error, duckdb_appender_error(appender) == "")
     if (allocated(error)) return
 
     status = duckdb_appender_flush(appender)
@@ -643,7 +635,7 @@ contains
     call check(error, status == duckdbsuccess, "Appender did not return success.")
     if (allocated(error)) return
 
-    call check(error, duckdb_appender_error(appender) == "NULL", "Appender error message not null.")
+    call check(error, duckdb_appender_error(appender) == "", "Appender error message not null.")
     if (allocated(error)) return
 
     ! successfull append
@@ -668,7 +660,7 @@ contains
     status = duckdb_append_varchar(appender, "XXXXX")
     call check(error, status == DuckDBError, "XXXXX does not give error")
     if (allocated(error)) return
-    call check(error, duckdb_appender_error(appender) /= "NULL", "Appender error message not null.")
+    call check(error, duckdb_appender_error(appender) /= "", "Appender error message not null.")
     if (allocated(error)) return
 
     status = duckdb_appender_end_row(appender)
