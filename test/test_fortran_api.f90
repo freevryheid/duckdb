@@ -397,7 +397,7 @@ module test_fortran_api
       call check(error, duckdb_rows_changed(res) == 0, "rows changed" )
       if (allocated(error)) return
 
-      call check(error, duckdb_result_error(res) == "NULL", "result error")
+      call check(error, duckdb_result_error(res) == "", "result error")
       if (allocated(error)) return
 
       ! depreciated
