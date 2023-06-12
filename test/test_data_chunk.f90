@@ -84,8 +84,9 @@ subroutine test_chunks(error)
         ! Get the column
         vector = duckdb_data_chunk_get_vector(chunk, col_idx)
         ptr = duckdb_vector_get_validity(vector)
-        call c_f_pointer(ptr, validity)
-        is_valid = duckdb_validity_row_is_valid(validity, row_idx)
+        ! call c_f_pointer(ptr, validity)
+        ! is_valid = duckdb_validity_row_is_valid(validity, row_idx)
+        is_valid = duckdb_validity_row_is_valid(ptr, row_idx)
 
         ! print *, "col: ", col_idx, "row: ", row_idx, "valid: ", is_valid, "fortran: ", &
         !   btest(validity, row_idx)," ", btest(validity, row_idx+1)
@@ -284,19 +285,25 @@ subroutine test_data_chunk_api(error)
   call duckdb_vector_ensure_validity_writable(vec2)
 
   col1_ptr = duckdb_vector_get_validity(vec1)
-  call c_f_pointer(col1_ptr, col1_validity)
-  call check(error, duckdb_validity_row_is_valid(col1_validity, 0))
+  ! call c_f_pointer(col1_ptr, col1_validity)
+  ! call check(error, duckdb_validity_row_is_valid(col1_validity, 0))
+  call check(error, duckdb_validity_row_is_valid(col1_ptr, 0))
   if (allocated(error)) return
-  call duckdb_validity_set_row_validity(col1_validity, 0, .false.)
-  call check(error,.not. duckdb_validity_row_is_valid(col1_validity, 0), "Failed to invalidate row 0")
+  ! call duckdb_validity_set_row_validity(col1_validity, 0, .false.)
+  call duckdb_validity_set_row_validity(col1_ptr, 0, .false.)
+  ! call check(error,.not. duckdb_validity_row_is_valid(col1_validity, 0), "Failed to invalidate row 0")
+  call check(error,.not. duckdb_validity_row_is_valid(col1_ptr, 0), "Failed to invalidate row 0")
   if (allocated(error)) return
 
   col2_ptr = duckdb_vector_get_validity(vec2)
-  call c_f_pointer(col2_ptr, col2_validity)
-  call check(error, duckdb_validity_row_is_valid(col2_validity, 0))
+  ! call c_f_pointer(col2_ptr, col2_validity)
+  ! call check(error, duckdb_validity_row_is_valid(col2_validity, 0))
+  call check(error, duckdb_validity_row_is_valid(col2_ptr, 0))
   if (allocated(error)) return
-  call duckdb_validity_set_row_validity(col2_validity, 0, .false.)
-  call check(error,.not. duckdb_validity_row_is_valid(col2_validity, 0))
+  ! call duckdb_validity_set_row_validity(col2_validity, 0, .false.)
+  call duckdb_validity_set_row_validity(col2_ptr, 0, .false.)
+  ! call check(error,.not. duckdb_validity_row_is_valid(col2_validity, 0))
+  call check(error,.not. duckdb_validity_row_is_valid(col2_ptr, 0))
   if (allocated(error)) return
 
   call duckdb_data_chunk_set_size(chunk, 1)
@@ -352,14 +359,14 @@ subroutine test_data_chunk_varchar_result_fetch(error)
   type(duckdb_vector) :: vector
   type(c_ptr) :: vector_ptr
   type(c_ptr) :: string_data
-  integer(kind=int64), pointer :: vectr_validity
+  ! integer(kind=int64), pointer :: vectr_validity
   character(len=*), parameter :: varchar_test_query = "select case when i != 0&
     &and i % 42 = 0 then NULL else repeat(chr((65 + (i % 26))::INTEGER), (4 + &
     &(i % 12))) end from range(5000) tbl(i);"
   integer :: tuple_index, chunk_amount, chunk_index, tuples_in_chunk, i
   integer :: expected_length
   character(len=1) :: expected_character
-  integer(kind=int64), pointer :: vector_validity
+  ! integer(kind=int64), pointer :: vector_validity
   character(len=:), allocatable :: f_string
   
   if (duckdb_vector_size() < 64) return
@@ -406,7 +413,7 @@ subroutine test_data_chunk_varchar_result_fetch(error)
     ! Get Vector and Validity
     vector = duckdb_data_chunk_get_vector(chunk, 0)
     vector_ptr = duckdb_vector_get_validity(vector)
-    call c_f_pointer(vector_ptr, vector_validity)
+    ! call c_f_pointer(vector_ptr, vector_validity, [12])
 
     ! FIXME: Original cpp code reads
     ! auto string_data = (duckdb_string_t *)duckdb_vector_get_data(vector);
@@ -414,10 +421,13 @@ subroutine test_data_chunk_varchar_result_fetch(error)
 
     ! Get Tuples in Chunk
     tuples_in_chunk = duckdb_data_chunk_get_size(chunk)
-    print '(B0)', vector_validity
+    ! print '(B0)', vector_validity
+    print *, "tuples in chunk: ", tuples_in_chunk
     do i = 0, tuples_in_chunk - 1
       print*, i
-      if ( .not. duckdb_validity_row_is_valid(vector_validity, i)) then
+      ! if ( .not. duckdb_validity_row_is_valid(vector_validity, i)) then
+      if ( .not. duckdb_validity_row_is_valid(vector_ptr, i)) then
+
         ! The query produces data formatted like below. Every 42 rows there is a NULL.
         ! Every letter is repeated from 4 to 16 increasing by 1 on each row. 
         ! The example below is run with range(3) as an input. In the test query we have range(5000)

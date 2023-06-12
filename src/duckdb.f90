@@ -1477,31 +1477,35 @@ module duckdb
 
     ! DUCKDB_API bool duckdb_validity_row_is_valid(uint64_t *validity, idx_t row);
     function duckdb_validity_row_is_valid_(validity, row) bind(c, name='duckdb_validity_row_is_valid') result(res)
-      import :: c_bool, c_int64_t
-      integer(kind=c_int64_t) :: validity
+      import :: c_bool, c_int64_t, c_ptr
+      ! integer(kind=c_int64_t),  :: validity
+      type(c_ptr), value :: validity
       integer(kind=c_int64_t), value :: row
       logical(kind=c_bool) :: res
     end function duckdb_validity_row_is_valid_
 
     ! DUCKDB_API void duckdb_validity_set_row_validity(uint64_t *validity, idx_t row, bool valid);
     subroutine duckdb_validity_set_row_validity_(validity, row, valid) bind(c, name='duckdb_validity_set_row_validity')
-      import :: c_bool, c_int64_t
-      integer(kind=c_int64_t) :: validity
+      import :: c_bool, c_int64_t, c_ptr
+      ! integer(kind=c_int64_t) :: validity
+      type(c_ptr), value :: validity
       integer(kind=c_int64_t), value :: row
       logical(kind=c_bool), value :: valid
     end subroutine duckdb_validity_set_row_validity_
 
     ! DUCKDB_API void duckdb_validity_set_row_invalid(uint64_t *validity, idx_t row);
     subroutine duckdb_validity_set_row_invalid_(validity, row) bind(c, name='duckdb_validity_set_row_invalid')
-      import :: c_int64_t
-      integer(kind=c_int64_t) :: validity
+      import :: c_int64_t, c_ptr
+      ! integer(kind=c_int64_t) :: validity
+      type(c_ptr), value :: validity
       integer(kind=c_int64_t), value :: row
     end subroutine duckdb_validity_set_row_invalid_
 
     ! DUCKDB_API void duckdb_validity_set_row_valid(uint64_t *validity, idx_t row);
     subroutine duckdb_validity_set_row_valid_(validity, row) bind(c, name='duckdb_validity_set_row_valid')
-      import :: c_int64_t
-      integer(kind=c_int64_t) :: validity
+      import :: c_int64_t, c_ptr
+      ! integer(kind=c_int64_t) :: validity
+      type(c_ptr), value :: validity
       integer(kind=c_int64_t), value :: row
     end subroutine duckdb_validity_set_row_valid_
 
@@ -2615,41 +2619,49 @@ module duckdb
     ! =========================================================================
 
     function duckdb_validity_row_is_valid(validity, row) result(res)
-      integer(kind=int64) :: validity
+      ! integer(kind=int64) :: validity
+      type(c_ptr) :: validity
       integer :: row
       logical :: res
-      integer(kind=c_int64_t) :: tmp
-      tmp = int(validity, kind=c_int64_t)
-      res = duckdb_validity_row_is_valid_(tmp, int(row, kind=c_int64_t))
-      validity = int(tmp, kind=int64)
+      ! integer(kind=c_int64_t) :: tmp
+      ! tmp = int(validity, kind=c_int64_t)
+      ! res = duckdb_validity_row_is_valid_(tmp, int(row, kind=c_int64_t))
+      res = duckdb_validity_row_is_valid_(validity, int(row, kind=c_int64_t))
+      ! validity = int(tmp, kind=int64)
     end function duckdb_validity_row_is_valid
 
     subroutine duckdb_validity_set_row_validity(validity, row, valid)
-      integer(kind=int64) :: validity
+      ! integer(kind=int64) :: validity
+      type(c_ptr) :: validity
       integer :: row
       logical :: valid
-      integer(kind=c_int64_t) :: tmp
-      tmp = int(validity, kind=c_int64_t)
-      call duckdb_validity_set_row_validity_(tmp, int(row, kind=c_int64_t), logical(valid, kind=c_bool))
-      validity = int(tmp, kind=int64)
+      ! integer(kind=c_int64_t) :: tmp
+      ! tmp = int(validity, kind=c_int64_t)
+      ! call duckdb_validity_set_row_validity_(tmp, int(row, kind=c_int64_t), logical(valid, kind=c_bool))
+      call duckdb_validity_set_row_validity_(validity, int(row, kind=c_int64_t), logical(valid, kind=c_bool))
+      ! validity = int(tmp, kind=int64)
     end subroutine duckdb_validity_set_row_validity
 
     subroutine duckdb_validity_set_row_invalid(validity, row)
-      integer(kind=int64) :: validity
+      ! integer(kind=int64) :: validity
+      type(c_ptr) :: validity
       integer :: row
-      integer(kind=c_int64_t) :: tmp
-      tmp = int(validity, kind=c_int64_t)
-      call duckdb_validity_set_row_invalid_(tmp, int(row, kind=c_int64_t))
-      validity = int(tmp, kind=int64)
+      ! integer(kind=c_int64_t) :: tmp
+      ! tmp = int(validity, kind=c_int64_t)
+      ! call duckdb_validity_set_row_invalid_(tmp, int(row, kind=c_int64_t))
+      call duckdb_validity_set_row_invalid_(validity, int(row, kind=c_int64_t))
+      ! validity = int(tmp, kind=int64)
     end subroutine duckdb_validity_set_row_invalid
 
     subroutine duckdb_validity_set_row_valid(validity, row)
-      integer(kind=int64) :: validity
+      ! integer(kind=int64) :: validity
+      type(c_ptr) :: validity
       integer :: row
-      integer(kind=c_int64_t) :: tmp
-      tmp = int(validity, kind=c_int64_t)
-      call duckdb_validity_set_row_invalid_(tmp, int(row, kind=c_int64_t))
-      validity = int(tmp, kind=int64)
+      ! integer(kind=c_int64_t) :: tmp
+      ! tmp = int(validity, kind=c_int64_t)
+      ! call duckdb_validity_set_row_invalid_(tmp, int(row, kind=c_int64_t))
+      call duckdb_validity_set_row_invalid_(validity, int(row, kind=c_int64_t))
+      ! validity = int(tmp, kind=int64)
     end subroutine duckdb_validity_set_row_valid
 
     ! =========================================================================
