@@ -427,7 +427,6 @@ subroutine test_data_chunk_varchar_result_fetch(error)
       print*, i
       ! if ( .not. duckdb_validity_row_is_valid(vector_validity, i)) then
       if ( .not. duckdb_validity_row_is_valid(vector_ptr, i)) then
-
         ! The query produces data formatted like below. Every 42 rows there is a NULL.
         ! Every letter is repeated from 4 to 16 increasing by 1 on each row. 
         ! The example below is run with range(3) as an input. In the test query we have range(5000)
@@ -438,12 +437,12 @@ subroutine test_data_chunk_varchar_result_fetch(error)
         !   │ AAAA                                                                                                                          │
         !   │ BBBBB                                                                                                                         │
         !   │ CCCCCC                                                                                                                        │
-        !   └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-        print*, i," is invalid."
-        
+        !   └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘        
         call check(error, (tuple_index /= 0) .and. (mod(tuple_index, 42) == 0), &
           "Invalid NULL entry at tuple index")
         if (allocated(error)) return
+
+        tuple_index = tuple_index + 1
         cycle
       end if
 
