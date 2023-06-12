@@ -45,8 +45,8 @@ module test_fortran_api
       type(duckdb_database) :: db
       type(duckdb_connection) :: conn
       type(duckdb_result) :: ddb_result = duckdb_result()
-      integer(kind=int64), pointer :: data_out
-      type(c_ptr) :: data_in
+      ! integer(kind=int64), pointer :: data_out
+      ! type(c_ptr) :: data_in
 
       ! Open data in in-memory mode
       call check(error, duckdb_open("", db) == duckdbsuccess, "open database")
@@ -397,7 +397,7 @@ module test_fortran_api
       call check(error, duckdb_rows_changed(res) == 0, "rows changed" )
       if (allocated(error)) return
 
-      call check(error, duckdb_result_error(res) == "NULL", "result error")
+      call check(error, duckdb_result_error(res) == "", "result error")
       if (allocated(error)) return
 
       ! depreciated

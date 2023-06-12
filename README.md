@@ -29,8 +29,8 @@ fortran bindings to duckdb c api
 - [ ] **test_capi_data_chunk.cpp**
   - [x] Test table_info incorrect 'is_valid' value for 'dflt_value' column
   - [x] Test Logical Types C API
-  - [ ] Test DataChunk C API (_in progress_)
-  - [ ] Test DataChunk result fetch in C API
+  - [x] Test DataChunk C API
+  - [ ] Test DataChunk varchar result fetch in C API
   - [ ] Test DataChunk populate ListVector in C API
 - [ ] **capi_table_functions.cpp**
   - [ ] Test Table Functions C API

@@ -2026,7 +2026,7 @@ module duckdb
       character(len=:), allocatable :: err
       type(c_ptr) :: tmp
       type(duckdb_result) :: res
-      err = "NULL"
+      err = ""
       if (c_associated(res%internal_data)) then
         tmp = duckdb_result_error_(res)
         if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
@@ -2690,7 +2690,7 @@ module duckdb
       character(len=:), allocatable :: err
       type(c_ptr) :: tmp
       type(duckdb_appender) :: appender
-      err = "NULL"
+      err = ""
       if (c_associated(appender%appn)) then
         tmp = duckdb_appender_error_(appender)
         if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
