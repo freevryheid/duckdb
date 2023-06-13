@@ -418,16 +418,12 @@ subroutine test_data_chunk_varchar_result_fetch(error)
     ! FIXME: Original cpp code reads
     ! auto string_data = (duckdb_string_t *)duckdb_vector_get_data(vector);
     string_data = duckdb_vector_get_data(vector)
-
+    
     ! Get Tuples in Chunk
     tuples_in_chunk = duckdb_data_chunk_get_size(chunk)
-    ! print '(B0)', vector_validity
     print *, "tuples in chunk: ", tuples_in_chunk
     do i = 0, tuples_in_chunk - 1
-      print*, i
-      ! if ( .not. duckdb_validity_row_is_valid(vector_validity, i)) then
       if ( .not. duckdb_validity_row_is_valid(vector_ptr, i)) then
-
         ! The query produces data formatted like below. Every 42 rows there is a NULL.
         ! Every letter is repeated from 4 to 16 increasing by 1 on each row. 
         ! The example below is run with range(3) as an input. In the test query we have range(5000)
@@ -438,20 +434,20 @@ subroutine test_data_chunk_varchar_result_fetch(error)
         !   │ AAAA                                                                                                                          │
         !   │ BBBBB                                                                                                                         │
         !   │ CCCCCC                                                                                                                        │
-        !   └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-        print*, i," is invalid."
-        
+        !   └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘        
         call check(error, (tuple_index /= 0) .and. (mod(tuple_index, 42) == 0), &
           "Invalid NULL entry at tuple index")
         if (allocated(error)) return
+
+        tuple_index = tuple_index + 1
         cycle
       end if
 
-    !   ! Calculate Expected Length and Character
-    !   expected_length = mod(tuple_index, 12) + 4
-    !   expected_character = char(mod(tuple_index, 26) + 65)
-
-    !   ! Get Tuple and Length
+      ! Calculate Expected Length and Character
+      expected_length = mod(tuple_index, 12) + 4
+      expected_character = char(mod(tuple_index, 26) + 65)
+      print*, expected_length, expected_character
+      ! Get Tuple and Length
     !   length = duckdb_string_t_value_inlined_length(string_data(i))
     !   if (length /= expected_length) then
     !     print *, "Invalid length at tuple index", tuple_index
