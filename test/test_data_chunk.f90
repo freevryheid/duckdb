@@ -358,16 +358,17 @@ subroutine test_data_chunk_varchar_result_fetch(error)
   type(duckdb_data_chunk) :: chunk
   type(duckdb_vector) :: vector
   type(c_ptr) :: vector_ptr
-  type(c_ptr) :: string_data
-  ! integer(kind=int64), pointer :: vectr_validity
+  type(duckdb_string_t), pointer :: string_data(:)
+  type(duckdb_string_t_inlined), pointer :: string_inlined
+  type(duckdb_string_t_pointer), pointer :: string_pointer
+
   character(len=*), parameter :: varchar_test_query = "select case when i != 0&
     &and i % 42 = 0 then NULL else repeat(chr((65 + (i % 26))::INTEGER), (4 + &
     &(i % 12))) end from range(5000) tbl(i);"
   integer :: tuple_index, chunk_amount, chunk_index, tuples_in_chunk, i
+  integer(kind=int32) :: length
   integer :: expected_length
   character(len=1) :: expected_character
-  ! integer(kind=int64), pointer :: vector_validity
-  character(len=:), allocatable :: f_string
   
   if (duckdb_vector_size() < 64) return
 
@@ -407,7 +408,7 @@ subroutine test_data_chunk_varchar_result_fetch(error)
   tuple_index = 0
   chunk_amount = duckdb_result_chunk_count(result)
   do chunk_index = 0, chunk_amount - 1
-    print*, chunk_index
+    ! print*, chunk_index
     chunk = duckdb_result_get_chunk(result, chunk_index)
 
     ! Get Vector and Validity
@@ -417,11 +418,11 @@ subroutine test_data_chunk_varchar_result_fetch(error)
 
     ! FIXME: Original cpp code reads
     ! auto string_data = (duckdb_string_t *)duckdb_vector_get_data(vector);
-    string_data = duckdb_vector_get_data(vector)
-    
+    ! call duckdb_vector_to_string_t(duckdb_vector_get_data(vector), string_data)
+    call c_f_pointer(duckdb_vector_get_data(vector), string_data, [tuples_in_chunk])
     ! Get Tuples in Chunk
     tuples_in_chunk = duckdb_data_chunk_get_size(chunk)
-    print *, "tuples in chunk: ", tuples_in_chunk
+    ! print *, "tuples in chunk: ", tuples_in_chunk
     do i = 0, tuples_in_chunk - 1
       if ( .not. duckdb_validity_row_is_valid(vector_ptr, i)) then
         ! The query produces data formatted like below. Every 42 rows there is a NULL.
@@ -443,12 +444,26 @@ subroutine test_data_chunk_varchar_result_fetch(error)
         cycle
       end if
 
+      print*, duckdb_string_is_inlined(string_data(i+1))
+      if (duckdb_string_is_inlined(string_data(i+1))) then
+        call c_f_pointer(string_data(i+1)%value, string_inlined)
+        print*, string_data(i+1)%value
+        length = int(string_inlined%length)
+      else 
+        call c_f_pointer(string_data(i+1)%value, string_pointer)
+        length = int(string_pointer%length)
+      endif
+        
       ! Calculate Expected Length and Character
       expected_length = mod(tuple_index, 12) + 4
       expected_character = char(mod(tuple_index, 26) + 65)
-      print*, expected_length, expected_character
+      ! print*, expected_length, expected_character
       ! Get Tuple and Length
-    !   length = duckdb_string_t_value_inlined_length(string_data(i))
+      print*, tuple_index, length, expected_length
+      if (i>10) stop
+      ! call check(error, length == expected_length, "String length does not match.")
+      ! if (allocated(error)) return
+
     !   if (length /= expected_length) then
     !     print *, "Invalid length at tuple index", tuple_index
     !     return
