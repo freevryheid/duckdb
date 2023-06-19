@@ -280,10 +280,6 @@ module test_fortran_api
       call check(error, duckdb_connect(db, conn) == duckdbsuccess)
       if (allocated(error)) return
 
-      call check(error, duckdb_query(conn, "SET default_null_order='nulls_last'", &
-        ddb_result) == duckdbsuccess, "null order query")
-      if (allocated(error)) return
-
       call check(error, &
         duckdb_query(conn, "CREATE TABLE test (a INTEGER, b INTEGER);", &
         ddb_result) == duckdbsuccess, "Table creation error.")
@@ -886,10 +882,6 @@ module test_fortran_api
       call check(error, duckdb_connect(db, conn) == duckdbsuccess)
       if (allocated(error)) return
 
-      call check(error, duckdb_query(conn, "SET default_null_order='nulls_last'", &
-        result) == duckdbsuccess, "null order query")
-      if (allocated(error)) return
-
       call check(error, &
         duckdb_query(conn, "CREATE TABLE decimals(dec DECIMAL(18, 4) NULL)", &
         result) == duckdbsuccess, "decimal table create error.")
@@ -1327,9 +1319,6 @@ module test_fortran_api
       call check(error, duckdb_set_config(config, "access_mode", "read_only") &
         == duckdbsuccess, "access_mode valid creation")
       if (allocated(error)) return
-      call check(error, duckdb_set_config(config, "aaaa_invalidoption", "read_only") &
-        == duckdberror, "invalid option name")
-      if (allocated(error)) return
 
       ! cannot open an in-memory database in read-only mode
       error_msg = ""
@@ -1374,6 +1363,17 @@ module test_fortran_api
       ! now we can connect
       call check(error, duckdb_open_ext(dbdir, db, config, error_msg) == DuckDBSuccess, &
         "error open existing database.")
+      if (allocated(error)) return
+
+      ! test unrecognized configuration
+      call check(error, duckdb_set_config(config, "aaaa_invalidoption", "read_only") == DuckDBSuccess, &
+        "Cannot use invalid option.")
+      if (allocated(error)) return
+      call check(error, duckdb_open_ext(dbdir, db, config, error_msg) == DuckDBError, &
+        "Open with invalid config.")
+      if (allocated(error)) return
+      call check(error, error_msg == 'Invalid Input Error: Unrecognized configuration property "aaaa_invalidoption"', &
+        "Type of error message.")
       if (allocated(error)) return
 
       ! we can destroy the config right after duckdb_open

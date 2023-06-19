@@ -69,6 +69,8 @@ fortran bindings to duckdb c api
 
 Requires the c library that can be downloaded from https://github.com/duckdb/duckdb/releases. If you're on archlinux you can install the libraries and headers using "yay duckdb-bin", which includes the cli binary.
 
+**Minimum Duckdb version required: 0.8**
+
 Test with
 
 ```shell
