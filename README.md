@@ -31,6 +31,7 @@ fortran bindings to duckdb c api
   - [x] Test Logical Types C API
   - [x] Test DataChunk C API
   - [ ] Test DataChunk varchar result fetch in C API
+  - [x] Test DataChunk result fetch in C API
   - [ ] Test DataChunk populate ListVector in C API
 - [ ] **capi_table_functions.cpp**
   - [ ] Test Table Functions C API

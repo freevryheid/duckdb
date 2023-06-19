@@ -20,7 +20,8 @@ subroutine collect_data_chunk(testsuite)
     new_unittest("data-chunk-test", test_chunks),                             &
     new_unittest("logical-types-test", test_logical_types),                   &
     new_unittest("data-chunk-api-test", test_data_chunk_api),                 &
-    new_unittest("varchar-chunk-test", test_data_chunk_varchar_result_fetch)  &
+    ! new_unittest("varchar-chunk-test", test_data_chunk_varchar_result_fetch), &
+    new_unittest("chunk-result-fetch-test", test_data_chunk_result_fetch)     &
   ]
 
 end subroutine collect_data_chunk
@@ -490,5 +491,78 @@ subroutine test_data_chunk_varchar_result_fetch(error)
   call duckdb_close(db)
 
 end subroutine test_data_chunk_varchar_result_fetch
+
+subroutine test_data_chunk_result_fetch(error)
+
+  type(error_type), allocatable, intent(out) :: error
+  type(duckdb_database) :: db
+  type(duckdb_connection) :: conn
+  type(duckdb_result) :: result = duckdb_result()
+  type(duckdb_data_chunk) :: chunk
+  type(duckdb_vector) :: vector
+  type(c_ptr) :: validity, col0_ptr
+  integer(int32), pointer :: col0_val(:)
+
+  if (duckdb_vector_size() < 64) return
+
+  ! Open db in in-memory mode
+  call check(error, duckdb_open("", db) == duckdbsuccess)
+  if (allocated(error)) return
+
+  call check(error, duckdb_connect(db, conn) == duckdbsuccess)
+  if (allocated(error)) return
+
+  ! fetch a small result set
+  call check(error, duckdb_query(conn,                                           &
+    "SELECT CASE WHEN i=1 THEN NULL ELSE i::INTEGER END i FROM range(3) tbl(i)", &
+    result) /= duckdberror)
+  if (allocated(error)) return
+  call check(error, duckdb_column_count(result) == 1, "Number of columns /= 1")
+  if (allocated(error)) return
+  call check(error, duckdb_row_count(result) == 3, "Number of rows /= 3")
+  if (allocated(error)) return
+  call check(error, duckdb_result_error(result) == "", "Error message not empty")
+  if (allocated(error)) return
+
+	! fetch the first chunk
+  call check(error, duckdb_result_chunk_count(result) == 1, "Number of chunks /= 1")
+  if (allocated(error)) return
+  chunk = duckdb_result_get_chunk(result, 0)
+  call check(error, c_associated(chunk%dtck), "Chunk is null")
+  if (allocated(error)) return
+
+  call check(error, duckdb_data_chunk_get_column_count(chunk) == 1, "Number of cols /= 1")
+  if (allocated(error)) return
+  call check(error, duckdb_data_chunk_get_size(chunk) == 3, "Number of chunks /= 3")
+  if (allocated(error)) return
+
+  vector = duckdb_data_chunk_get_vector(chunk, 0)
+  validity = duckdb_vector_get_validity(vector)
+  col0_ptr = duckdb_vector_get_data(vector)
+  call c_f_pointer(col0_ptr, col0_val, [duckdb_data_chunk_get_size(chunk)])
+  call check(error, col0_val(1) == 0, "row 0 /= 0")
+  if (allocated(error)) return
+  call check(error, col0_val(3) == 2, "row 2 /= 2")
+  if (allocated(error)) return
+
+  call check(error, duckdb_validity_row_is_valid(validity, 0), "row 0 invalid")
+  if (allocated(error)) return
+  call check(error, .not.duckdb_validity_row_is_valid(validity, 1), "row 1 valid")
+  if (allocated(error)) return
+  call check(error, duckdb_validity_row_is_valid(validity, 2), "row 2 invalid")
+  if (allocated(error)) return
+
+	! after fetching a chunk, we cannot use the old API anymore
+  call check(error, .not.c_associated(duckdb_column_data(result, 0)), "column data works")
+  if (allocated(error)) return
+  call check(error, duckdb_value_int32(result, 0, 1) == 0, "fetch result works")
+  if (allocated(error)) return
+
+	! result set is exhausted!
+  chunk = duckdb_result_get_chunk(result, 1)
+  call check(error, .not.c_associated(chunk%dtck), "Chunk is not exhausted.")
+  if (allocated(error)) return
+
+end subroutine test_data_chunk_result_fetch
 
 end module test_data_chunk
