@@ -21,7 +21,8 @@ subroutine collect_data_chunk(testsuite)
     new_unittest("logical-types-test", test_logical_types),                   &
     new_unittest("data-chunk-api-test", test_data_chunk_api),                 &
     ! new_unittest("varchar-chunk-test", test_data_chunk_varchar_result_fetch), &
-    new_unittest("chunk-result-fetch-test", test_data_chunk_result_fetch)     &
+    new_unittest("chunk-result-fetch-test", test_data_chunk_result_fetch),    &
+    new_unittest("populate-listvector-test", test_data_chunk_populate_ListVector)     &
   ]
 
 end subroutine collect_data_chunk
@@ -564,5 +565,77 @@ subroutine test_data_chunk_result_fetch(error)
   if (allocated(error)) return
 
 end subroutine test_data_chunk_result_fetch
+
+
+subroutine test_data_chunk_populate_ListVector(error)
+
+  type(error_type), allocatable, intent(out) :: error
+  ! type(duckdb_database) :: db
+  ! type(duckdb_connection) :: conn
+  ! type(duckdb_result) :: result = duckdb_result()
+  type(duckdb_data_chunk) :: chunk
+  type(duckdb_vector) :: vector, list_vector, child
+  type(duckdb_logical_type) :: elem_type, list_type
+  type(duckdb_logical_type), allocatable :: schema(:)
+  type(duckdb_list_entry), pointer :: entries(:)
+  type(c_ptr) :: child_ptr
+  integer, pointer :: child_val(:)
+  integer, pointer :: f_vector(:)
+  integer :: i
+
+  call check(error, duckdb_list_vector_reserve(vector, 100_int64) == duckdberror,     &
+    "no error on null list vector reserve")
+  if (allocated(error)) return  
+  call check(error, duckdb_list_vector_set_size(vector, 200_int64) == duckdberror,     &
+    "no error on null list vector set size")
+  if (allocated(error)) return
+
+  elem_type = duckdb_create_logical_type(duckdb_type_integer)
+  list_type = duckdb_create_list_type(elem_type)
+  schema = [list_type]
+
+  chunk = duckdb_create_data_chunk(schema, 1)
+  list_vector = duckdb_data_chunk_get_vector(chunk, 0)
+
+  call check(error, duckdb_list_vector_reserve(list_vector, 123_int64) == duckdbsuccess, &
+    "error on list vector reserve")
+  if (allocated(error)) return  
+  call check(error, duckdb_list_vector_get_size(list_vector) == 0, &
+    "list vector size /= 0")
+  if (allocated(error)) return  
+
+  child = duckdb_list_vector_get_child(list_vector)
+  child_ptr = duckdb_vector_get_data(child)
+  call c_f_pointer(child_ptr, child_val, [123])
+  child_val = [(i, i=0,122)]
+  call check(error, duckdb_list_vector_set_size(list_vector, 123_int64) == duckdbsuccess, &
+    "error on list vector set size")
+  if (allocated(error)) return  
+  call check(error, duckdb_list_vector_get_size(list_vector) == 123, &
+    "list vector size /= 123")
+  if (allocated(error)) return
+
+  if (STANDARD_VECTOR_SIZE > 2) then
+    child_ptr = duckdb_vector_get_data(list_vector)
+    call c_f_pointer(child_ptr, entries, [3])
+    entries(1)%offset = 0
+    entries(1)%length = 20
+    entries(2)%offset = 20
+    entries(2)%length = 80
+    entries(3)%offset = 100
+    entries(3)%length = 23
+
+    child = duckdb_list_vector_get_child(list_vector)
+    child_ptr = duckdb_vector_get_data(child)
+    call c_f_pointer(child_ptr, f_vector, [123])
+    call check(error, all(f_vector == [(i, i=0,122)]), "value mismatch in vector.")
+    if (allocated(error)) return
+  end if
+
+  call duckdb_destroy_data_chunk(chunk)
+  call duckdb_destroy_logical_type(list_type)
+  call duckdb_destroy_logical_type(elem_type)
+
+end subroutine test_data_chunk_populate_ListVector
 
 end module test_data_chunk

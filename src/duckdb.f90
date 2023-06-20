@@ -1441,27 +1441,27 @@ module duckdb
     end function duckdb_list_vector_get_child
 
     ! DUCKDB_API idx_t duckdb_list_vector_get_size(duckdb_vector vector);
-    function duckdb_list_vector_get_size(vector) bind(c, name='duckdb_list_vector_get_size') result(res)
+    function duckdb_list_vector_get_size_(vector) bind(c, name='duckdb_list_vector_get_size') result(res)
       import :: duckdb_vector, c_int64_t
       type(duckdb_vector), value :: vector
       integer(kind=c_int64_t) :: res
-    end function duckdb_list_vector_get_size
+    end function duckdb_list_vector_get_size_
 
     ! DUCKDB_API duckdb_state duckdb_list_vector_set_size(duckdb_vector vector, idx_t size);
-    function duckdb_list_vector_set_size(vector, size) bind(c, name='duckdb_list_vector_set_size') result(res)
+    function duckdb_list_vector_set_size_(vector, size) bind(c, name='duckdb_list_vector_set_size') result(res)
       import :: duckdb_vector, c_int64_t, duckdb_state
       type(duckdb_vector), value :: vector
       integer(kind=c_int64_t), value :: size
       integer(kind(duckdb_state)) :: res
-    end function duckdb_list_vector_set_size
+    end function duckdb_list_vector_set_size_
 
     ! DUCKDB_API duckdb_state duckdb_list_vector_reserve(duckdb_vector vector, idx_t required_capacity);
-    function duckdb_list_vector_reserve(vector, required_capacity) bind(c, name='duckdb_list_vector_reserve') result(res)
+    function duckdb_list_vector_reserve_(vector, required_capacity) bind(c, name='duckdb_list_vector_reserve') result(res)
       import :: duckdb_vector, c_int64_t, duckdb_state
       type(duckdb_vector), value :: vector
       integer(kind=c_int64_t), value :: required_capacity
       integer(kind(duckdb_state)) :: res
-    end function duckdb_list_vector_reserve
+    end function duckdb_list_vector_reserve_
 
     ! DUCKDB_API duckdb_vector duckdb_struct_vector_get_child(duckdb_vector vector, idx_t index);
     function duckdb_struct_vector_get_child(vector, index) bind(c, name='duckdb_struct_vector_get_child') result(res)
@@ -2613,6 +2613,26 @@ module duckdb
       call duckdb_vector_assign_string_element_len_(vector, int(index, kind=c_int64_t), &
         str // c_null_char, int(str_len, kind=c_int64_t))
     end subroutine duckdb_vector_assign_string_element_len
+
+    function duckdb_list_vector_reserve(vector, required_capacity) result(res)
+      type(duckdb_vector) :: vector
+      integer(kind=int64) :: required_capacity
+      integer(kind(duckdb_state)) :: res
+      res = duckdb_list_vector_reserve_(vector, int(required_capacity, kind=c_int64_t))
+    end function duckdb_list_vector_reserve
+
+    function duckdb_list_vector_get_size(vector) result(res)
+      type(duckdb_vector), value :: vector
+      integer(kind=int64) :: res
+      res = int(duckdb_list_vector_get_size_(vector), kind=int64)
+    end function duckdb_list_vector_get_size
+
+    function duckdb_list_vector_set_size(vector, size) result(res)
+      type(duckdb_vector) :: vector
+      integer(kind=int64) :: size
+      integer(kind(duckdb_state)) :: res
+      res = duckdb_list_vector_set_size_(vector, int(size, kind=c_int64_t))
+    end function duckdb_list_vector_set_size
 
     ! =========================================================================
     ! Validity Mask Functions
