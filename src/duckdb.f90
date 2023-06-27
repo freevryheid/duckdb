@@ -30,6 +30,9 @@ module duckdb
   public :: duckdb_hugeint
   public :: duckdb_decimal
   public :: duckdb_string
+  public :: duckdb_string_t
+  public :: duckdb_string_t_inlined
+  public :: duckdb_string_t_pointer
   public :: duckdb_blob
   public :: duckdb_list_entry
   public :: duckdb_column
@@ -120,6 +123,7 @@ module duckdb
   public :: duckdb_malloc
   public :: duckdb_free
   public :: duckdb_vector_size
+  public :: duckdb_string_is_inlined
   public :: duckdb_from_date
   public :: duckdb_to_date
   public :: duckdb_from_time
@@ -396,6 +400,22 @@ module duckdb
     type(c_ptr) :: data = c_null_ptr
     integer(kind=c_int64_t) :: size = 0
   end type
+
+  ! The internal data representation of a VARCHAR/BLOB column
+  type, bind(c) :: duckdb_string_t_pointer
+    integer(c_int32_t) :: length = 0
+    character(c_char), dimension(4) :: prefix = ''
+    type(c_ptr) :: ptr = c_null_ptr
+  end type duckdb_string_t_pointer
+
+  type, bind(c) :: duckdb_string_t_inlined
+    integer(c_int32_t) :: length = 0
+    character(c_char), dimension(12) :: inlined = ''
+  end type duckdb_string_t_inlined
+
+  type, bind(c) :: duckdb_string_t
+    type(c_ptr) :: value
+  end type duckdb_string_t
 
   type, bind(c) :: duckdb_blob
     type(c_ptr) :: data = c_null_ptr
@@ -815,6 +835,12 @@ module duckdb
       import :: c_int64_t
       integer(kind=c_int64_t) :: res
     end function duckdb_vector_size_
+
+    function duckdb_string_is_inlined_(string) bind(c, name='duckdb_string_is_inlined') result(res)
+      import :: duckdb_string_t, c_bool
+      type(duckdb_string_t), value :: string
+      logical(kind=c_bool) :: res
+    end function duckdb_string_is_inlined_
 
     ! =========================================================================
     ! Date/Time/Timestamp Helpers
@@ -2239,6 +2265,14 @@ module duckdb
       integer :: res
       res = int(duckdb_vector_size_())
     end function duckdb_vector_size
+
+    function duckdb_string_is_inlined(string) result(res)
+      type(duckdb_string_t), value :: string
+      logical :: res
+      logical(kind=c_bool) :: tmp
+      tmp = duckdb_string_is_inlined_(string)
+      res = logical(tmp)
+    end function duckdb_string_is_inlined
 
     ! =========================================================================
     ! Date/Time/Timestamp Helpers
