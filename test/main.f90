@@ -6,6 +6,7 @@ program tester
   use test_parquet_files, only: collect_parquet_files
   use test_data_chunk, only: collect_data_chunk
   use test_appender, only: collect_appender
+  use test_complex_types, only: collect_complex_types
   implicit none
   integer :: stat, is
   type(testsuite_type), allocatable :: testsuites(:)
@@ -18,7 +19,8 @@ program tester
     new_testsuite("test_fortran_api", collect_fortran_api),        &
     new_testsuite("test_parquet_files", collect_parquet_files),    &
     new_testsuite("test_data_chunk", collect_data_chunk),          &
-    new_testsuite("test_appender", collect_appender)               &
+    new_testsuite("test_appender", collect_appender),              &
+    new_testsuite("test_complex_types", collect_complex_types)     &
   ]
 
   do is = 1, size(testsuites)
