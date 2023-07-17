@@ -44,9 +44,9 @@ fortran bindings to duckdb c api
 - [ ] **test_capi_arrow.cpp**
   - [ ] Test arrow in C API
 - [ ] **test_capi_complex_types.cpp**
-  - [ ] Test decimal types C API
-  - [ ] Test enum types C API
-  - [ ] Test list types C API
+  - [x] Test decimal types C API
+  - [x] Test enum types C API
+  - [x] Test list types C API
   - [ ] Test struct types C API
 - [ ] **test_capi_extract.cpp**
   - [ ] Test extract statements in C API

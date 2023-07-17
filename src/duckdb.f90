@@ -2529,8 +2529,10 @@ module duckdb
       integer :: index
       type(c_ptr) :: ptr
       character(len=:), allocatable :: res
+      res = ""
       ptr = duckdb_enum_dictionary_value_(type, int(index, kind=c_int64_t))
-      call c_f_str_ptr(ptr, res)
+      if (c_associated(ptr)) &
+        call c_f_str_ptr(ptr, res)
     end function duckdb_enum_dictionary_value
 
     function duckdb_struct_type_child_count(type) result(res)
