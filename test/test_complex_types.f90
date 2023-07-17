@@ -16,7 +16,8 @@ contains
     testsuite = [                                                       &
       new_unittest("decimal-types-test", test_decimal_types),           &
       new_unittest("enum-types-test", test_enum_types),                 &
-      new_unittest("list-types-test", test_list_types)                  &
+      new_unittest("list-types-test", test_list_types),                 &
+      new_unittest("struct-types-test", test_struct_types)              &
     ]
 
   end subroutine collect_complex_types
@@ -284,5 +285,98 @@ contains
     call duckdb_disconnect(con)
     call duckdb_close(db)
   end subroutine test_list_types
+
+  subroutine test_struct_types(error)
+    type(error_type), allocatable, intent(out) :: error
+    type(duckdb_database) :: db
+    type(duckdb_connection) :: con
+    type(duckdb_result) :: result = duckdb_result()
+    integer :: i, j, nc, nr
+    type(duckdb_data_chunk) :: chunk
+    integer(kind(duckdb_type)), allocatable :: types(:)
+    integer, allocatable :: child_count(:)
+    type(string_t), allocatable :: child_names(:,:)
+    type(duckdb_logical_type) :: logical_type, child_type
+    integer(kind(duckdb_type)), allocatable :: child_types(:, :)
+    character(len=:), allocatable :: child_name
+
+    ! Open data in in-memory mode
+    call check(error, duckdb_open("", db) == duckdbsuccess, "failed to open db.")
+    if (allocated(error)) return
+
+    call check(error, duckdb_connect(db, con) == duckdbsuccess, "failed to open connection.")
+    if (allocated(error)) return
+
+    ! create a table from reading a parquet file
+    call check(error, duckdb_query( &
+      con, &
+      "select {'a': 42::int}, {'b': 'hello', 'c': [1, 2, 3]}, {'d': {'e': 42}}, 3::int", &
+      result) == duckdbsuccess, "failed query.")    
+    if (allocated(error)) return
+
+    nc = duckdb_column_count(result)
+    call check(error, nc == 4, "wrong number of columns.")
+    if (allocated(error)) return
+
+    call check(error, duckdb_result_error(result) == "", "error message.")
+    if (allocated(error)) return
+
+    ! Fetch the first chunk
+    call check(error, duckdb_result_chunk_count(result) == 1, "wrong chunk count.")
+    if (allocated(error)) return
+
+    chunk = duckdb_result_get_chunk(result, 0)
+    call check(error, c_associated(chunk%dtck), "chunk not associated.")
+    if (allocated(error)) return
+
+    types = [DUCKDB_TYPE_STRUCT, DUCKDB_TYPE_STRUCT, DUCKDB_TYPE_STRUCT, &
+      DUCKDB_TYPE_INTEGER]
+    child_count = [1, 2, 1, 0]
+    child_names = reshape([string_t("a"), string_t(""), &
+      string_t("b"), string_t("c"), string_t("d"), string_t(""), string_t(""), &
+      string_t("")], [2, 4], order=[1,2])
+    child_types = reshape([DUCKDB_TYPE_INTEGER, 0, DUCKDB_TYPE_VARCHAR, &
+      DUCKDB_TYPE_LIST, DUCKDB_TYPE_STRUCT, 0, 0, 0], [2, 4], order=[1,2])
+    do i = 0, duckdb_column_count(result)-1 
+      logical_type = duckdb_vector_get_column_type(duckdb_data_chunk_get_vector(chunk, i))
+      call check(error, c_associated(logical_type%lglt), "type not associated.")
+      if (allocated(error)) return
+      call check(error, duckdb_get_type_id(logical_type) == types(i+1), &
+        "wrong type.")
+      if (allocated(error)) return
+      do j = 0, child_count(i+1)-1
+        child_name = duckdb_struct_type_child_name(logical_type, j)
+        call check(error, string_t(child_name) == child_names(j+1, i+1), &
+          "wrong child name.")
+        if (allocated(error)) return
+
+        child_type = duckdb_struct_type_child_type(logical_type, j)
+        call check(error, duckdb_get_type_id(child_type) == child_types(j+1, i+1), &
+          "wrong child type.")
+        if (allocated(error)) return        
+
+        call duckdb_destroy_logical_type(child_type)
+      enddo
+      call duckdb_destroy_logical_type(logical_type)
+    enddo
+
+    call check(error, &
+      duckdb_struct_type_child_count(logical_type) == 0, &
+      "unassigned: wrong struct type child count.")
+    if (allocated(error)) return
+    call check(error, &
+      duckdb_struct_type_child_name(logical_type, 0) == "", &
+      "unassigned: wrong struct type child name.")
+    if (allocated(error)) return
+    child_type = duckdb_struct_type_child_type(logical_type, 0)
+    call check(error, &
+      .not. c_associated(child_type%lglt), &
+      "unassigned: wrong struct type child type.")
+    if (allocated(error)) return
+
+    call duckdb_destroy_result(result)
+    call duckdb_disconnect(con)
+    call duckdb_close(db)
+  end subroutine test_struct_types
 
 end module test_complex_types

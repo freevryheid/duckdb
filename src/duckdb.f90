@@ -1288,17 +1288,17 @@ module duckdb
     function duckdb_struct_type_child_name_(type, index) bind(c, name="duckdb_struct_type_child_name") result(res)
       import :: duckdb_logical_type, c_int64_t, c_ptr
       type(duckdb_logical_type), value :: type
-      integer(kind=c_int64_t) :: index
+      integer(kind=c_int64_t), value :: index
       type(c_ptr) :: res
     end function duckdb_struct_type_child_name_
 
     ! DUCKDB_API duckdb_logical_type duckdb_struct_type_child_type(duckdb_logical_type type, idx_t index);
-    function duckdb_struct_type_child_type(type, index) bind(c, name="duckdb_struct_type_child_type") result(res)
+    function duckdb_struct_type_child_type_(type, index) bind(c, name="duckdb_struct_type_child_type") result(res)
       import :: duckdb_logical_type, c_int64_t
       type(duckdb_logical_type), value :: type
       integer(kind=c_int64_t), value :: index
       type(duckdb_logical_type) :: res
-    end function duckdb_struct_type_child_type
+    end function duckdb_struct_type_child_type_
 
     ! DUCKDB_API idx_t duckdb_union_type_member_count(duckdb_logical_type type);
 
@@ -2546,10 +2546,17 @@ module duckdb
       integer :: index
       type(c_ptr) :: tmp
       character(len=:), allocatable :: res
+      res = ""
       tmp = duckdb_struct_type_child_name_(type, int(index, kind=c_int64_t))
       if (c_associated(tmp)) call c_f_str_ptr(tmp, res)
     end function duckdb_struct_type_child_name
 
+    function duckdb_struct_type_child_type(type, index) result(res)
+      type(duckdb_logical_type), value :: type
+      integer :: index
+      type(duckdb_logical_type) :: res
+      res = duckdb_struct_type_child_type_(type, int(index, kind=c_int64_t))
+    end function duckdb_struct_type_child_type
     ! =========================================================================
     ! Data Chunk Interface
     ! =========================================================================

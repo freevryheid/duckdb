@@ -43,11 +43,11 @@ fortran bindings to duckdb c api
   - [x] Test append timestamp in C API
 - [ ] **test_capi_arrow.cpp**
   - [ ] Test arrow in C API
-- [ ] **test_capi_complex_types.cpp**
+- [x] **test_capi_complex_types.cpp**
   - [x] Test decimal types C API
   - [x] Test enum types C API
   - [x] Test list types C API
-  - [ ] Test struct types C API
+  - [x] Test struct types C API
 - [ ] **test_capi_extract.cpp**
   - [ ] Test extract statements in C API
 - [ ] **test_capi_pending.cpp**
