@@ -416,12 +416,14 @@ subroutine test_data_chunk_varchar_result_fetch(error)
     vector_ptr = duckdb_vector_get_validity(vector)
     ! call c_f_pointer(vector_ptr, vector_validity, [12])
 
-    ! FIXME: Original cpp code reads
-    ! auto string_data = (duckdb_string_t *)duckdb_vector_get_data(vector);
-    ! call duckdb_vector_to_string_t(duckdb_vector_get_data(vector), string_data)
-    call c_f_pointer(duckdb_vector_get_data(vector), string_data, [tuples_in_chunk])
     ! Get Tuples in Chunk
     tuples_in_chunk = duckdb_data_chunk_get_size(chunk)
+
+    ! FIXME: Original cpp code reads
+    ! auto string_data = (duckdb_string_t *)duckdb_vector_get_data(vector);
+    vector_ptr = duckdb_vector_get_data(vector)
+    call c_f_pointer(vector_ptr, string_data, [tuples_in_chunk])
+
     ! print *, "tuples in chunk: ", tuples_in_chunk
     do i = 0, tuples_in_chunk - 1
       if ( .not. duckdb_validity_row_is_valid(vector_ptr, i)) then
