@@ -8,7 +8,7 @@ module duckdb
   public :: duckdb_connection
 
   public ::  duckdb_prepared_statement
-  ! public :: duckdb_extracted_statements
+  public :: duckdb_extracted_statements
   ! public :: duckdb_pending_result
   public :: duckdb_appender
   public :: duckdb_arrow
@@ -168,6 +168,10 @@ module duckdb
   public :: duckdb_bind_null
   public :: duckdb_execute_prepared
   ! public :: duckdb_execute_prepared_arrow
+  public :: duckdb_extract_statements
+  public :: duckdb_prepare_extracted_statement
+  public :: duckdb_extract_statements_error
+  public :: duckdb_destroy_extracted
 
   public :: duckdb_data_chunk_get_size
   public :: duckdb_data_chunk_get_vector
@@ -1150,12 +1154,38 @@ module duckdb
     ! TODO
 
     ! DUCKDB_API idx_t duckdb_extract_statements(duckdb_connection connection, const char *query, duckdb_extracted_statements *out_extracted_statements);
+    function duckdb_extract_statements_(connection, query, out_extracted_statements) &
+        bind(c, name='duckdb_extract_statements') result(res)
+      import :: duckdb_connection, c_char, duckdb_extracted_statements, c_int64_t
+      type(duckdb_connection), value :: connection
+      character(kind=c_char) :: query
+      type(duckdb_extracted_statements) :: out_extracted_statements
+      integer(kind=c_int64_t) :: res
+    end function duckdb_extract_statements_
 
     ! DUCKDB_API duckdb_state duckdb_prepare_extracted_statement(duckdb_connection connection, duckdb_extracted_statements extracted_statements, idx_t index, duckdb_prepared_statement *out_prepared_statement);
+    function duckdb_prepare_extracted_statement_(connection, extracted_statements, &
+        index, out_prepared_statement) bind(c, name='duckdb_prepare_extracted_statement') result(res)
+      import :: duckdb_connection, duckdb_prepared_statement, duckdb_extracted_statements, c_int64_t, duckdb_state
+      type(duckdb_connection), value :: connection
+      type(duckdb_extracted_statements), value :: extracted_statements
+      type(duckdb_prepared_statement) :: out_prepared_statement
+      integer(kind=c_int64_t), value :: index
+      integer(kind(duckdb_state)) :: res
+    end function duckdb_prepare_extracted_statement_
 
     ! DUCKDB_API const char *duckdb_extract_statements_error(duckdb_extracted_statements extracted_statements);
+    function duckdb_extract_statements_error_(extracted_statements) bind(c, name='duckdb_extract_statements_error') result(res)
+      import :: duckdb_extracted_statements, c_ptr
+      type(duckdb_extracted_statements), value :: extracted_statements
+      type(c_ptr) :: res
+    end function duckdb_extract_statements_error_
 
     ! DUCKDB_API void duckdb_destroy_extracted(duckdb_extracted_statements *extracted_statements);
+    subroutine duckdb_destroy_extracted(extracted_statements) bind(c, name='duckdb_destroy_extracted')
+      import :: duckdb_extracted_statements
+      type(duckdb_extracted_statements) :: extracted_statements
+    end subroutine duckdb_destroy_extracted
 
     ! =========================================================================
     ! Pending Result Interface
@@ -1314,17 +1344,17 @@ module duckdb
     function duckdb_struct_type_child_name_(type, index) bind(c, name="duckdb_struct_type_child_name") result(res)
       import :: duckdb_logical_type, c_int64_t, c_ptr
       type(duckdb_logical_type), value :: type
-      integer(kind=c_int64_t) :: index
+      integer(kind=c_int64_t), value :: index
       type(c_ptr) :: res
     end function duckdb_struct_type_child_name_
 
     ! DUCKDB_API duckdb_logical_type duckdb_struct_type_child_type(duckdb_logical_type type, idx_t index);
-    function duckdb_struct_type_child_type(type, index) bind(c, name="duckdb_struct_type_child_type") result(res)
+    function duckdb_struct_type_child_type_(type, index) bind(c, name="duckdb_struct_type_child_type") result(res)
       import :: duckdb_logical_type, c_int64_t
       type(duckdb_logical_type), value :: type
       integer(kind=c_int64_t), value :: index
       type(duckdb_logical_type) :: res
-    end function duckdb_struct_type_child_type
+    end function duckdb_struct_type_child_type_
 
     ! DUCKDB_API idx_t duckdb_union_type_member_count(duckdb_logical_type type);
 
@@ -1467,27 +1497,27 @@ module duckdb
     end function duckdb_list_vector_get_child
 
     ! DUCKDB_API idx_t duckdb_list_vector_get_size(duckdb_vector vector);
-    function duckdb_list_vector_get_size(vector) bind(c, name='duckdb_list_vector_get_size') result(res)
+    function duckdb_list_vector_get_size_(vector) bind(c, name='duckdb_list_vector_get_size') result(res)
       import :: duckdb_vector, c_int64_t
       type(duckdb_vector), value :: vector
       integer(kind=c_int64_t) :: res
-    end function duckdb_list_vector_get_size
+    end function duckdb_list_vector_get_size_
 
     ! DUCKDB_API duckdb_state duckdb_list_vector_set_size(duckdb_vector vector, idx_t size);
-    function duckdb_list_vector_set_size(vector, size) bind(c, name='duckdb_list_vector_set_size') result(res)
+    function duckdb_list_vector_set_size_(vector, size) bind(c, name='duckdb_list_vector_set_size') result(res)
       import :: duckdb_vector, c_int64_t, duckdb_state
       type(duckdb_vector), value :: vector
       integer(kind=c_int64_t), value :: size
       integer(kind(duckdb_state)) :: res
-    end function duckdb_list_vector_set_size
+    end function duckdb_list_vector_set_size_
 
     ! DUCKDB_API duckdb_state duckdb_list_vector_reserve(duckdb_vector vector, idx_t required_capacity);
-    function duckdb_list_vector_reserve(vector, required_capacity) bind(c, name='duckdb_list_vector_reserve') result(res)
+    function duckdb_list_vector_reserve_(vector, required_capacity) bind(c, name='duckdb_list_vector_reserve') result(res)
       import :: duckdb_vector, c_int64_t, duckdb_state
       type(duckdb_vector), value :: vector
       integer(kind=c_int64_t), value :: required_capacity
       integer(kind(duckdb_state)) :: res
-    end function duckdb_list_vector_reserve
+    end function duckdb_list_vector_reserve_
 
     ! DUCKDB_API duckdb_vector duckdb_struct_vector_get_child(duckdb_vector vector, idx_t index);
     function duckdb_struct_vector_get_child(vector, index) bind(c, name='duckdb_struct_vector_get_child') result(res)
@@ -2521,12 +2551,37 @@ module duckdb
         res = duckdb_bind_null_(ps, int(idx, kind=c_int64_t))
     end function duckdb_bind_null
 
-
-
-
     ! =========================================================================
     ! Extract Statements
     ! =========================================================================
+    function duckdb_extract_statements(connection, query, out_extracted_statements) result(res)
+      type(duckdb_connection) :: connection
+      character(len=*) :: query
+      type(duckdb_extracted_statements) :: out_extracted_statements
+      integer :: res
+      res = int(duckdb_extract_statements_(connection, query//c_null_char, out_extracted_statements))
+    end function duckdb_extract_statements
+
+    function duckdb_prepare_extracted_statement(connection, extracted_statements, index, out_prepared_statement) result(res)
+      type(duckdb_connection) :: connection
+      type(duckdb_extracted_statements) :: extracted_statements
+      type(duckdb_prepared_statement) :: out_prepared_statement
+      integer(kind=int64) :: index
+      integer(kind(duckdb_state)) :: res
+      res = duckdb_prepare_extracted_statement_(connection, extracted_statements, &
+        int(index, c_int64_t), out_prepared_statement)
+    end function duckdb_prepare_extracted_statement
+
+    function duckdb_extract_statements_error(extracted_statements) result(err)
+      character(len=:), allocatable :: err
+      type(c_ptr) :: tmp
+      type(duckdb_extracted_statements) :: extracted_statements
+      err = ""
+      if (c_associated(extracted_statements%extrac)) then
+        tmp = duckdb_extract_statements_error_(extracted_statements)
+        if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
+      end if  
+    end function duckdb_extract_statements_error
 
     ! =========================================================================
     ! Pending Result Interface
@@ -2563,8 +2618,10 @@ module duckdb
       integer :: index
       type(c_ptr) :: ptr
       character(len=:), allocatable :: res
+      res = ""
       ptr = duckdb_enum_dictionary_value_(type, int(index, kind=c_int64_t))
-      call c_f_str_ptr(ptr, res)
+      if (c_associated(ptr)) &
+        call c_f_str_ptr(ptr, res)
     end function duckdb_enum_dictionary_value
 
     function duckdb_struct_type_child_count(type) result(res)
@@ -2578,10 +2635,17 @@ module duckdb
       integer :: index
       type(c_ptr) :: tmp
       character(len=:), allocatable :: res
+      res = ""
       tmp = duckdb_struct_type_child_name_(type, int(index, kind=c_int64_t))
       if (c_associated(tmp)) call c_f_str_ptr(tmp, res)
     end function duckdb_struct_type_child_name
 
+    function duckdb_struct_type_child_type(type, index) result(res)
+      type(duckdb_logical_type), value :: type
+      integer :: index
+      type(duckdb_logical_type) :: res
+      res = duckdb_struct_type_child_type_(type, int(index, kind=c_int64_t))
+    end function duckdb_struct_type_child_type
     ! =========================================================================
     ! Data Chunk Interface
     ! =========================================================================
@@ -2647,6 +2711,26 @@ module duckdb
       call duckdb_vector_assign_string_element_len_(vector, int(index, kind=c_int64_t), &
         str // c_null_char, int(str_len, kind=c_int64_t))
     end subroutine duckdb_vector_assign_string_element_len
+
+    function duckdb_list_vector_reserve(vector, required_capacity) result(res)
+      type(duckdb_vector) :: vector
+      integer(kind=int64) :: required_capacity
+      integer(kind(duckdb_state)) :: res
+      res = duckdb_list_vector_reserve_(vector, int(required_capacity, kind=c_int64_t))
+    end function duckdb_list_vector_reserve
+
+    function duckdb_list_vector_get_size(vector) result(res)
+      type(duckdb_vector), value :: vector
+      integer(kind=int64) :: res
+      res = int(duckdb_list_vector_get_size_(vector), kind=int64)
+    end function duckdb_list_vector_get_size
+
+    function duckdb_list_vector_set_size(vector, size) result(res)
+      type(duckdb_vector) :: vector
+      integer(kind=int64) :: size
+      integer(kind(duckdb_state)) :: res
+      res = duckdb_list_vector_set_size_(vector, int(size, kind=c_int64_t))
+    end function duckdb_list_vector_set_size
 
     ! =========================================================================
     ! Validity Mask Functions
