@@ -1200,7 +1200,7 @@ module duckdb
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_logical_type(duckdb_type type);
     function duckdb_create_logical_type(type) bind(c, name='duckdb_create_logical_type') result(res)
-      import :: duckdb_logical_type
+      import :: duckdb_logical_type, duckdb_type
       integer(kind(duckdb_type)), value :: type
       type(duckdb_logical_type) :: res
     end function duckdb_create_logical_type
@@ -1238,7 +1238,7 @@ module duckdb
 
     ! DUCKDB_API duckdb_type duckdb_get_type_id(duckdb_logical_type type);
     function duckdb_get_type_id(type) bind(c, name="duckdb_get_type_id") result(res)
-      import :: duckdb_logical_type
+      import :: duckdb_logical_type, duckdb_type
       type(duckdb_logical_type), value :: type
       integer(kind(duckdb_type)) :: res
     end function duckdb_get_type_id
@@ -1259,14 +1259,14 @@ module duckdb
 
     ! DUCKDB_API duckdb_type duckdb_decimal_internal_type(duckdb_logical_type type);
     function duckdb_decimal_internal_type(type) bind(c, name="duckdb_decimal_internal_type") result(res)
-      import :: duckdb_logical_type
+      import :: duckdb_logical_type, duckdb_type
       type(duckdb_logical_type), value :: type
       integer(kind(duckdb_type)) :: res
     end function duckdb_decimal_internal_type
 
     ! DUCKDB_API duckdb_type duckdb_enum_internal_type(duckdb_logical_type type);
     function duckdb_enum_internal_type(type) bind(c, name="duckdb_enum_internal_type") result(res)
-      import :: duckdb_logical_type
+      import :: duckdb_logical_type, duckdb_type
       type(duckdb_logical_type), value :: type
       integer(kind(duckdb_type)) :: res
     end function duckdb_enum_internal_type
