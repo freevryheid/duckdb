@@ -1,7 +1,7 @@
 name = "duckdb"
 version = "0.1.0"
 license = "MIT"
-author = "Andre Smit"
+author = "Andre Smit, Ludovico Nicotina"
 maintainer = "freevryheid@gmail.com"
 copyright = "Copyright 2023, Andre Smit"
 
