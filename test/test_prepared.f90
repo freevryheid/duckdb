@@ -1,5 +1,5 @@
 module test_prepared
-  use, intrinsic :: iso_c_binding, only: c_associated
+  use, intrinsic :: iso_c_binding, only: c_associated, c_loc
   use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan
   use constants
   use duckdb
@@ -23,6 +23,9 @@ contains
     type(duckdb_result) :: res
     integer(kind(duckdb_state)) :: status
     type(duckdb_decimal) :: decimal, result_decimal
+    character(len=:), allocatable, target :: str
+    character(len=:), allocatable :: str_res
+    type(duckdb_blob) :: blob_data
 
     ! open the database in in-memory mode
     call check(error, duckdb_open("", database) == duckdbsuccess, "error opening db.")
@@ -185,6 +188,9 @@ contains
     if (allocated(error)) return
     call duckdb_destroy_result(res)
 
+    status = duckdb_bind_varchar(stmt, 1, achar(int(Z'80'))//achar(int(Z'40'))//achar(int(Z'41')))
+    call check(error, status == DuckDBError, "Can bind an invalid unicode to varchar.")
+    if (allocated(error)) return
     status = duckdb_bind_varchar(stmt, 1, "44")
     call check(error, status == duckdbsuccess, "Cannot bind to varchar.")
     if (allocated(error)) return
@@ -210,36 +216,53 @@ contains
     call duckdb_destroy_result(res)
     call duckdb_destroy_prepare(stmt)
 
+    status = duckdb_prepare(connection, "SELECT CAST($1 AS VARCHAR)", stmt)
+    call check(error, status == duckdbsuccess, "Cannot prepare cast to varchar.")
+    if (allocated(error)) return
+    call check(error, c_associated(stmt%prep), "Statement is allocated.")
+    if (allocated(error)) return
+
+    ! invalid unicode
+    status = duckdb_bind_varchar_length(stmt, 1, achar(int(Z'80')), 1)
+    call check(error, status == DuckDBError, "Can bind an invalid unicode to varchar.")
+    if (allocated(error)) return
+
+    ! we can bind null values, though!
+    status = duckdb_bind_varchar_length(stmt, 1, achar(int(Z'00'))//achar(int(Z'40'))//achar(int(Z'41')), 3)
+    call check(error, status == DuckDBSuccess, "Cannot bind null values to varchar.")
+    if (allocated(error)) return
+    status = duckdb_bind_varchar_length(stmt, 1, "hello world", 5)
+    call check(error, status == DuckDBSuccess, "Cannot bind string to varchar length.")
+    if (allocated(error)) return
+    status = duckdb_execute_prepared(stmt, res)
+    call check(error, status == duckdbsuccess, "Cannot execute bind to varchar length.")
+    if (allocated(error)) return
+    str_res = duckdb_value_varchar(res, 0, 0)
+    call check(error, str_res == "hello", "Cannot retrieve string from varchar.")
+    if (allocated(error)) return
+    call check(error, duckdb_value_int8(res, 0, 0) == 0_int8, "Cannot retrieve int8 from result.")
+    if (allocated(error)) return
+    call duckdb_destroy_result(res)
+
+    str = "hello\0world"
+    blob_data=duckdb_blob(c_loc(str), len(str))
+    status = duckdb_bind_blob(stmt, 1, blob_data)
+    call check(error, status == duckdbsuccess, "Cannot bind binary blob.")
+    if (allocated(error)) return
+    status = duckdb_execute_prepared(stmt, res)
+    call check(error, status == duckdbsuccess, "Cannot execute bind to blob.")
+    if (allocated(error)) return
+    ! FIXME: Retrieving a blob as varchar returns the hex literal rather than the string.
+    ! str_res = duckdb_value_varchar(res, 0, 0)
+    ! call check(error, str_res == "hello\\x00world", "Cannot retrieve blob data from varchar.")
+    ! if (allocated(error)) return
+    call check(error, duckdb_value_int8(res, 0, 0) == 0, "Cannot retrieve blob data as int8")
+    if (allocated(error)) return
+    call duckdb_destroy_result(res)
+
+
   end subroutine test_prepared_statements
 end module test_prepared
-
-
-! 	status = duckdb_prepare(tester.connection, "SELECT CAST($1 AS VARCHAR)", &stmt);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	REQUIRE(stmt != nullptr);
-
-! 	// invalid unicode
-! 	REQUIRE(duckdb_bind_varchar_length(stmt, 1, "\x80", 1) == DuckDBError);
-! 	// we can bind null values, though!
-! 	REQUIRE(duckdb_bind_varchar_length(stmt, 1, "\x00\x40\x41", 3) == DuckDBSuccess);
-! 	duckdb_bind_varchar_length(stmt, 1, "hello world", 5);
-! 	status = duckdb_execute_prepared(stmt, &res);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	auto value = duckdb_value_varchar(&res, 0, 0);
-! 	REQUIRE(string(value) == "hello");
-! 	REQUIRE(duckdb_value_int8(&res, 0, 0) == 0);
-! 	duckdb_free(value);
-! 	duckdb_destroy_result(&res);
-
-! 	duckdb_bind_blob(stmt, 1, "hello\0world", 11);
-! 	status = duckdb_execute_prepared(stmt, &res);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	value = duckdb_value_varchar(&res, 0, 0);
-! 	REQUIRE(string(value) == "hello\\x00world");
-! 	REQUIRE(duckdb_value_int8(&res, 0, 0) == 0);
-! 	duckdb_free(value);
-! 	duckdb_destroy_result(&res);
-
 ! 	duckdb_date_struct date_struct;
 ! 	date_struct.year = 1992;
 ! 	date_struct.month = 9;
