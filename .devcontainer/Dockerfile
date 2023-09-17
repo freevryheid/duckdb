@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 
-ARG FPM_BIN="https://github.com/fortran-lang/fpm/releases/download/v0.7.0/fpm-0.7.0-linux-x86_64"
+ARG FPM_BIN="https://github.com/fortran-lang/fpm/releases/download/v0.9.0/fpm-0.9.0-linux-x86_64"
 ARG DUCKDB_DISTR="https://github.com/duckdb/duckdb/releases/download/v0.8.1/libduckdb-linux-aarch64.zip"
 ARG GIT_PROMPT="https://raw.githubusercontent.com/git/git/master/contrib/completion/git-prompt.sh"
 ARG GIT_COMPLETION="https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash"
