@@ -5,7 +5,7 @@
   "forwardPorts": [3000],  
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "uname -a",
+	// "postCreateCommand": "uname -a"
 
 	"customizations": {
     "vscode": {
