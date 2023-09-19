@@ -26,6 +26,10 @@ contains
     character(len=:), allocatable, target :: str
     character(len=:), allocatable :: str_res
     type(duckdb_blob) :: blob_data
+    type(duckdb_date_struct) :: date_struct
+    type(duckdb_time_struct) :: time_struct
+    type(duckdb_timestamp_struct) :: ts
+    type(duckdb_interval) :: interval
 
     ! open the database in in-memory mode
     call check(error, duckdb_open("", database) == duckdbsuccess, "error opening db.")
@@ -260,62 +264,61 @@ contains
     if (allocated(error)) return
     call duckdb_destroy_result(res)
 
+    date_struct%year = 1992
+    date_struct%month = 9
+    date_struct%day = 3
 
+    status = duckdb_bind_date(stmt, 1, duckdb_to_date(date_struct))
+    status = duckdb_execute_prepared(stmt, res)
+    call check(error, status == duckdbsuccess, "Cannot execute bind to date.")
+    if (allocated(error)) return
+    str_res = duckdb_value_varchar(res, 0, 0)
+    call check(error, str_res == "1992-09-03", "Cannot retrieve date_struct as varchar.")
+    if (allocated(error)) return
+    call duckdb_destroy_result(res)
+ 
+    time_struct%hour = 12
+    time_struct%min = 22
+    time_struct%sec = 33
+    time_struct%micros = 123400
+
+    status = duckdb_bind_time(stmt, 1, duckdb_to_time(time_struct))
+    status = duckdb_execute_prepared(stmt, res)
+    call check(error, status == duckdbsuccess, "Cannot execute bind to time.")
+    if (allocated(error)) return
+    str_res = duckdb_value_varchar(res, 0, 0)
+    call check(error, str_res == "12:22:33.1234", "Cannot retrieve time_struct as varchar.")
+    if (allocated(error)) return
+    call duckdb_destroy_result(res)
+
+    ts%date = date_struct
+    ts%time = time_struct
+
+    status = duckdb_bind_timestamp(stmt, 1, duckdb_to_timestamp(ts))
+    status = duckdb_execute_prepared(stmt, res)
+    call check(error, status == duckdbsuccess, "Cannot execute bind to time.")
+    if (allocated(error)) return
+    str_res = duckdb_value_varchar(res, 0, 0)
+    call check(error, str_res == "1992-09-03 12:22:33.1234", &
+      "Cannot retrieve timestamp_struct as varchar.")
+    if (allocated(error)) return
+    call duckdb_destroy_result(res)
+
+    interval%months = 3;
+    interval%days = 0;
+    interval%micros = 0;
+
+  	status = duckdb_bind_interval(stmt, 1, interval)
+    status = duckdb_execute_prepared(stmt, res)
+    call check(error, status == duckdbsuccess, "Cannot execute bind to interval.")
+    if (allocated(error)) return
+    str_res = duckdb_value_varchar(res, 0, 0)
+    call check(error, str_res == "3 months", "Cannot retrieve interval as varchar.")
+    if (allocated(error)) return
+    call duckdb_destroy_result(res)
+    call duckdb_destroy_prepare(stmt)
   end subroutine test_prepared_statements
 end module test_prepared
-! 	duckdb_date_struct date_struct;
-! 	date_struct.year = 1992;
-! 	date_struct.month = 9;
-! 	date_struct.day = 3;
-
-! 	duckdb_bind_date(stmt, 1, duckdb_to_date(date_struct));
-! 	status = duckdb_execute_prepared(stmt, &res);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	value = duckdb_value_varchar(&res, 0, 0);
-! 	REQUIRE(string(value) == "1992-09-03");
-! 	duckdb_free(value);
-! 	duckdb_destroy_result(&res);
-
-! 	duckdb_time_struct time_struct;
-! 	time_struct.hour = 12;
-! 	time_struct.min = 22;
-! 	time_struct.sec = 33;
-! 	time_struct.micros = 123400;
-
-! 	duckdb_bind_time(stmt, 1, duckdb_to_time(time_struct));
-! 	status = duckdb_execute_prepared(stmt, &res);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	value = duckdb_value_varchar(&res, 0, 0);
-! 	REQUIRE(string(value) == "12:22:33.1234");
-! 	duckdb_free(value);
-! 	duckdb_destroy_result(&res);
-
-! 	duckdb_timestamp_struct ts;
-! 	ts.date = date_struct;
-! 	ts.time = time_struct;
-
-! 	duckdb_bind_timestamp(stmt, 1, duckdb_to_timestamp(ts));
-! 	status = duckdb_execute_prepared(stmt, &res);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	value = duckdb_value_varchar(&res, 0, 0);
-! 	REQUIRE(string(value) == "1992-09-03 12:22:33.1234");
-! 	duckdb_free(value);
-! 	duckdb_destroy_result(&res);
-
-! 	duckdb_interval interval;
-! 	interval.months = 3;
-! 	interval.days = 0;
-! 	interval.micros = 0;
-
-! 	duckdb_bind_interval(stmt, 1, interval);
-! 	status = duckdb_execute_prepared(stmt, &res);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	value = duckdb_value_varchar(&res, 0, 0);
-! 	REQUIRE(string(value) == "3 months");
-! 	duckdb_free(value);
-! 	duckdb_destroy_result(&res);
-
-! 	duckdb_destroy_prepare(&stmt);
 
 ! 	status = duckdb_query(tester.connection, "CREATE TABLE a (i INTEGER)", NULL);
 ! 	REQUIRE(status == DuckDBSuccess);
