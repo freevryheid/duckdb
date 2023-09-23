@@ -1,7 +1,8 @@
 module test_prepared
-  use, intrinsic :: iso_c_binding, only: c_associated, c_loc
+  use, intrinsic :: iso_c_binding, only: c_associated, c_loc, c_ptr
   use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan
   use constants
+  use util, only: c_f_str_ptr
   use duckdb
   use testdrive, only: new_unittest, unittest_type, error_type, check, skip_test
   implicit none
@@ -19,7 +20,7 @@ contains
     type(error_type), allocatable, intent(out) :: error
     type(duckdb_database) :: database
     type(duckdb_connection) :: connection
-    type(duckdb_prepared_statement) :: stmt
+    type(duckdb_prepared_statement) :: stmt, unallocated_stmt
     type(duckdb_result) :: res
     integer(kind(duckdb_state)) :: status
     type(duckdb_decimal) :: decimal, result_decimal
@@ -30,6 +31,8 @@ contains
     type(duckdb_time_struct) :: time_struct
     type(duckdb_timestamp_struct) :: ts
     type(duckdb_interval) :: interval
+    integer(kind=kind(duckdb_type)) :: pt
+    integer :: i
 
     ! open the database in in-memory mode
     call check(error, duckdb_open("", database) == duckdbsuccess, "error opening db.")
@@ -308,7 +311,7 @@ contains
     interval%days = 0;
     interval%micros = 0;
 
-  	status = duckdb_bind_interval(stmt, 1, interval)
+    status = duckdb_bind_interval(stmt, 1, interval)
     status = duckdb_execute_prepared(stmt, res)
     call check(error, status == duckdbsuccess, "Cannot execute bind to interval.")
     if (allocated(error)) return
@@ -317,71 +320,96 @@ contains
     if (allocated(error)) return
     call duckdb_destroy_result(res)
     call duckdb_destroy_prepare(stmt)
+
+    call check(error, duckdb_query(connection, "CREATE TABLE a (i INTEGER)", res) == duckdbsuccess)
+    if (allocated(error)) return
+
+    status = duckdb_prepare(connection, "INSERT INTO a VALUES (?)", stmt)
+    call check(error, status == duckdbsuccess, "Cannot prepare insert values.")
+    if (allocated(error)) return
+    call check(error, c_associated(stmt%prep), "Statement for insert values not allocated.")
+    if (allocated(error)) return
+    call check(error, duckdb_nparams(unallocated_stmt)==0, "error in nparams for null.")
+    if (allocated(error)) return
+    call check(error, duckdb_nparams(stmt)==1, "error in nparams.")
+    if (allocated(error)) return
+    call check(error, duckdb_param_type(unallocated_stmt, 0)==DUCKDB_TYPE_INVALID, "error in invalid param type.")
+    if (allocated(error)) return
+    call check(error, duckdb_param_type(stmt, 0)==DUCKDB_TYPE_INVALID, "error in stmt, 0 param type.")
+    if (allocated(error)) return
+    call check(error, duckdb_param_type(stmt, 1)==DUCKDB_TYPE_INTEGER, "error in stmt, 1 param type.")
+    if (allocated(error)) return
+    call check(error, duckdb_param_type(stmt, 2)==DUCKDB_TYPE_INVALID, "error in stmt, 2 param type.")
+    if (allocated(error)) return
+
+    do i = 1, 1000
+      status = duckdb_bind_int32(stmt, 1, i)
+      status = duckdb_execute_prepared(stmt, res)
+      call check(error, status == DuckDBSuccess, "error in loop bind int32.")
+      if (allocated(error)) return  
+    end do
+    call duckdb_destroy_prepare(stmt)
+
+    status = duckdb_prepare(connection, "SELECT SUM(i)*$1-$2 FROM a", stmt)
+    call check(error, status == DuckDBSuccess, "error prepare select sum.")
+    if (allocated(error)) return  
+    call check(error, c_associated(stmt%prep), "Statement for select sum not allocated.")
+    if (allocated(error)) return
+
+    ! clear bindings
+    status = duckdb_bind_int32(stmt, 1, 2)
+    call check(error, duckdb_clear_bindings(stmt) == DuckDBSuccess, "Error in clear bindings.")
+    if (allocated(error)) return
+
+    ! bind again will succeed
+    status = duckdb_bind_int32(stmt, 1, 2)
+    status = duckdb_bind_int32(stmt, 2, 1000)
+    status = duckdb_execute_prepared(stmt, res)
+    call check(error, status == DuckDBSuccess, "Error in execute again bind int 32.")
+    if (allocated(error)) return
+    call check(error, duckdb_value_int32(res, 0, 0) == 1000000, "Error in get result as int32.")
+    if (allocated(error)) return
+    call duckdb_destroy_result(res)
+    call duckdb_destroy_prepare(stmt)
+
+    ! not-so-happy path
+    status = duckdb_prepare(connection, "SELECT XXXXX", stmt)
+    call check(error, status == DuckDBError, "Error in unhappy prepare.")
+    if (allocated(error)) return
+    status = duckdb_prepare(connection, "SELECT CAST($1 AS INTEGER)", stmt)
+    call check(error, status == DuckDBSuccess, "Error in cast input as integer prepare.")
+    if (allocated(error)) return
+    status = duckdb_execute_prepared(stmt, res)
+    call check(error, status == DuckDBError, "Error in execut cast input as integer, no input.")
+    if (allocated(error)) return
+    call duckdb_destroy_result(res)
+    call duckdb_destroy_prepare(stmt)
+
+    ! test duckdb_malloc explicitly
+    block 
+      type(c_ptr) :: malloced_data
+      character(len=6), target :: f_str = "hello "
+      character(len=:), allocatable :: tmp
+      malloced_data = duckdb_malloc(int(100, kind=int64))
+      malloced_data = c_loc(f_str)
+      call c_f_str_ptr(malloced_data, tmp)
+      call check(error, tmp == "hello", "Error in duckdb_malloc.")
+      if (allocated(error)) return
+    end block
+
+    status = duckdb_prepare(connection, "SELECT sum(i) FROM a WHERE i > ?", stmt)
+    call check(error, status == DuckDBSuccess, "Error select sum prepare.")
+    if (allocated(error)) return
+    call check(error, c_associated(stmt%prep), "Unallocated statement (prep sum).")
+    if (allocated(error)) return
+    call check(error, duckdb_nparams(stmt) == 1, "Nparams different from 1.")
+    if (allocated(error)) return
+    call check(error, duckdb_param_type(unallocated_stmt, 0)==DUCKDB_TYPE_INVALID, &
+      "unallocated statment has param type.")
+    if (allocated(error)) return
+    call check(error, duckdb_param_type(stmt, 1)==DUCKDB_TYPE_INTEGER, &
+      "param type 1 not integer.")
+    if (allocated(error)) return
+    call duckdb_destroy_prepare(stmt)
   end subroutine test_prepared_statements
 end module test_prepared
-
-! 	status = duckdb_query(tester.connection, "CREATE TABLE a (i INTEGER)", NULL);
-! 	REQUIRE(status == DuckDBSuccess);
-
-! 	status = duckdb_prepare(tester.connection, "INSERT INTO a VALUES (?)", &stmt);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	REQUIRE(stmt != nullptr);
-! 	REQUIRE(duckdb_nparams(nullptr) == 0);
-! 	REQUIRE(duckdb_nparams(stmt) == 1);
-! 	REQUIRE(duckdb_param_type(nullptr, 0) == DUCKDB_TYPE_INVALID);
-! 	REQUIRE(duckdb_param_type(stmt, 0) == DUCKDB_TYPE_INVALID);
-! 	REQUIRE(duckdb_param_type(stmt, 1) == DUCKDB_TYPE_INTEGER);
-! 	REQUIRE(duckdb_param_type(stmt, 2) == DUCKDB_TYPE_INVALID);
-
-! 	for (int32_t i = 1; i <= 1000; i++) {
-! 		duckdb_bind_int32(stmt, 1, i);
-! 		status = duckdb_execute_prepared(stmt, nullptr);
-! 		REQUIRE(status == DuckDBSuccess);
-! 	}
-! 	duckdb_destroy_prepare(&stmt);
-
-! 	status = duckdb_prepare(tester.connection, "SELECT SUM(i)*$1-$2 FROM a", &stmt);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	REQUIRE(stmt != nullptr);
-! 	// clear bindings
-! 	duckdb_bind_int32(stmt, 1, 2);
-! 	REQUIRE(duckdb_clear_bindings(stmt) == DuckDBSuccess);
-
-! 	// bind again will succeed
-! 	duckdb_bind_int32(stmt, 1, 2);
-! 	duckdb_bind_int32(stmt, 2, 1000);
-! 	status = duckdb_execute_prepared(stmt, &res);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	REQUIRE(duckdb_value_int32(&res, 0, 0) == 1000000);
-! 	duckdb_destroy_result(&res);
-! 	duckdb_destroy_prepare(&stmt);
-
-! 	// not-so-happy path
-! 	status = duckdb_prepare(tester.connection, "SELECT XXXXX", &stmt);
-! 	REQUIRE(status == DuckDBError);
-! 	duckdb_destroy_prepare(&stmt);
-
-! 	status = duckdb_prepare(tester.connection, "SELECT CAST($1 AS INTEGER)", &stmt);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	REQUIRE(stmt != nullptr);
-
-! 	status = duckdb_execute_prepared(stmt, &res);
-! 	REQUIRE(status == DuckDBError);
-! 	duckdb_destroy_result(&res);
-! 	duckdb_destroy_prepare(&stmt);
-
-! 	// test duckdb_malloc explicitly
-! 	auto malloced_data = duckdb_malloc(100);
-! 	memcpy(malloced_data, "hello\0", 6);
-! 	REQUIRE(string((char *)malloced_data) == "hello");
-! 	duckdb_free(malloced_data);
-
-! 	status = duckdb_prepare(tester.connection, "SELECT sum(i) FROM a WHERE i > ?", &stmt);
-! 	REQUIRE(status == DuckDBSuccess);
-! 	REQUIRE(stmt != nullptr);
-! 	REQUIRE(duckdb_nparams(stmt) == 1);
-! 	REQUIRE(duckdb_param_type(nullptr, 0) == DUCKDB_TYPE_INVALID);
-! 	REQUIRE(duckdb_param_type(stmt, 1) == DUCKDB_TYPE_INTEGER);
-
-! 	duckdb_destroy_prepare(&stmt);
-! }
