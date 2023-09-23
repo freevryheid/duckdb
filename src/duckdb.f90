@@ -2336,8 +2336,7 @@ module duckdb
       integer(kind(duckdb_type)) :: res
       type(duckdb_prepared_statement) :: ps
       integer :: idx
-      if (c_associated(ps%prep)) &
-        res = duckdb_param_type_(ps, int(idx, kind=c_int64_t))
+      res = duckdb_param_type_(ps, int(idx, kind=c_int64_t))
     end function duckdb_param_type
 
     function duckdb_bind_boolean(ps, idx, val) result(res)
