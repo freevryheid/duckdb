@@ -160,7 +160,7 @@ module duckdb
   public :: duckdb_bind_varchar
   public :: duckdb_bind_varchar_length
   ! public :: duckdb_bind_string ! helper function to wrap duckdb_bind_varchar_length
-  ! public :: duckdb_bind_blob ! the way it should work
+  public :: duckdb_bind_blob ! the way it should work
   public :: duckdb_bind_null
   public :: duckdb_execute_prepared
   ! public :: duckdb_execute_prepared_arrow
@@ -1093,14 +1093,12 @@ module duckdb
     end function duckdb_bind_varchar_length_
 
     ! DUCKDB_API duckdb_state duckdb_bind_blob(duckdb_prepared_statement prepared_statement, idx_t param_idx, const void *data, idx_t length);
-    ! FIXME: shouldn't this be fixed on the c-api side to use duckdb_blob instead
-    !        propose addressing in the helper function
-    function duckdb_bind_blob_(prepared_statement, param_idx, val, length) bind(c, name='duckdb_bind_blob') result(res)
+    function duckdb_bind_blob_(prepared_statement, param_idx, data, length) bind(c, name='duckdb_bind_blob') result(res)
       import :: duckdb_state, duckdb_prepared_statement, c_int64_t, c_ptr
       integer(kind(duckdb_state)) :: res
       type(duckdb_prepared_statement), value :: prepared_statement
       integer(kind=c_int64_t), value :: param_idx, length
-      type(c_ptr) :: val
+      type(c_ptr) :: data
     end function duckdb_bind_blob_
 
     ! DUCKDB_API duckdb_state duckdb_bind_null(duckdb_prepared_statement prepared_statement, idx_t param_idx);
@@ -2338,8 +2336,7 @@ module duckdb
       integer(kind(duckdb_type)) :: res
       type(duckdb_prepared_statement) :: ps
       integer :: idx
-      if (c_associated(ps%prep)) &
-        res = duckdb_param_type_(ps, int(idx, kind=c_int64_t))
+      res = duckdb_param_type_(ps, int(idx, kind=c_int64_t))
     end function duckdb_param_type
 
     function duckdb_bind_boolean(ps, idx, val) result(res)
@@ -2495,6 +2492,15 @@ module duckdb
       if (c_associated(ps%prep)) &
         res = duckdb_bind_varchar_length_(ps, int(idx, kind=c_int64_t), cval, int(length, kind=c_int64_t))
     end function duckdb_bind_varchar_length
+
+    function duckdb_bind_blob(ps, idx, blob) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_prepared_statement) :: ps
+      integer :: idx, length
+      type(duckdb_blob) :: blob
+
+      res = duckdb_bind_blob_(ps, int(idx, kind=c_int64_t), blob%data, blob%size)
+    end function duckdb_bind_blob
 
     ! FIXME
     ! function duckdb_bind_string(ps, idx, val) result(res)

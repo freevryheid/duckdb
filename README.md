@@ -52,8 +52,8 @@ fortran bindings to duckdb c api
   - [x] Test extract statements in C API
 - [ ] **test_capi_pending.cpp**
   - [ ] Test pending statements in C API
-- [ ] **test_capi_prepared.cpp**
-  - [ ] Test prepared statements in C API
+- [x] **test_capi_prepared.cpp**
+  - [x] Test prepared statements in C API
 - [ ] **test_capi_replacement_scan.cpp**
   - [ ] Test replacement scans in C API
   - [ ] Test error replacement scan
