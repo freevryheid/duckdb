@@ -50,8 +50,8 @@ fortran bindings to duckdb c api
   - [x] Test struct types C API
 - [x] **test_capi_extract.cpp**
   - [x] Test extract statements in C API
-- [ ] **test_capi_pending.cpp**
-  - [ ] Test pending statements in C API
+- [x] **test_capi_pending.cpp**
+  - [x] Test pending statements in C API
 - [x] **test_capi_prepared.cpp**
   - [x] Test prepared statements in C API
 - [ ] **test_capi_replacement_scan.cpp**
