@@ -237,6 +237,7 @@ module duckdb
   public :: duckdb_append_timestamp
   public :: duckdb_append_interval
   public :: duckdb_append_varchar
+  public :: duckdb_append_varchar_length
   public :: duckdb_append_blob
   public :: duckdb_append_null
   public :: duckdb_append_data_chunk
@@ -1836,6 +1837,14 @@ module duckdb
     end function duckdb_append_varchar_
 
     ! DUCKDB_API duckdb_state duckdb_append_varchar_length(duckdb_appender appender, const char *val, idx_t length);
+    function duckdb_append_varchar_length_(appender, value, length) &
+        bind(c, name='duckdb_append_varchar_length') result(res)
+      import :: duckdb_state, duckdb_appender, c_char, c_int64_t
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+      integer(kind=c_int64_t), value :: length
+      character(kind=c_char) :: value
+    end function duckdb_append_varchar_length_
 
     ! DUCKDB_API duckdb_state duckdb_append_blob(duckdb_appender appender, const void *data, idx_t length);
     ! FIXME: Similar to duckdb_bind_blob_ the c-api uses a pointer rather than
@@ -2896,6 +2905,18 @@ module duckdb
       if (c_associated(appender%appn)) &
         res = duckdb_append_varchar_(appender, cval)
     end function duckdb_append_varchar
+
+    function duckdb_append_varchar_length(appender, val, length) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender) :: appender
+      integer :: length
+      character(len=*) :: val
+      character(len=:), allocatable :: cval
+      cval = val // c_null_char ! convert to c string
+      res = duckdberror
+      if (c_associated(appender%appn)) &
+        res = duckdb_append_varchar_length_(appender, cval, int(length, kind=c_int64_t))
+    end function duckdb_append_varchar_length
 
     function duckdb_append_blob(appender, blob) result(res)
       integer(kind(duckdb_state)) :: res

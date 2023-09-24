@@ -18,14 +18,151 @@ contains
     type(unittest_type), allocatable, intent(out) :: testsuite(:)
 
     testsuite = [ &
-                new_unittest("appender-statements-test", test_appender_statements), &
-                new_unittest("append-timestamp-test", test_append_timestamp) &
+                new_unittest("append-in-decimal-test", test_appending_into_decimal),  &
+                new_unittest("appender-statements-test", test_appender_statements),   &
+                new_unittest("append-timestamp-test", test_append_timestamp)          &
                 ]
 
   end subroutine collect_appender
 
-  subroutine test_appender_statements(error)
+  subroutine test_appending_single_decimal_value(error, value, expected, width, scale)
+    type(error_type), allocatable, intent(out) :: error
+    class(*), intent(in) :: value
+    type(duckdb_decimal) :: expected
+    integer(kind=int8), intent(in) :: width, scale
+    type(duckdb_result) :: result
+    type(duckdb_connection) :: con
+    type(duckdb_database) :: db
+    integer(kind=kind(duckdb_state)) :: status
+    character(len=:), allocatable :: query
+    character(len=10) :: width_chr, scale_chr
+    type(duckdb_appender) :: appender
+    integer :: my_kind
 
+    ! Set the width and scale of the expected value
+    expected%width = width
+    expected%scale = scale
+
+    write(width_chr, '(i0)') width
+    write(scale_chr, '(i0)') scale
+    query = 'CREATE TABLE decimals(i DECIMAL('//trim(width_chr)//','//trim(scale_chr)//'))'
+        ! Open db in in-memory mode
+    call check(error, duckdb_open("", db) == duckdbsuccess, "Could not open db.")
+    if (allocated(error)) return
+    call check(error, duckdb_connect(db, con) == duckdbsuccess, "Could not start connection.")
+    if (allocated(error)) return
+    call check(error, duckdb_query(con, query, result) /= duckdberror, "Could not run query.")
+    if (allocated(error)) return
+    status = duckdb_appender_create(con, "", "decimals", appender)
+    call check(error, status == duckdbsuccess, "Could not create appender.")
+    if (allocated(error)) return
+    status = duckdb_appender_begin_row(appender)
+    call check(error, status == duckdbsuccess, "Could not begin appender row.")
+    if (allocated(error)) return
+
+    select type(value)
+      type is (integer(kind=int32))
+        ! print*, "value is int32"
+        status = duckdb_append_int32(appender, value)
+      type is (integer(kind=int16))
+        ! print*, "value is int16"
+        status = duckdb_append_int16(appender, value)
+      type is (real(kind=real32))
+        ! print*, "value is real32"
+        status = duckdb_append_float(appender, value)
+      type is (real(kind=real64))
+        status = duckdb_append_double(appender, value)
+      type is (character(len=*))
+        ! print*, "value is character(len=*)"
+        status = duckdb_append_varchar(appender, value)
+      class default
+        error stop "only implemented int16, int32, real32, real64 and character types"
+    end select
+    call check(error, status == duckdbsuccess, "Could not append value.")
+    if (allocated(error)) return
+
+    status = duckdb_appender_end_row(appender)
+    call check(error, status == duckdbsuccess, "Could not end row.")
+    if (allocated(error)) return
+    status = duckdb_appender_flush(appender)
+    call check(error, status == duckdbsuccess, "Could not flush appender.")
+    if (allocated(error)) return
+
+    call check(error, duckdb_query(con, "SELECT * FROM decimals", result) /= duckdberror, &
+      "Could not retrieve result.")
+    if (allocated(error)) return
+    call check(error, assert_decimal_value_match(result, expected), &
+      "Decimal result mismatch.")
+    if (allocated(error)) return
+
+    status = duckdb_appender_close(appender)
+    call check(error, status == duckdbsuccess, "Error closing appender.")
+    if (allocated(error)) return
+    status = duckdb_appender_destroy(appender)
+    call check(error, status == duckdbsuccess, "Error destroying appender.")
+    if (allocated(error)) return
+    call duckdb_destroy_result(result)
+    call duckdb_disconnect(con)
+    call duckdb_close(db)
+  end subroutine test_appending_single_decimal_value
+
+  function assert_decimal_value_match(result, expected) result(res)
+    type(duckdb_result), intent(in) :: result
+    type(duckdb_decimal), intent(in) :: expected
+    type(duckdb_decimal) :: actual
+    logical :: res
+    actual = duckdb_value_decimal(result, 0, 0)
+    res = actual%scale == expected%scale .and. &
+          actual%width == expected%width .and. &
+          actual%value%lower == expected%value%lower .and. &
+          actual%value%upper == expected%value%upper
+  end function assert_decimal_value_match
+
+  subroutine test_appending_into_decimal(error)
+    type(error_type), allocatable, intent(out) :: error
+    type(duckdb_decimal) :: expected
+
+    expected%value%lower = 1000
+    expected%value%upper = 0
+    call test_appending_single_decimal_value(error, 1_int32, expected, 4_int8, 3_int8)
+    if (allocated(error)) return
+    ! expected%value%lower = 18446744073709541617_c_int64_t ! does not fit in a signed int64
+    ! expected%value%upper = -1
+    ! call test_appending_single_decimal_value(error, -9999_int16, expected, 4_int8, 0_int8)
+    ! if (allocated(error)) return
+    expected%value%lower = 9999
+    expected%value%upper = 0
+    call test_appending_single_decimal_value(error, 9999_int16, expected, 4_int8, 0_int8)
+    if (allocated(error)) return
+    expected%value%lower = 99999999
+    expected%value%upper = 0
+    call test_appending_single_decimal_value(error, 99999999_int32, expected, 8_int8, 0_int8)
+    if (allocated(error)) return
+    expected%value%lower = 1234
+    expected%value%upper = 0
+    call test_appending_single_decimal_value(error, "1.234", expected, 4_int8, 3_int8)
+    if (allocated(error)) return
+    call test_appending_single_decimal_value(error, "123.4", expected, 4_int8, 1_int8)
+    if (allocated(error)) return
+    expected%value%lower = 3245234123123_c_int64_t
+    expected%value%upper = 0
+    call test_appending_single_decimal_value(error, "3245234.123123", expected, 19_int8, 6_int8)
+    if (allocated(error)) return
+    call test_appending_single_decimal_value(error, "3245234.123123", expected, 13_int8, 6_int8)
+    if (allocated(error)) return
+    ! Precision loss
+    expected%value%lower = 123124320
+    expected%value%upper = 0
+    call test_appending_single_decimal_value(error, 12.3124324_real32, expected, 9_int8, 7_int8)
+    if (allocated(error)) return
+    ! Precision loss
+    expected%value%lower = 123452342343_c_int64_t
+    expected%value%upper = 0
+    call test_appending_single_decimal_value(error, 12345234234.31243244234324_real64, expected, 26_int8, 1_int8)
+    if (allocated(error)) return
+  end subroutine test_appending_into_decimal
+
+  subroutine test_appender_statements(error)
     type(error_type), allocatable, intent(out) :: error
     type(duckdb_database) :: db
     type(duckdb_connection) :: con
@@ -69,14 +206,6 @@ contains
 
     call check(error, duckdb_appender_destroy(a) == duckdberror, "Destroy unallocated appender does not error.")
     if (allocated(error)) return
-
-    !! FIXME: fortran does not let us pass a nullptr here as in the c++ test.
-    ! not sure we want to 'fix' this
-    ! status = duckdb_appender_create(con, "", "test", c_null_ptr)
-    ! call check(error, status == duckdberror, "Appender did not return error.")
-    ! if (allocated(error)) return
-    ! status = duckdb_appender_create(tester.connection, nullptr, "test", nullptr);
-    ! REQUIRE(status == DuckDBError);
 
     status = duckdb_appender_create(con, "", "test", appender)
     call check(error, status == duckdbsuccess, "Appender creation error.")
@@ -265,25 +394,18 @@ contains
     call check(error, status == duckdbsuccess, "duckdb_append_float error.")
     if (allocated(error)) return
 
-    status = duckdb_append_varchar(tappender, "hello world");
-    call check(error, status == duckdbsuccess, "duckdb_append_varchar error.")
+    ! status = duckdb_append_varchar(tappender, "hello world");
+    status = duckdb_append_varchar_length(tappender, "hello world", 5)
+    call check(error, status == duckdbsuccess, "duckdb_append_varchar_length error.")
     if (allocated(error)) return
 
     date_struct%year = int(1992, kind=c_int32_t)
     date_struct%month = int(9, kind=c_int8_t)
     date_struct%day = int(3, kind=c_int8_t)
 
-    ! FIXME - cannot use a block here else tmp will be freed on block exit (right?)
-    ! but we want to retain the pointer to it
-    ! block
-      ! character(len=:), allocatable, target :: tmp
-
     tmp = "hello world this\0is my long string"
     blob_data%data = c_loc(tmp)
-
     blob_data%size = len(tmp, kind=c_int64_t)
-    ! end block
-
     status = duckdb_append_blob(tappender, blob_data)
     call check(error, status == duckdbsuccess, "duckdb_append_blob error.")
     if (allocated(error)) return
@@ -415,7 +537,7 @@ contains
     block
       character(len=:), allocatable :: val
       val = duckdb_string_to_character(duckdb_value_string(result, 6, 0))
-      call check(error, val == "hello world", "error retrieving string")
+      call check(error, val == "hello", "error retrieving string")
       if (allocated(error)) return
     end block
 
