@@ -7,9 +7,9 @@ module duckdb
   public :: duckdb_database
   public :: duckdb_connection
 
-  public ::  duckdb_prepared_statement
+  public :: duckdb_prepared_statement
   public :: duckdb_extracted_statements
-  ! public :: duckdb_pending_result
+  public :: duckdb_pending_result
   public :: duckdb_appender
   public :: duckdb_arrow
   public :: duckdb_arrow_schema
@@ -65,12 +65,10 @@ module duckdb
   public :: duckdb_type_uuid
   public :: duckdb_type_union
   public :: duckdb_type_bit
-
-  ! public :: duckdb_pending_state
-  ! public :: duckdb_pending_result_ready
-  ! public :: duckdb_pending_result_not_ready
-  ! public :: duckdb_pending_error
-
+  public :: duckdb_pending_state
+  public :: duckdb_pending_result_ready
+  public :: duckdb_pending_result_not_ready
+  public :: duckdb_pending_error_state
   public :: duckdb_state
   public :: duckdbsuccess
   public :: duckdberror
@@ -168,6 +166,12 @@ module duckdb
   public :: duckdb_prepare_extracted_statement
   public :: duckdb_extract_statements_error
   public :: duckdb_destroy_extracted
+
+  public :: duckdb_pending_prepared
+  public :: duckdb_destroy_pending
+  public :: duckdb_pending_error
+  public :: duckdb_pending_execute_task
+  public :: duckdb_execute_pending
 
   public :: duckdb_data_chunk_get_size
   public :: duckdb_data_chunk_get_vector
@@ -289,7 +293,7 @@ module duckdb
     enumerator :: duckdb_pending_state            = 0
     enumerator :: duckdb_pending_result_ready     = 0
     enumerator :: duckdb_pending_result_not_ready = 1
-    enumerator :: duckdb_pending_error            = 2
+    enumerator :: duckdb_pending_error_state      = 2
   end enum
 
   ! FIXME - wondering if we should initialize these as null pointers?
@@ -1163,18 +1167,42 @@ module duckdb
     ! Pending Result Interface
     ! =========================================================================
 
-    ! TODO
-
     ! DUCKDB_API duckdb_state duckdb_pending_prepared(duckdb_prepared_statement prepared_statement, duckdb_pending_result *out_result);
+    function duckdb_pending_prepared(prepared_statement, out_result) &
+        bind(c, name='duckdb_pending_prepared') result(res)
+      import :: duckdb_prepared_statement, duckdb_pending_result, duckdb_state
+      type(duckdb_prepared_statement), value :: prepared_statement
+      type(duckdb_pending_result) :: out_result
+      integer(kind(duckdb_state)) :: res
+    end function duckdb_pending_prepared
 
     ! DUCKDB_API void duckdb_destroy_pending(duckdb_pending_result *pending_result);
+    subroutine duckdb_destroy_pending(pending_result) bind(c, name='duckdb_destroy_pending')
+      import :: duckdb_pending_result
+      type(duckdb_pending_result) :: pending_result
+    end subroutine duckdb_destroy_pending
 
     ! DUCKDB_API const char *duckdb_pending_error(duckdb_pending_result pending_result);
+    function duckdb_pending_error_(pending_result) bind(c, name='duckdb_pending_error') result(err)
+      import :: c_ptr, duckdb_pending_result
+      type(duckdb_pending_result), value :: pending_result
+      type(c_ptr) :: err
+    end function duckdb_pending_error_
 
     ! DUCKDB_API duckdb_pending_state duckdb_pending_execute_task(duckdb_pending_result pending_result);
+    function duckdb_pending_execute_task(pending_result) bind(c, name='duckdb_pending_execute_task') result(res)
+      import :: duckdb_pending_result, duckdb_pending_state
+      type(duckdb_pending_result), value :: pending_result
+      integer(kind(duckdb_pending_state)) :: res
+    end function duckdb_pending_execute_task 
 
     ! DUCKDB_API duckdb_state duckdb_execute_pending(duckdb_pending_result pending_result, duckdb_result *out_result);
-
+    function duckdb_execute_pending(pending_result, out_result) bind(c, name='duckdb_execute_pending') result(res)
+      import :: duckdb_pending_result, duckdb_state, duckdb_result
+      type(duckdb_pending_result), value :: pending_result
+      type(duckdb_result) :: out_result
+      integer(kind(duckdb_state)) :: res
+    end function duckdb_execute_pending 
     ! =========================================================================
     ! Value Interface
     ! =========================================================================
@@ -2558,6 +2586,16 @@ module duckdb
     ! =========================================================================
     ! Pending Result Interface
     ! =========================================================================
+    function duckdb_pending_error(pending_result) result(err)
+      character(len=:), allocatable :: err
+      type(c_ptr) :: tmp
+      type(duckdb_pending_result) :: pending_result
+      err = ""
+      if (c_associated(pending_result%pend)) then
+        tmp = duckdb_pending_error_(pending_result)
+        if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
+      end if
+    end function duckdb_pending_error
 
     ! =========================================================================
     ! Value Interface
