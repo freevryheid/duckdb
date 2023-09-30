@@ -261,6 +261,7 @@ module duckdb
   public :: duckdb_table_function_set_name
   public :: duckdb_table_function_add_parameter
   public :: duckdb_table_function_add_named_parameter
+  public :: duckdb_table_function_set_extra_info
   public :: duckdb_table_function_set_bind
   public :: duckdb_table_function_set_init
   public :: duckdb_table_function_set_function
@@ -1683,6 +1684,12 @@ module duckdb
     end subroutine duckdb_table_function_add_named_parameter_
 
     ! DUCKDB_API void duckdb_table_function_set_extra_info(duckdb_table_function table_function, void *extra_info, duckdb_delete_callback_t destroy);
+    subroutine duckdb_table_function_set_extra_info_(info, extra_info, destroy) bind(c, name='duckdb_table_function_set_extra_info')
+      import :: duckdb_table_function, c_ptr, c_funptr
+      type(duckdb_table_function), value :: info
+      type(c_ptr), value :: extra_info
+      type(c_funptr), value :: destroy
+    end subroutine duckdb_table_function_set_extra_info_
 
     ! DUCKDB_API void duckdb_table_function_set_bind(duckdb_table_function table_function, duckdb_table_function_bind_t bind);
     subroutine duckdb_table_function_set_bind_(table_function, bind) bind(c, name='duckdb_table_function_set_bind')
@@ -1748,7 +1755,7 @@ module duckdb
 
     ! DUCKDB_API void duckdb_bind_set_bind_data(duckdb_bind_info info, void *bind_data, duckdb_delete_callback_t destroy);
     subroutine duckdb_bind_set_bind_data_(info, bind_data, destroy) bind(c, name='duckdb_bind_set_bind_data')
-      import :: duckdb_bind_info, duckdb_delete_callback_t, c_ptr, c_funptr
+      import :: duckdb_bind_info, c_ptr, c_funptr
       type(duckdb_bind_info), value :: info
       type(c_ptr), value :: bind_data
       type(c_funptr), value :: destroy
@@ -1778,7 +1785,7 @@ module duckdb
 
     ! DUCKDB_API void duckdb_init_set_init_data(duckdb_init_info info, void *init_data, duckdb_delete_callback_t destroy);
     subroutine duckdb_init_set_init_data_(info, init_data, destroy) bind(c, name='duckdb_init_set_init_data')
-      import :: duckdb_init_info, duckdb_delete_callback_t, c_ptr, c_funptr
+      import :: duckdb_init_info, c_ptr, c_funptr
       type(duckdb_init_info), value :: info
       type(c_ptr), value :: init_data
       type(c_funptr), value :: destroy
@@ -2984,6 +2991,13 @@ module duckdb
       type(duckdb_logical_type) :: type
       call duckdb_table_function_add_named_parameter_(table_function, trim(name)//c_null_char, type)
     end subroutine duckdb_table_function_add_named_parameter
+
+    subroutine duckdb_table_function_set_extra_info(info, extra_info, destroy)
+      type(duckdb_table_function), value :: info
+      type(c_ptr) :: extra_info
+      procedure(duckdb_delete_callback_t) :: destroy
+      call duckdb_table_function_set_extra_info_(info, extra_info, c_funloc(destroy))
+    end subroutine duckdb_table_function_set_extra_info
 
     subroutine duckdb_table_function_set_bind(table_function, bind)
       type(duckdb_table_function), value :: table_function
