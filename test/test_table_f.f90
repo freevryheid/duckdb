@@ -59,6 +59,7 @@ contains
     ! func_ptr => c_free
     func_ptr => dummy_free
     call duckdb_bind_set_bind_data(info, c_loc(my_bind_data), func_ptr)
+    print*, "  Set the bind size to ",my_bind_data%size
     deallocate(my_bind_data)
     print*, "Done my_bind"
   end subroutine my_bind
@@ -74,6 +75,7 @@ contains
     ! func_ptr => c_free
     func_ptr => dummy_free
     call duckdb_init_set_init_data(info, c_loc(my_init_data), func_ptr)
+    print*, "  Set the init pos to ",my_init_data%pos
     deallocate(my_init_data)
     print*, "Done my_init"
   end subroutine my_init
@@ -90,10 +92,10 @@ contains
     print*, "Starting execution of my_function"
     tmp = duckdb_function_get_bind_data(info)
     call c_f_pointer(tmp, bind_data)
-    print*, "  Bind data size: ",bind_data%size
+    print*, "  Retrieved bind size: ",bind_data%size
     tmp = duckdb_function_get_init_data(info)
     call c_f_pointer(tmp, init_data)
-    print*, "  Init data pos: ", init_data%pos
+    print*, "  Retrieved init pos: ", init_data%pos
     tmp = duckdb_vector_get_data(duckdb_data_chunk_get_vector(output, 0))
     print*, "  Size of output: ", duckdb_data_chunk_get_size(output)
     call c_f_pointer(tmp, v, [duckdb_data_chunk_get_size(output)])
