@@ -269,6 +269,8 @@ module duckdb
   public :: duckdb_bind_get_parameter_count
   public :: duckdb_bind_get_parameter
   public :: duckdb_bind_set_bind_data
+  public :: duckdb_init_get_extra_info
+  public :: duckdb_init_get_bind_data
   public :: duckdb_init_set_init_data
   public :: duckdb_function_get_bind_data
   public :: duckdb_function_get_init_data
@@ -1761,8 +1763,18 @@ module duckdb
     ! =========================================================================
 
     ! DUCKDB_API void *duckdb_init_get_extra_info(duckdb_init_info info);
+    function duckdb_init_get_extra_info(info) bind(c, name='duckdb_init_get_extra_info') result(res)
+      import :: duckdb_init_info, c_ptr
+      type(duckdb_init_info), value :: info
+      type(c_ptr) :: res
+    end function duckdb_init_get_extra_info
 
     ! DUCKDB_API void *duckdb_init_get_bind_data(duckdb_init_info info);
+    function duckdb_init_get_bind_data(info) bind(c, name='duckdb_init_get_bind_data') result(res)
+      import :: duckdb_init_info, c_ptr
+      type(duckdb_init_info), value :: info
+      type(c_ptr) :: res
+    end function duckdb_init_get_bind_data
 
     ! DUCKDB_API void duckdb_init_set_init_data(duckdb_init_info info, void *init_data, duckdb_delete_callback_t destroy);
     subroutine duckdb_init_set_init_data_(info, init_data, destroy) bind(c, name='duckdb_init_set_init_data')
@@ -2975,19 +2987,19 @@ module duckdb
 
     subroutine duckdb_table_function_set_bind(table_function, bind)
       type(duckdb_table_function), value :: table_function
-      procedure(duckdb_table_function_bind_t), pointer :: bind
+      procedure(duckdb_table_function_bind_t) :: bind
       call duckdb_table_function_set_bind_(table_function, c_funloc(bind))
     end subroutine duckdb_table_function_set_bind
 
     subroutine duckdb_table_function_set_init(table_function, init)
       type(duckdb_table_function), value :: table_function
-      procedure(duckdb_table_function_init_t), pointer :: init
+      procedure(duckdb_table_function_init_t) :: init
       call duckdb_table_function_set_init_(table_function, c_funloc(init))
     end subroutine duckdb_table_function_set_init
 
     subroutine duckdb_table_function_set_function(table_function, func)
       type(duckdb_table_function), value :: table_function
-      procedure(duckdb_table_function_t), pointer :: func
+      procedure(duckdb_table_function_t) :: func
       call duckdb_table_function_set_function_(table_function, c_funloc(func))
     end subroutine duckdb_table_function_set_function
 
