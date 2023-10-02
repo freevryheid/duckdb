@@ -8,6 +8,8 @@ program tester
   use test_appender, only: collect_appender
   use test_complex_types, only: collect_complex_types
   use test_extract, only: collect_extract
+  use test_prepared, only: collect_prepared
+  use test_pending, only: collect_pending
   implicit none
   integer :: stat, is
   type(testsuite_type), allocatable :: testsuites(:)
@@ -22,7 +24,9 @@ program tester
     new_testsuite("test_data_chunk", collect_data_chunk),          &
     new_testsuite("test_appender", collect_appender),              &
     new_testsuite("test_complex_types", collect_complex_types),    &
-    new_testsuite("test_extract_statements", collect_extract)      &
+    new_testsuite("test_extract_statements", collect_extract),     &
+    new_testsuite("test_prepared_statements", collect_prepared),   &
+    new_testsuite("test_pending_statements", collect_pending)    &
   ]
 
   do is = 1, size(testsuites)

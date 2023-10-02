@@ -7,9 +7,9 @@ module duckdb
   public :: duckdb_database
   public :: duckdb_connection
 
-  public ::  duckdb_prepared_statement
+  public :: duckdb_prepared_statement
   public :: duckdb_extracted_statements
-  ! public :: duckdb_pending_result
+  public :: duckdb_pending_result
   public :: duckdb_appender
   public :: duckdb_arrow
   public :: duckdb_arrow_schema
@@ -68,12 +68,10 @@ module duckdb
   public :: duckdb_type_uuid
   public :: duckdb_type_union
   public :: duckdb_type_bit
-
-  ! public :: duckdb_pending_state
-  ! public :: duckdb_pending_result_ready
-  ! public :: duckdb_pending_result_not_ready
-  ! public :: duckdb_pending_error
-
+  public :: duckdb_pending_state
+  public :: duckdb_pending_result_ready
+  public :: duckdb_pending_result_not_ready
+  public :: duckdb_pending_error_state
   public :: duckdb_state
   public :: duckdbsuccess
   public :: duckdberror
@@ -164,7 +162,7 @@ module duckdb
   public :: duckdb_bind_varchar
   public :: duckdb_bind_varchar_length
   ! public :: duckdb_bind_string ! helper function to wrap duckdb_bind_varchar_length
-  ! public :: duckdb_bind_blob ! the way it should work
+  public :: duckdb_bind_blob ! the way it should work
   public :: duckdb_bind_null
   public :: duckdb_execute_prepared
   ! public :: duckdb_execute_prepared_arrow
@@ -172,6 +170,12 @@ module duckdb
   public :: duckdb_prepare_extracted_statement
   public :: duckdb_extract_statements_error
   public :: duckdb_destroy_extracted
+
+  public :: duckdb_pending_prepared
+  public :: duckdb_destroy_pending
+  public :: duckdb_pending_error
+  public :: duckdb_pending_execute_task
+  public :: duckdb_execute_pending
 
   public :: duckdb_data_chunk_get_size
   public :: duckdb_data_chunk_get_vector
@@ -237,6 +241,7 @@ module duckdb
   public :: duckdb_append_timestamp
   public :: duckdb_append_interval
   public :: duckdb_append_varchar
+  public :: duckdb_append_varchar_length
   public :: duckdb_append_blob
   public :: duckdb_append_null
   public :: duckdb_append_data_chunk
@@ -293,7 +298,7 @@ module duckdb
     enumerator :: duckdb_pending_state            = 0
     enumerator :: duckdb_pending_result_ready     = 0
     enumerator :: duckdb_pending_result_not_ready = 1
-    enumerator :: duckdb_pending_error            = 2
+    enumerator :: duckdb_pending_error_state      = 2
   end enum
 
   ! FIXME - wondering if we should initialize these as null pointers?
@@ -1119,14 +1124,12 @@ module duckdb
     end function duckdb_bind_varchar_length_
 
     ! DUCKDB_API duckdb_state duckdb_bind_blob(duckdb_prepared_statement prepared_statement, idx_t param_idx, const void *data, idx_t length);
-    ! FIXME: shouldn't this be fixed on the c-api side to use duckdb_blob instead
-    !        propose addressing in the helper function
-    function duckdb_bind_blob_(prepared_statement, param_idx, val, length) bind(c, name='duckdb_bind_blob') result(res)
+    function duckdb_bind_blob_(prepared_statement, param_idx, data, length) bind(c, name='duckdb_bind_blob') result(res)
       import :: duckdb_state, duckdb_prepared_statement, c_int64_t, c_ptr
       integer(kind(duckdb_state)) :: res
       type(duckdb_prepared_statement), value :: prepared_statement
       integer(kind=c_int64_t), value :: param_idx, length
-      type(c_ptr) :: val
+      type(c_ptr) :: data
     end function duckdb_bind_blob_
 
     ! DUCKDB_API duckdb_state duckdb_bind_null(duckdb_prepared_statement prepared_statement, idx_t param_idx);
@@ -1191,18 +1194,42 @@ module duckdb
     ! Pending Result Interface
     ! =========================================================================
 
-    ! TODO
-
     ! DUCKDB_API duckdb_state duckdb_pending_prepared(duckdb_prepared_statement prepared_statement, duckdb_pending_result *out_result);
+    function duckdb_pending_prepared(prepared_statement, out_result) &
+        bind(c, name='duckdb_pending_prepared') result(res)
+      import :: duckdb_prepared_statement, duckdb_pending_result, duckdb_state
+      type(duckdb_prepared_statement), value :: prepared_statement
+      type(duckdb_pending_result) :: out_result
+      integer(kind(duckdb_state)) :: res
+    end function duckdb_pending_prepared
 
     ! DUCKDB_API void duckdb_destroy_pending(duckdb_pending_result *pending_result);
+    subroutine duckdb_destroy_pending(pending_result) bind(c, name='duckdb_destroy_pending')
+      import :: duckdb_pending_result
+      type(duckdb_pending_result) :: pending_result
+    end subroutine duckdb_destroy_pending
 
     ! DUCKDB_API const char *duckdb_pending_error(duckdb_pending_result pending_result);
+    function duckdb_pending_error_(pending_result) bind(c, name='duckdb_pending_error') result(err)
+      import :: c_ptr, duckdb_pending_result
+      type(duckdb_pending_result), value :: pending_result
+      type(c_ptr) :: err
+    end function duckdb_pending_error_
 
     ! DUCKDB_API duckdb_pending_state duckdb_pending_execute_task(duckdb_pending_result pending_result);
+    function duckdb_pending_execute_task(pending_result) bind(c, name='duckdb_pending_execute_task') result(res)
+      import :: duckdb_pending_result, duckdb_pending_state
+      type(duckdb_pending_result), value :: pending_result
+      integer(kind(duckdb_pending_state)) :: res
+    end function duckdb_pending_execute_task 
 
     ! DUCKDB_API duckdb_state duckdb_execute_pending(duckdb_pending_result pending_result, duckdb_result *out_result);
-
+    function duckdb_execute_pending(pending_result, out_result) bind(c, name='duckdb_execute_pending') result(res)
+      import :: duckdb_pending_result, duckdb_state, duckdb_result
+      type(duckdb_pending_result), value :: pending_result
+      type(duckdb_result) :: out_result
+      integer(kind(duckdb_state)) :: res
+    end function duckdb_execute_pending 
     ! =========================================================================
     ! Value Interface
     ! =========================================================================
@@ -1226,7 +1253,7 @@ module duckdb
 
     ! DUCKDB_API duckdb_logical_type duckdb_create_logical_type(duckdb_type type);
     function duckdb_create_logical_type(type) bind(c, name='duckdb_create_logical_type') result(res)
-      import :: duckdb_logical_type
+      import :: duckdb_logical_type, duckdb_type
       integer(kind(duckdb_type)), value :: type
       type(duckdb_logical_type) :: res
     end function duckdb_create_logical_type
@@ -1264,7 +1291,7 @@ module duckdb
 
     ! DUCKDB_API duckdb_type duckdb_get_type_id(duckdb_logical_type type);
     function duckdb_get_type_id(type) bind(c, name="duckdb_get_type_id") result(res)
-      import :: duckdb_logical_type
+      import :: duckdb_logical_type, duckdb_type
       type(duckdb_logical_type), value :: type
       integer(kind(duckdb_type)) :: res
     end function duckdb_get_type_id
@@ -1285,14 +1312,14 @@ module duckdb
 
     ! DUCKDB_API duckdb_type duckdb_decimal_internal_type(duckdb_logical_type type);
     function duckdb_decimal_internal_type(type) bind(c, name="duckdb_decimal_internal_type") result(res)
-      import :: duckdb_logical_type
+      import :: duckdb_logical_type, duckdb_type
       type(duckdb_logical_type), value :: type
       integer(kind(duckdb_type)) :: res
     end function duckdb_decimal_internal_type
 
     ! DUCKDB_API duckdb_type duckdb_enum_internal_type(duckdb_logical_type type);
     function duckdb_enum_internal_type(type) bind(c, name="duckdb_enum_internal_type") result(res)
-      import :: duckdb_logical_type
+      import :: duckdb_logical_type, duckdb_type
       type(duckdb_logical_type), value :: type
       integer(kind(duckdb_type)) :: res
     end function duckdb_enum_internal_type
@@ -1836,6 +1863,14 @@ module duckdb
     end function duckdb_append_varchar_
 
     ! DUCKDB_API duckdb_state duckdb_append_varchar_length(duckdb_appender appender, const char *val, idx_t length);
+    function duckdb_append_varchar_length_(appender, value, length) &
+        bind(c, name='duckdb_append_varchar_length') result(res)
+      import :: duckdb_state, duckdb_appender, c_char, c_int64_t
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender), value :: appender
+      integer(kind=c_int64_t), value :: length
+      character(kind=c_char) :: value
+    end function duckdb_append_varchar_length_
 
     ! DUCKDB_API duckdb_state duckdb_append_blob(duckdb_appender appender, const void *data, idx_t length);
     ! FIXME: Similar to duckdb_bind_blob_ the c-api uses a pointer rather than
@@ -2372,8 +2407,7 @@ module duckdb
       integer(kind(duckdb_type)) :: res
       type(duckdb_prepared_statement) :: ps
       integer :: idx
-      if (c_associated(ps%prep)) &
-        res = duckdb_param_type_(ps, int(idx, kind=c_int64_t))
+      res = duckdb_param_type_(ps, int(idx, kind=c_int64_t))
     end function duckdb_param_type
 
     function duckdb_bind_boolean(ps, idx, val) result(res)
@@ -2530,6 +2564,15 @@ module duckdb
         res = duckdb_bind_varchar_length_(ps, int(idx, kind=c_int64_t), cval, int(length, kind=c_int64_t))
     end function duckdb_bind_varchar_length
 
+    function duckdb_bind_blob(ps, idx, blob) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_prepared_statement) :: ps
+      integer :: idx, length
+      type(duckdb_blob) :: blob
+
+      res = duckdb_bind_blob_(ps, int(idx, kind=c_int64_t), blob%data, blob%size)
+    end function duckdb_bind_blob
+
     ! FIXME
     ! function duckdb_bind_string(ps, idx, val) result(res)
     !   integer(kind(duckdb_state)) :: res
@@ -2586,6 +2629,16 @@ module duckdb
     ! =========================================================================
     ! Pending Result Interface
     ! =========================================================================
+    function duckdb_pending_error(pending_result) result(err)
+      character(len=:), allocatable :: err
+      type(c_ptr) :: tmp
+      type(duckdb_pending_result) :: pending_result
+      err = ""
+      if (c_associated(pending_result%pend)) then
+        tmp = duckdb_pending_error_(pending_result)
+        if (c_associated(tmp)) call c_f_str_ptr(tmp, err)
+      end if
+    end function duckdb_pending_error
 
     ! =========================================================================
     ! Value Interface
@@ -2886,6 +2939,18 @@ module duckdb
       if (c_associated(appender%appn)) &
         res = duckdb_append_varchar_(appender, cval)
     end function duckdb_append_varchar
+
+    function duckdb_append_varchar_length(appender, val, length) result(res)
+      integer(kind(duckdb_state)) :: res
+      type(duckdb_appender) :: appender
+      integer :: length
+      character(len=*) :: val
+      character(len=:), allocatable :: cval
+      cval = val // c_null_char ! convert to c string
+      res = duckdberror
+      if (c_associated(appender%appn)) &
+        res = duckdb_append_varchar_length_(appender, cval, int(length, kind=c_int64_t))
+    end function duckdb_append_varchar_length
 
     function duckdb_append_blob(appender, blob) result(res)
       integer(kind(duckdb_state)) :: res

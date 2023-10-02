@@ -37,8 +37,8 @@ fortran bindings to duckdb c api
   - [ ] Test Table Functions C API
   - [ ] Test Table Function errors in C API
   - [ ] Test Table Function named parameters in C API
-- [ ] **test_capi_appender.cpp**
-  - [ ] Test appending into DECIMAL in C API
+- [x] **test_capi_appender.cpp**
+  - [x] Test appending into DECIMAL in C API
   - [x] Test appender statements in C API
   - [x] Test append timestamp in C API
 - [ ] **test_capi_arrow.cpp**
@@ -50,10 +50,10 @@ fortran bindings to duckdb c api
   - [x] Test struct types C API
 - [x] **test_capi_extract.cpp**
   - [x] Test extract statements in C API
-- [ ] **test_capi_pending.cpp**
-  - [ ] Test pending statements in C API
-- [ ] **test_capi_prepared.cpp**
-  - [ ] Test prepared statements in C API
+- [x] **test_capi_pending.cpp**
+  - [x] Test pending statements in C API
+- [x] **test_capi_prepared.cpp**
+  - [x] Test prepared statements in C API
 - [ ] **test_capi_replacement_scan.cpp**
   - [ ] Test replacement scans in C API
   - [ ] Test error replacement scan
