@@ -405,6 +405,17 @@ subroutine test_data_chunk_varchar_result_fetch(error)
     "Invalid chunk count")
   if (allocated(error)) return
 
+  chunk = duckdb_result_get_chunk(result, 0)
+  call check(error, duckdb_data_chunk_get_column_count(chunk) == 1, &
+    "Invalid column count")
+  if (allocated(error)) return
+  call check(error, STANDARD_VECTOR_SIZE < 5000, "Wrong standard vector size")
+  if (allocated(error)) return
+  call check(error, duckdb_data_chunk_get_size(chunk) == STANDARD_VECTOR_SIZE, &
+    "Error in chunk size")
+  if (allocated(error)) return
+  call duckdb_destroy_data_chunk(chunk)
+
   ! Fetch and Process Chunks
   tuple_index = 0
   chunk_amount = duckdb_result_chunk_count(result)
