@@ -20,7 +20,7 @@ subroutine collect_data_chunk(testsuite)
     new_unittest("data-chunk-test", test_chunks),                             &
     new_unittest("logical-types-test", test_logical_types),                   &
     new_unittest("data-chunk-api-test", test_data_chunk_api),                 &
-    ! new_unittest("varchar-chunk-test", test_data_chunk_varchar_result_fetch), &
+    new_unittest("varchar-chunk-test", test_data_chunk_varchar_result_fetch), &
     new_unittest("chunk-result-fetch-test", test_data_chunk_result_fetch),    &
     new_unittest("populate-listvector-test", test_data_chunk_populate_ListVector)     &
   ]
@@ -360,16 +360,19 @@ subroutine test_data_chunk_varchar_result_fetch(error)
   type(duckdb_data_chunk) :: chunk
   type(duckdb_vector) :: vector
   type(c_ptr) :: vector_ptr
-  type(c_ptr) :: string_data
-  ! integer(kind=int64), pointer :: vectr_validity
+  type(c_ptr) :: validity_ptr
+  type(duckdb_string_t), pointer :: string_data(:)
+  type(duckdb_string_t) :: string_data_tmp
+  type(duckdb_string_t_inlined) :: string_inlined
+  type(duckdb_string_t_pointer) :: string_pointer
+
   character(len=*), parameter :: varchar_test_query = "select case when i != 0&
     &and i % 42 = 0 then NULL else repeat(chr((65 + (i % 26))::INTEGER), (4 + &
     &(i % 12))) end from range(5000) tbl(i);"
   integer :: tuple_index, chunk_amount, chunk_index, tuples_in_chunk, i
-  integer :: expected_length
+  integer(kind=int32) :: length
+  integer :: expected_length, expected_chunk_count
   character(len=1) :: expected_character
-  ! integer(kind=int64), pointer :: vector_validity
-  character(len=:), allocatable :: f_string
   
   if (duckdb_vector_size() < 64) return
 
@@ -396,36 +399,47 @@ subroutine test_data_chunk_varchar_result_fetch(error)
   if (allocated(error)) return
 
   ! Calculate Expected Chunk Count
-  block 
-    integer :: expected_chunk_count
-    expected_chunk_count = (5000 / STANDARD_VECTOR_SIZE) 
-    if (mod(5000, STANDARD_VECTOR_SIZE) /= 0) expected_chunk_count = expected_chunk_count + 1
-    call check(error, duckdb_result_chunk_count(result) == expected_chunk_count, &
-      "Invalid chunk count")
-    if (allocated(error)) return
-  end block 
+  expected_chunk_count = (5000 / STANDARD_VECTOR_SIZE) 
+  if (mod(5000, STANDARD_VECTOR_SIZE) /= 0) expected_chunk_count = expected_chunk_count + 1
+  call check(error, duckdb_result_chunk_count(result) == expected_chunk_count, &
+    "Invalid chunk count")
+  if (allocated(error)) return
+
+  chunk = duckdb_result_get_chunk(result, 0)
+  call check(error, duckdb_data_chunk_get_column_count(chunk) == 1, &
+    "Invalid column count")
+  if (allocated(error)) return
+  call check(error, STANDARD_VECTOR_SIZE < 5000, "Wrong standard vector size")
+  if (allocated(error)) return
+  call check(error, duckdb_data_chunk_get_size(chunk) == STANDARD_VECTOR_SIZE, &
+    "Error in chunk size")
+  if (allocated(error)) return
+  call duckdb_destroy_data_chunk(chunk)
 
   ! Fetch and Process Chunks
   tuple_index = 0
   chunk_amount = duckdb_result_chunk_count(result)
   do chunk_index = 0, chunk_amount - 1
-    print*, chunk_index
     chunk = duckdb_result_get_chunk(result, chunk_index)
 
     ! Get Vector and Validity
     vector = duckdb_data_chunk_get_vector(chunk, 0)
-    vector_ptr = duckdb_vector_get_validity(vector)
-    ! call c_f_pointer(vector_ptr, vector_validity, [12])
+    validity_ptr = duckdb_vector_get_validity(vector)
 
-    ! FIXME: Original cpp code reads
-    ! auto string_data = (duckdb_string_t *)duckdb_vector_get_data(vector);
-    string_data = duckdb_vector_get_data(vector)
-    
     ! Get Tuples in Chunk
     tuples_in_chunk = duckdb_data_chunk_get_size(chunk)
-    print *, "tuples in chunk: ", tuples_in_chunk
+
+    vector_ptr = duckdb_vector_get_data(vector)
+    call c_f_pointer(vector_ptr, string_data, [tuples_in_chunk])
+
+    print*, size(string_data), tuples_in_chunk
+    do i=1, 10
+      print*, string_data(i)%value, c_associated(string_data(i)%value), c_loc(string_data(i)%value)
+    enddo 
+
     do i = 0, tuples_in_chunk - 1
-      if ( .not. duckdb_validity_row_is_valid(vector_ptr, i)) then
+      print*, 'Enter if:', tuple_index, i, .not. duckdb_validity_row_is_valid(validity_ptr, i)
+      if ( .not. duckdb_validity_row_is_valid(validity_ptr, i)) then
         ! The query produces data formatted like below. Every 42 rows there is a NULL.
         ! Every letter is repeated from 4 to 16 increasing by 1 on each row. 
         ! The example below is run with range(3) as an input. In the test query we have range(5000)
@@ -445,12 +459,32 @@ subroutine test_data_chunk_varchar_result_fetch(error)
         cycle
       end if
 
+      string_data_tmp = string_data(i+1)
+      if (duckdb_string_is_inlined(string_data_tmp)) then
+        string_inlined = transfer(string_data_tmp%value, string_inlined)
+        length = int(string_inlined%length)
+        print*, 'inlined length:', length, string_inlined%inlined(1:length)
+      else 
+        string_pointer = transfer(string_data_tmp%value, string_pointer)
+        length = int(string_pointer%length)
+        print*, 'pointer length:', length
+      endif
+        
       ! Calculate Expected Length and Character
       expected_length = mod(tuple_index, 12) + 4
       expected_character = char(mod(tuple_index, 26) + 65)
-      print*, expected_length, expected_character
+      ! print*, expected_length, expected_character
       ! Get Tuple and Length
-    !   length = duckdb_string_t_value_inlined_length(string_data(i))
+      print*, "Chunk index:", chunk_index
+      print*, "Tuple index:", tuple_index
+      print*, "Actual length:", length
+      print*, "Expected length:", expected_length
+      print*, "Pass: ", length == expected_length
+      print*, "----------------------------------"
+      if (i>10) stop
+      ! call check(error, length == expected_length, "String length does not match.")
+      ! if (allocated(error)) return
+
     !   if (length /= expected_length) then
     !     print *, "Invalid length at tuple index", tuple_index
     !     return
