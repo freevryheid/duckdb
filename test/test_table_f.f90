@@ -1,5 +1,5 @@
 module test_table_f
-  use, intrinsic :: iso_c_binding, only: c_int64_t, c_ptr, c_loc, c_f_pointer, c_funloc, c_associated
+  use, intrinsic :: iso_c_binding, only: c_int64_t, c_ptr, c_loc, c_f_pointer, c_null_ptr
   use constants
   use duckdb
   use testdrive, only: new_unittest, unittest_type, error_type, check, skip_test
@@ -35,7 +35,7 @@ contains
   end subroutine dummy_free
 
   subroutine my_bind(info) bind(c)
-    type(duckdb_bind_info), value :: info
+    type(c_ptr), value :: info
     type(duckdb_logical_type) :: type
     type(my_bind_data_struct), pointer :: my_bind_data
     type(duckdb_value) :: param
@@ -65,7 +65,7 @@ contains
   end subroutine my_bind
 
   subroutine my_init(info) bind(c)
-    type(duckdb_init_info), value :: info
+    type(c_ptr), value :: info
     type(my_init_data_struct), pointer :: my_init_data
     type(c_ptr) :: ptr
     procedure(duckdb_delete_callback_t), pointer :: func_ptr
@@ -81,7 +81,7 @@ contains
   end subroutine my_init
 
   subroutine my_function(info, output) bind(c)
-    type(duckdb_function_info), value :: info
+    type(c_ptr), value :: info
     type(duckdb_data_chunk), value :: output
     type(my_bind_data_struct), pointer :: bind_data
     type(my_init_data_struct), pointer :: init_data
@@ -120,14 +120,14 @@ contains
     procedure(duckdb_table_function_init_t) :: init
     procedure(duckdb_table_function_t) :: f
 
-    type(duckdb_table_function) :: func, func_uninit
+    type(c_ptr) :: func
     integer(kind(duckdb_state)) :: status
     type(duckdb_logical_type) :: type
 
     print*, "Starting registering table function: ",trim(name)
     ! create a table function
     func = duckdb_create_table_function()
-    call duckdb_table_function_set_name(func_uninit, name)
+    call duckdb_table_function_set_name(c_null_ptr, name)
     call duckdb_table_function_set_name(func, "")
     call duckdb_table_function_set_name(func, name)
     call duckdb_table_function_set_name(func, name)
@@ -152,7 +152,7 @@ contains
 
     call duckdb_destroy_table_function(func)
     call duckdb_destroy_table_function(func)
-    call duckdb_destroy_table_function(func_uninit)
+    call duckdb_destroy_table_function(c_null_ptr)
     print*, "Done registering table function: ",trim(name) 
   end subroutine capi_register_table_function
 
@@ -161,7 +161,7 @@ contains
     type(duckdb_database) :: database
     type(duckdb_connection) :: connection
     type(duckdb_result) :: result
-    type(duckdb_table_function) :: func, func_uninit
+    type(c_ptr) :: func
     integer(kind(duckdb_state)) :: status
     type(duckdb_logical_type) :: type
 

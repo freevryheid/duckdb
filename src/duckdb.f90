@@ -72,10 +72,10 @@ module duckdb
   public :: duckdb_state
   public :: duckdbsuccess
   public :: duckdberror
-  public :: duckdb_table_function
-  public :: duckdb_bind_info
-  public :: duckdb_init_info
-  public :: duckdb_function_info
+  ! public :: duckdb_table_function
+  ! public :: duckdb_bind_info
+  ! public :: duckdb_init_info
+  ! public :: duckdb_function_info
 
   public :: duckdb_open
   public :: duckdb_open_ext
@@ -484,18 +484,18 @@ module duckdb
 
   abstract interface 
     subroutine duckdb_table_function_bind_t(info) bind(c)
-      import :: duckdb_bind_info
-      type(duckdb_bind_info), value :: info
+      import :: c_ptr
+      type(c_ptr), value :: info
     end subroutine duckdb_table_function_bind_t
 
     subroutine duckdb_table_function_init_t(info) bind(c)
-      import :: duckdb_init_info
-      type(duckdb_init_info), value :: info
+      import :: c_ptr
+      type(c_ptr), value :: info
     end subroutine duckdb_table_function_init_t
 
     subroutine duckdb_table_function_t(info, output) bind(c)
-      import :: duckdb_function_info, duckdb_data_chunk
-      type(duckdb_function_info), value :: info
+      import :: c_ptr, duckdb_data_chunk
+      type(c_ptr), value :: info
       type(duckdb_data_chunk), value :: output
     end subroutine duckdb_table_function_t
 
@@ -1650,58 +1650,59 @@ module duckdb
 
     ! DUCKDB_API duckdb_table_function duckdb_create_table_function();
     function duckdb_create_table_function() bind(c, name='duckdb_create_table_function') result(res)
-      import :: duckdb_table_function
-      type(duckdb_table_function) :: res
+      import :: c_ptr
+      type(c_ptr) :: res
     end function duckdb_create_table_function
 
     ! DUCKDB_API void duckdb_destroy_table_function(duckdb_table_function *table_function);
     subroutine duckdb_destroy_table_function(table_function) bind(c, name='duckdb_destroy_table_function')
-      import :: duckdb_table_function
-      type(duckdb_table_function) :: table_function
+      import :: c_ptr
+      type(c_ptr) :: table_function
     end subroutine duckdb_destroy_table_function
 
     ! DUCKDB_API void duckdb_table_function_set_name(duckdb_table_function table_function, const char *name);
     subroutine duckdb_table_function_set_name_(table_function, name) bind(c, name='duckdb_table_function_set_name')
-      import :: duckdb_table_function, c_char
-      type(duckdb_table_function), value :: table_function
+      import :: c_ptr, c_char
+      type(c_ptr), value :: table_function
       character(kind=c_char) :: name
     end subroutine duckdb_table_function_set_name_
 
     ! DUCKDB_API void duckdb_table_function_add_parameter(duckdb_table_function table_function, duckdb_logical_type type);
     subroutine duckdb_table_function_add_parameter(table_function, type) bind(c, name='duckdb_table_function_add_parameter')
-      import :: duckdb_table_function, duckdb_logical_type
-      type(duckdb_table_function), value :: table_function
+      import :: c_ptr, duckdb_logical_type
+      type(c_ptr), value :: table_function
       type(duckdb_logical_type), value :: type
     end subroutine duckdb_table_function_add_parameter
 
     ! DUCKDB_API void duckdb_table_function_add_named_parameter(duckdb_table_function table_function, const char *name, duckdb_logical_type type);
     subroutine duckdb_table_function_add_named_parameter_(table_function, name, type) &
         bind(c, name='duckdb_table_function_add_named_parameter')
-      import :: duckdb_table_function, duckdb_logical_type, c_char
-      type(duckdb_table_function), value :: table_function
+      import :: c_ptr, duckdb_logical_type, c_char
+      type(c_ptr), value :: table_function
       character(kind=c_char) :: name
       type(duckdb_logical_type), value :: type
     end subroutine duckdb_table_function_add_named_parameter_
 
     ! DUCKDB_API void duckdb_table_function_set_extra_info(duckdb_table_function table_function, void *extra_info, duckdb_delete_callback_t destroy);
-    subroutine duckdb_table_function_set_extra_info_(info, extra_info, destroy) bind(c, name='duckdb_table_function_set_extra_info')
-      import :: duckdb_table_function, c_ptr, c_funptr
-      type(duckdb_table_function), value :: info
+    subroutine duckdb_table_function_set_extra_info_(table_function, extra_info, destroy) &
+      bind(c, name='duckdb_table_function_set_extra_info')
+      import :: c_ptr, c_funptr
+      type(c_ptr), value :: table_function
       type(c_ptr), value :: extra_info
       type(c_funptr), value :: destroy
     end subroutine duckdb_table_function_set_extra_info_
 
     ! DUCKDB_API void duckdb_table_function_set_bind(duckdb_table_function table_function, duckdb_table_function_bind_t bind);
     subroutine duckdb_table_function_set_bind_(table_function, bind) bind(c, name='duckdb_table_function_set_bind')
-      import :: duckdb_table_function, duckdb_table_function_bind_t, c_funptr
-      type(duckdb_table_function), value :: table_function
+      import :: c_ptr, duckdb_table_function_bind_t, c_funptr
+      type(c_ptr), value :: table_function
       type(c_funptr), value :: bind
     end subroutine duckdb_table_function_set_bind_
 
     ! DUCKDB_API void duckdb_table_function_set_init(duckdb_table_function table_function, duckdb_table_function_init_t init);
     subroutine duckdb_table_function_set_init_(table_function, init) bind(c, name='duckdb_table_function_set_init')
-      import :: duckdb_table_function, duckdb_table_function_init_t, c_funptr
-      type(duckdb_table_function), value :: table_function
+      import :: c_ptr, duckdb_table_function_init_t, c_funptr
+      type(c_ptr), value :: table_function
       type(c_funptr), value :: init
     end subroutine duckdb_table_function_set_init_
 
@@ -1709,8 +1710,8 @@ module duckdb
 
     ! DUCKDB_API void duckdb_table_function_set_function(duckdb_table_function table_function, duckdb_table_function_t function);
     subroutine duckdb_table_function_set_function_(table_function, function) bind(c, name='duckdb_table_function_set_function')
-      import :: duckdb_table_function, duckdb_table_function_t, c_funptr
-      type(duckdb_table_function), value :: table_function
+      import :: c_ptr, duckdb_table_function_t, c_funptr
+      type(c_ptr), value :: table_function
       type(c_funptr), value :: function
     end subroutine duckdb_table_function_set_function_
 
@@ -1718,9 +1719,9 @@ module duckdb
 
     ! DUCKDB_API duckdb_state duckdb_register_table_function(duckdb_connection con, duckdb_table_function function);
     function duckdb_register_table_function(con, function) bind(c, name='duckdb_register_table_function') result(res)
-      import :: duckdb_connection, duckdb_table_function, duckdb_state
+      import :: duckdb_connection, c_ptr, duckdb_state
       type(duckdb_connection), value :: con
-      type(duckdb_table_function), value :: function
+      type(c_ptr), value :: function
       integer(kind=kind(duckdb_state)) :: res
     end function duckdb_register_table_function
     ! =========================================================================
@@ -1732,31 +1733,31 @@ module duckdb
     ! DUCKDB_API void duckdb_bind_add_result_column(duckdb_bind_info info, const char *name, duckdb_logical_type type);
     subroutine duckdb_bind_add_result_column_(info, name, type) &
         bind(c, name='duckdb_bind_add_result_column')
-      import :: duckdb_bind_info, duckdb_logical_type, c_char
-      type(duckdb_bind_info), value :: info
+      import :: c_ptr, duckdb_logical_type, c_char
+      type(c_ptr), value :: info
       character(kind=c_char) :: name
       type(duckdb_logical_type), value :: type
     end subroutine duckdb_bind_add_result_column_
     
     ! DUCKDB_API idx_t duckdb_bind_get_parameter_count(duckdb_bind_info info);
     function duckdb_bind_get_parameter_count_(info) bind(c, name='duckdb_bind_get_parameter_count') result(res)
-      import :: duckdb_bind_info, c_int64_t
-      type(duckdb_bind_info), value :: info
+      import :: c_ptr, c_int64_t
+      type(c_ptr), value :: info
       integer(kind=c_int64_t) :: res
     end function duckdb_bind_get_parameter_count_
       
     ! DUCKDB_API duckdb_value duckdb_bind_get_parameter(duckdb_bind_info info, idx_t index);
     function duckdb_bind_get_parameter_(info, index) bind(c, name='duckdb_bind_get_parameter') result(res)
-      import :: duckdb_bind_info, c_int64_t, duckdb_value
-      type(duckdb_bind_info), value :: info
+      import :: c_ptr, c_int64_t, duckdb_value
+      type(c_ptr), value :: info
       integer(kind=c_int64_t), value :: index
       type(duckdb_value) :: res
     end function duckdb_bind_get_parameter_
 
     ! DUCKDB_API void duckdb_bind_set_bind_data(duckdb_bind_info info, void *bind_data, duckdb_delete_callback_t destroy);
     subroutine duckdb_bind_set_bind_data_(info, bind_data, destroy) bind(c, name='duckdb_bind_set_bind_data')
-      import :: duckdb_bind_info, c_ptr, c_funptr
-      type(duckdb_bind_info), value :: info
+      import :: c_ptr, c_funptr
+      type(c_ptr), value :: info
       type(c_ptr), value :: bind_data
       type(c_funptr), value :: destroy
     end subroutine duckdb_bind_set_bind_data_
@@ -1771,22 +1772,22 @@ module duckdb
 
     ! DUCKDB_API void *duckdb_init_get_extra_info(duckdb_init_info info);
     function duckdb_init_get_extra_info(info) bind(c, name='duckdb_init_get_extra_info') result(res)
-      import :: duckdb_init_info, c_ptr
-      type(duckdb_init_info), value :: info
+      import :: c_ptr
+      type(c_ptr), value :: info
       type(c_ptr) :: res
     end function duckdb_init_get_extra_info
 
     ! DUCKDB_API void *duckdb_init_get_bind_data(duckdb_init_info info);
     function duckdb_init_get_bind_data(info) bind(c, name='duckdb_init_get_bind_data') result(res)
-      import :: duckdb_init_info, c_ptr
-      type(duckdb_init_info), value :: info
+      import :: c_ptr
+      type(c_ptr), value :: info
       type(c_ptr) :: res
     end function duckdb_init_get_bind_data
 
     ! DUCKDB_API void duckdb_init_set_init_data(duckdb_init_info info, void *init_data, duckdb_delete_callback_t destroy);
     subroutine duckdb_init_set_init_data_(info, init_data, destroy) bind(c, name='duckdb_init_set_init_data')
-      import :: duckdb_init_info, c_ptr, c_funptr
-      type(duckdb_init_info), value :: info
+      import :: c_ptr, c_funptr
+      type(c_ptr), value :: info
       type(c_ptr), value :: init_data
       type(c_funptr), value :: destroy
     end subroutine duckdb_init_set_init_data_
@@ -1807,15 +1808,15 @@ module duckdb
 
     ! DUCKDB_API void *duckdb_function_get_bind_data(duckdb_function_info info);
     function duckdb_function_get_bind_data(info) bind(c, name='duckdb_function_get_bind_data') result(res)
-      import :: duckdb_function_info, c_ptr
-      type(duckdb_function_info), value :: info
+      import :: c_ptr
+      type(c_ptr), value :: info
       type(c_ptr) :: res
     end function duckdb_function_get_bind_data
     
     ! DUCKDB_API void *duckdb_function_get_init_data(duckdb_function_info info);
     function duckdb_function_get_init_data(info) bind(c, name='duckdb_function_get_init_data') result(res)
-      import :: duckdb_function_info, c_ptr
-      type(duckdb_function_info), value :: info
+      import :: c_ptr
+      type(c_ptr), value :: info
       type(c_ptr) :: res
     end function duckdb_function_get_init_data
 
@@ -2980,72 +2981,72 @@ module duckdb
     ! Table Functions
     ! =========================================================================  
     subroutine duckdb_table_function_set_name(table_function, name)
-      type(duckdb_table_function) :: table_function
+      type(c_ptr) :: table_function
       character(len=*) :: name
       call duckdb_table_function_set_name_(table_function, trim(name)//c_null_char)
     end subroutine duckdb_table_function_set_name
 
     subroutine duckdb_table_function_add_named_parameter(table_function, name, type)
-      type(duckdb_table_function) :: table_function
+      type(c_ptr) :: table_function
       character(len=*) :: name
       type(duckdb_logical_type) :: type
       call duckdb_table_function_add_named_parameter_(table_function, trim(name)//c_null_char, type)
     end subroutine duckdb_table_function_add_named_parameter
 
-    subroutine duckdb_table_function_set_extra_info(info, extra_info, destroy)
-      type(duckdb_table_function), value :: info
+    subroutine duckdb_table_function_set_extra_info(table_function, extra_info, destroy)
+      type(c_ptr), value :: table_function
       type(c_ptr) :: extra_info
       procedure(duckdb_delete_callback_t) :: destroy
-      call duckdb_table_function_set_extra_info_(info, extra_info, c_funloc(destroy))
+      call duckdb_table_function_set_extra_info_(table_function, extra_info, c_funloc(destroy))
     end subroutine duckdb_table_function_set_extra_info
 
     subroutine duckdb_table_function_set_bind(table_function, bind)
-      type(duckdb_table_function), value :: table_function
+      type(c_ptr), value :: table_function
       procedure(duckdb_table_function_bind_t) :: bind
       call duckdb_table_function_set_bind_(table_function, c_funloc(bind))
     end subroutine duckdb_table_function_set_bind
 
     subroutine duckdb_table_function_set_init(table_function, init)
-      type(duckdb_table_function), value :: table_function
+      type(c_ptr), value :: table_function
       procedure(duckdb_table_function_init_t) :: init
       call duckdb_table_function_set_init_(table_function, c_funloc(init))
     end subroutine duckdb_table_function_set_init
 
     subroutine duckdb_table_function_set_function(table_function, func)
-      type(duckdb_table_function), value :: table_function
+      type(c_ptr), value :: table_function
       procedure(duckdb_table_function_t) :: func
       call duckdb_table_function_set_function_(table_function, c_funloc(func))
     end subroutine duckdb_table_function_set_function
 
     subroutine duckdb_bind_add_result_column(info, name, type)
-      type(duckdb_bind_info) :: info
+      type(c_ptr) :: info
       character(len=*) :: name
       type(duckdb_logical_type) :: type
       call duckdb_bind_add_result_column_(info, trim(name)//c_null_char, type)
     end subroutine duckdb_bind_add_result_column
     
     function duckdb_bind_get_parameter_count(info) result(res)
-      type(duckdb_bind_info) :: info
+      type(c_ptr) :: info
       integer :: res
       res = int(duckdb_bind_get_parameter_count_(info))
     end function duckdb_bind_get_parameter_count
 
     function duckdb_bind_get_parameter(info, index) result(res)
-      type(duckdb_bind_info) :: info
+      type(c_ptr) :: info
       integer :: index
       type(duckdb_value) :: res
       res = duckdb_bind_get_parameter_(info, int(index, kind=c_int64_t))
     end function duckdb_bind_get_parameter
 
     subroutine duckdb_bind_set_bind_data(info, bind_data, destroy)
-      type(duckdb_bind_info) :: info
+      type(c_ptr) :: info
       type(c_ptr) :: bind_data
       procedure(duckdb_delete_callback_t) :: destroy
       call duckdb_bind_set_bind_data_(info, bind_data, c_funloc(destroy))
     end subroutine duckdb_bind_set_bind_data
 
     subroutine duckdb_init_set_init_data(info, init_data, destroy)
-      type(duckdb_init_info) :: info
+      type(c_ptr) :: info
       type(c_ptr) :: init_data
       procedure(duckdb_delete_callback_t) :: destroy
       call duckdb_init_set_init_data_(info, init_data, c_funloc(destroy))
