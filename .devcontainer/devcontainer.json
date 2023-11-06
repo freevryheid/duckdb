@@ -1,0 +1,16 @@
+{
+	"name": "Ubuntu",
+	"build": { "dockerfile": "Dockerfile" },
+
+  "forwardPorts": [3000],  
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bungcip.better-toml", 
+        "ms-vscode.cpptools", 
+        "fortran-lang.linter-gfortran"
+      ]
+    }
+  }
+}
