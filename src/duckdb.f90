@@ -1,4 +1,5 @@
 module duckdb
+  use, intrinsic :: iso_fortran_env
   use, intrinsic :: iso_c_binding
   use util
   use constants
@@ -474,33 +475,33 @@ module duckdb
 
     ! DUCKDB_API
     ! duckdb_state
-    ! duckdb_open(const char *path, duckdb_database *out_database);
-    function duckdb_open_char(path, out_database) &
+    ! duckdb_open(const char *path, duckdb_database *db);
+    function duckdb_open_char(path, db) &
     & bind(c, name='duckdb_open') result(res)
       import :: duckdb_state, c_char, duckdb_database
       integer(kind(duckdb_state)) :: res
       character(kind=c_char) :: path
-      type(duckdb_database) :: out_database
+      type(duckdb_database) :: db
     end function duckdb_open_char
 
-    function duckdb_open_ptr(path, out_database) &
+    function duckdb_open_ptr(path, db) &
     & bind(c, name='duckdb_open') result(res)
       import :: duckdb_state, c_char, c_ptr, duckdb_database
       integer(kind(duckdb_state)) :: res
       type(c_ptr) ::  path
-      type(duckdb_database) :: out_database
+      type(duckdb_database) :: db
     end function duckdb_open_ptr
 
     ! DUCKDB_API
     ! duckdb_state
-    ! duckdb_open_ext(const char *path, duckdb_database *out_database,
+    ! duckdb_open_ext(const char *path, duckdb_database *db,
     ! duckdb_config config,char **out_error);
-    function duckdb_open_ext_(path, out_database, config, out_error) &
+    function duckdb_open_ext_(path, db, config, out_error) &
     & bind(c, name='duckdb_open_ext') result(res)
       import :: duckdb_state, c_char, duckdb_database, duckdb_config, c_ptr
       integer(kind(duckdb_state)) :: res
       character(kind=c_char) :: path
-      type(duckdb_database) :: out_database
+      type(duckdb_database) :: db
       type(duckdb_config), value :: config
       type(c_ptr) :: out_error
     end function duckdb_open_ext_
@@ -570,11 +571,11 @@ module duckdb
     ! duckdb_state
     ! duckdb_get_config_flag(size_t index, const char **out_name,
     ! const char **out_description);
-    function duckdb_get_config_flag_(index, out_name, out_description) &
+    function duckdb_get_config_flag_(idx, out_name, out_description) &
     & bind(c, name='duckdb_get_config_flag') result(res)
       import :: duckdb_state, c_size_t, c_ptr
       integer(kind(duckdb_state)) :: res
-      integer(kind=c_size_t), value :: index
+      integer(kind=c_size_t), value :: idx
       type(c_ptr) :: out_name
       type(c_ptr) :: out_description
     end function duckdb_get_config_flag_
@@ -983,10 +984,10 @@ module duckdb
     ! DUCKDB_API
     ! void
     ! *duckdb_malloc(size_t size);
-    function duckdb_malloc(size) &
+    function duckdb_malloc(siz) &
     & bind(c, name='duckdb_malloc') result(res)
       import :: c_ptr, c_size_t
-      integer(kind=c_size_t) :: size
+      integer(kind=c_size_t) :: siz
       type(c_ptr) :: res
     end function duckdb_malloc
 
@@ -1601,20 +1602,20 @@ module duckdb
     ! DUCKDB_API
     ! duckdb_logical_type
     ! duckdb_create_logical_type(duckdb_type type);
-    function duckdb_create_logical_type(type) &
+    function duckdb_create_logical_type(typ) &
     & bind(c, name='duckdb_create_logical_type') result(res)
       import :: duckdb_logical_type, duckdb_type
-      integer(kind(duckdb_type)), value :: type
+      integer(kind(duckdb_type)), value :: typ
       type(duckdb_logical_type) :: res
     end function duckdb_create_logical_type
 
     ! DUCKDB_API
     ! duckdb_logical_type
     ! duckdb_create_list_type(duckdb_logical_type type);
-    function duckdb_create_list_type(type) &
+    function duckdb_create_list_type(typ) &
     & bind(c, name='duckdb_create_list_type') result(res)
       import :: duckdb_logical_type
-      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type), value :: typ
       type(duckdb_logical_type) :: res
     end function duckdb_create_list_type
 
@@ -1655,133 +1656,133 @@ module duckdb
     ! DUCKDB_API
     ! duckdb_type
     ! duckdb_get_type_id(duckdb_logical_type type);
-    function duckdb_get_type_id(type) &
+    function duckdb_get_type_id(typ) &
     & bind(c, name="duckdb_get_type_id") result(res)
       import :: duckdb_logical_type, duckdb_type
-      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type), value :: typ
       integer(kind(duckdb_type)) :: res
     end function duckdb_get_type_id
 
     ! DUCKDB_API
     ! uint8_t
     ! duckdb_decimal_width(duckdb_logical_type type);
-    function duckdb_decimal_width_(type) &
+    function duckdb_decimal_width_(typ) &
     & bind(c, name='duckdb_decimal_width') result(res)
       import :: duckdb_logical_type, c_int8_t
-      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type), value :: typ
       integer(kind=c_int8_t) :: res
     end function duckdb_decimal_width_
 
     ! DUCKDB_API
     ! uint8_t
     ! duckdb_decimal_scale(duckdb_logical_type type);
-    function duckdb_decimal_scale_(type) &
+    function duckdb_decimal_scale_(typ) &
     & bind(c, name='duckdb_decimal_scale') result(res)
       import :: duckdb_logical_type, c_int8_t
-      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type), value :: typ
       integer(kind=c_int8_t) :: res
     end function duckdb_decimal_scale_
 
     ! DUCKDB_API
     ! duckdb_type
     ! duckdb_decimal_internal_type(duckdb_logical_type type);
-    function duckdb_decimal_internal_type(type) &
+    function duckdb_decimal_internal_type(typ) &
     & bind(c, name="duckdb_decimal_internal_type") result(res)
       import :: duckdb_logical_type, duckdb_type
-      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type), value :: typ
       integer(kind(duckdb_type)) :: res
     end function duckdb_decimal_internal_type
 
     ! DUCKDB_API
     ! duckdb_type
     ! duckdb_enum_internal_type(duckdb_logical_type type);
-    function duckdb_enum_internal_type(type) &
+    function duckdb_enum_internal_type(typ) &
     & bind(c, name="duckdb_enum_internal_type") result(res)
       import :: duckdb_logical_type, duckdb_type
-      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type), value :: typ
       integer(kind(duckdb_type)) :: res
     end function duckdb_enum_internal_type
 
     ! DUCKDB_API
     ! uint32_t
     ! duckdb_enum_dictionary_size(duckdb_logical_type type);
-    function duckdb_enum_dictionary_size_(type) &
+    function duckdb_enum_dictionary_size_(typ) &
     & bind(c, name='duckdb_enum_dictionary_size') result(res)
       import :: duckdb_logical_type, c_int32_t
-      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type), value :: typ
       integer(kind=c_int32_t) :: res
     end function duckdb_enum_dictionary_size_
 
     ! DUCKDB_API
     ! char
     ! *duckdb_enum_dictionary_value(duckdb_logical_type type, idx_t index);
-    function duckdb_enum_dictionary_value_(type, index) &
+    function duckdb_enum_dictionary_value_(typ, idx) &
     & bind(c, name="duckdb_enum_dictionary_value") result(res)
       import :: duckdb_logical_type, c_ptr, c_int64_t
-      type(duckdb_logical_type), value :: type
-      integer(kind=c_int64_t), value :: index
+      type(duckdb_logical_type), value :: typ
+      integer(kind=c_int64_t), value :: idx
       type(c_ptr) :: res
     end function duckdb_enum_dictionary_value_
 
     ! DUCKDB_API
     ! duckdb_logical_type
     ! duckdb_list_type_child_type(duckdb_logical_type type);
-    function duckdb_list_type_child_type(type) &
+    function duckdb_list_type_child_type(typ) &
     & bind(c, name="duckdb_list_type_child_type") result(res)
       import :: duckdb_logical_type
-      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type), value :: typ
       type(duckdb_logical_type) :: res
     end function duckdb_list_type_child_type
 
     ! DUCKDB_API
     ! duckdb_logical_type
     ! duckdb_map_type_key_type(duckdb_logical_type type);
-    function duckdb_map_type_key_type(type) &
+    function duckdb_map_type_key_type(typ) &
     & bind(c, name="duckdb_map_type_key_type") result(res)
       import :: duckdb_logical_type
-      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type), value :: typ
       type(duckdb_logical_type) :: res
     end function duckdb_map_type_key_type
 
     ! DUCKDB_API
     ! duckdb_logical_type
     ! duckdb_map_type_value_type(duckdb_logical_type type);
-    function duckdb_map_type_value_type(type) &
+    function duckdb_map_type_value_type(typ) &
     & bind(c, name="duckdb_map_type_value_type") result(res)
       import :: duckdb_logical_type
-      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type), value :: typ
       type(duckdb_logical_type) :: res
     end function duckdb_map_type_value_type
 
     ! DUCKDB_API
     ! idx_t
     ! duckdb_struct_type_child_count(duckdb_logical_type type);
-    function duckdb_struct_type_child_count_(type) &
+    function duckdb_struct_type_child_count_(typ) &
     & bind(c, name="duckdb_struct_type_child_count") result(res)
       import :: duckdb_logical_type, c_int64_t
-      type(duckdb_logical_type), value :: type
+      type(duckdb_logical_type), value :: typ
       integer(kind=c_int64_t) :: res
     end function duckdb_struct_type_child_count_
 
     ! DUCKDB_API
     ! char
     ! *duckdb_struct_type_child_name(duckdb_logical_type type, idx_t index);
-    function duckdb_struct_type_child_name_(type, index) &
+    function duckdb_struct_type_child_name_(typ, idx) &
     & bind(c, name="duckdb_struct_type_child_name") result(res)
       import :: duckdb_logical_type, c_int64_t, c_ptr
-      type(duckdb_logical_type), value :: type
-      integer(kind=c_int64_t), value :: index
+      type(duckdb_logical_type), value :: typ
+      integer(kind=c_int64_t), value :: idx
       type(c_ptr) :: res
     end function duckdb_struct_type_child_name_
 
     ! DUCKDB_API
     ! duckdb_logical_type
     ! duckdb_struct_type_child_type(duckdb_logical_type type, idx_t index);
-    function duckdb_struct_type_child_type_(type, index) &
+    function duckdb_struct_type_child_type_(typ, idx) &
     & bind(c, name="duckdb_struct_type_child_type") result(res)
       import :: duckdb_logical_type, c_int64_t
-      type(duckdb_logical_type), value :: type
-      integer(kind=c_int64_t), value :: index
+      type(duckdb_logical_type), value :: typ
+      integer(kind=c_int64_t), value :: idx
       type(duckdb_logical_type) :: res
     end function duckdb_struct_type_child_type_
 
@@ -2321,67 +2322,67 @@ module duckdb
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_bool(duckdb_appender appender, bool value);
-    function duckdb_append_bool_(appender, value) &
+    function duckdb_append_bool_(appender, val) &
     & bind(c, name='duckdb_append_bool') result(res)
       import :: duckdb_state, duckdb_appender, c_bool
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      logical(kind=c_bool), value :: value
+      logical(kind=c_bool), value :: val
     end function duckdb_append_bool_
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_int8(duckdb_appender appender, int8_t value);
-    function duckdb_append_int8_(appender, value) &
+    function duckdb_append_int8_(appender, val) &
     & bind(c, name='duckdb_append_int8') result(res)
       import :: duckdb_state, duckdb_appender, c_int8_t
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      integer(kind=c_int8_t), value :: value
+      integer(kind=c_int8_t), value :: val
     end function duckdb_append_int8_
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_int16(duckdb_appender appender, int16_t value);
-    function duckdb_append_int16_(appender, value) &
+    function duckdb_append_int16_(appender, val) &
     & bind(c, name='duckdb_append_int16') result(res)
       import :: duckdb_state, duckdb_appender, c_int16_t
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      integer(kind=c_int16_t), value :: value
+      integer(kind=c_int16_t), value :: val
     end function duckdb_append_int16_
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_int32(duckdb_appender appender, int32_t value);
-    function duckdb_append_int32_(appender, value) &
+    function duckdb_append_int32_(appender, val) &
     & bind(c, name='duckdb_append_int32') result(res)
       import :: duckdb_state, duckdb_appender, c_int32_t
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      integer(kind=c_int32_t), value :: value
+      integer(kind=c_int32_t), value :: val
     end function duckdb_append_int32_
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_int64(duckdb_appender appender, int64_t value);
-    function duckdb_append_int64_(appender, value) &
+    function duckdb_append_int64_(appender, val) &
     & bind(c, name='duckdb_append_int64') result(res)
       import :: duckdb_state, duckdb_appender, c_int64_t
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      integer(kind=c_int64_t), value :: value
+      integer(kind=c_int64_t), value :: val
     end function duckdb_append_int64_
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_hugeint(duckdb_appender appender, duckdb_hugeint value);
-    function duckdb_append_hugeint(appender, value) &
+    function duckdb_append_hugeint(appender, val) &
     & bind(c, name='duckdb_append_hugeint') result(res)
       import :: duckdb_state, duckdb_appender, duckdb_hugeint
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(duckdb_hugeint), value :: value
+      type(duckdb_hugeint), value :: val
     end function duckdb_append_hugeint
 
     ! NOTE: Fortran doesn't currently have an unsigned integer definition.
@@ -2406,91 +2407,91 @@ module duckdb
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_float(duckdb_appender appender, float value);
-    function duckdb_append_float_(appender, value) &
+    function duckdb_append_float_(appender, val) &
     & bind(c, name='duckdb_append_float') result(res)
       import :: duckdb_state, duckdb_appender, c_float
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      real(kind=c_float), value :: value
+      real(kind=c_float), value :: val
     end function duckdb_append_float_
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_double(duckdb_appender appender, double value);
-    function duckdb_append_double_(appender, value) &
+    function duckdb_append_double_(appender, val) &
     & bind(c, name='duckdb_append_double') result(res)
       import :: duckdb_state, duckdb_appender, c_double
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      real(kind=c_double), value :: value
+      real(kind=c_double), value :: val
     end function duckdb_append_double_
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_date(duckdb_appender appender, duckdb_date value);
-    function duckdb_append_date(appender, value) &
+    function duckdb_append_date(appender, val) &
     & bind(c, name='duckdb_append_date') result(res)
       import :: duckdb_state, duckdb_appender, duckdb_date
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(duckdb_date), value :: value
+      type(duckdb_date), value :: val
     end function duckdb_append_date
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_time(duckdb_appender appender, duckdb_time value);
-    function duckdb_append_time(appender, value) &
+    function duckdb_append_time(appender, val) &
     & bind(c, name='duckdb_append_time') result(res)
       import :: duckdb_state, duckdb_appender, duckdb_time
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(duckdb_time), value :: value
+      type(duckdb_time), value :: val
     end function duckdb_append_time
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_timestamp(duckdb_appender appender, duckdb_timestamp value);
-    function duckdb_append_timestamp(appender, value) &
+    function duckdb_append_timestamp(appender, val) &
     & bind(c, name='duckdb_append_timestamp') result(res)
       import :: duckdb_state, duckdb_appender, duckdb_timestamp
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(duckdb_timestamp), value :: value
+      type(duckdb_timestamp), value :: val
     end function duckdb_append_timestamp
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_interval(duckdb_appender appender, duckdb_interval value);
-    function duckdb_append_interval(appender, value) &
+    function duckdb_append_interval(appender, val) &
     & bind(c, name='duckdb_append_interval') result(res)
       import :: duckdb_state, duckdb_appender, duckdb_interval
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      type(duckdb_interval), value :: value
+      type(duckdb_interval), value :: val
     end function duckdb_append_interval
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_varchar(duckdb_appender appender, const char *val);
-    function duckdb_append_varchar_(appender, value) &
+    function duckdb_append_varchar_(appender, val) &
     & bind(c, name='duckdb_append_varchar') result(res)
       import :: duckdb_state, duckdb_appender, c_char
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
-      character(kind=c_char) :: value
+      character(kind=c_char) :: val
     end function duckdb_append_varchar_
 
     ! DUCKDB_API
     ! duckdb_state
     ! duckdb_append_varchar_length(duckdb_appender appender, const char *val,
     ! idx_t length);
-    function duckdb_append_varchar_length_(appender, value, length) &
+    function duckdb_append_varchar_length_(appender, val, length) &
     & bind(c, name='duckdb_append_varchar_length') result(res)
       import :: duckdb_state, duckdb_appender, c_char, c_int64_t
       integer(kind(duckdb_state)) :: res
       type(duckdb_appender), value :: appender
       integer(kind=c_int64_t), value :: length
-      character(kind=c_char) :: value
+      character(kind=c_char) :: val
     end function duckdb_append_varchar_length_
 
     ! DUCKDB_API
@@ -2551,11 +2552,11 @@ module duckdb
     ! duckdb_state
     ! duckdb_query_arrow_schema(duckdb_arrow result,
     ! duckdb_arrow_schema *out_schema);
-    function duckdb_query_arrow_schema(result, out_schema) &
+    function duckdb_query_arrow_schema(rslt, out_schema) &
     & bind(c, name='duckdb_query_arrow_schema') result(res)
       import :: duckdb_state, duckdb_arrow, duckdb_arrow_schema
       integer(kind(duckdb_state)) :: res
-      type(duckdb_arrow), value :: result
+      type(duckdb_arrow), value :: rslt
       type(duckdb_arrow_schema) :: out_schema
     end function duckdb_query_arrow_schema
 
@@ -2563,11 +2564,11 @@ module duckdb
     ! duckdb_state
     ! duckdb_query_arrow_array(duckdb_arrow result,
     ! duckdb_arrow_array *out_array);
-    function duckdb_query_arrow_array(result, out_array) &
+    function duckdb_query_arrow_array(rslt, out_array) &
     & bind(c, name='duckdb_query_arrow_array') result(res)
       import :: duckdb_state, duckdb_arrow, duckdb_arrow_array
       integer(kind(duckdb_state)) :: res
-      type(duckdb_arrow), value :: result
+      type(duckdb_arrow), value :: rslt
       type(duckdb_arrow_array) :: out_array
     end function duckdb_query_arrow_array
 
@@ -2586,20 +2587,20 @@ module duckdb
     ! DUCKDB_API
     ! const char
     ! *duckdb_query_arrow_error(duckdb_arrow result);
-    function duckdb_query_arrow_error_(result) &
+    function duckdb_query_arrow_error_(rslt) &
     & bind(c, name='duckdb_query_arrow_error') result(err)
       import :: c_ptr, duckdb_arrow
       type(c_ptr) :: err
-      type(duckdb_arrow), value :: result
+      type(duckdb_arrow), value :: rslt
     end function duckdb_query_arrow_error_
 
     ! DUCKDB_API
     ! void
     ! duckdb_destroy_arrow(duckdb_arrow *result);
-    subroutine duckdb_destroy_arrow(result) &
+    subroutine duckdb_destroy_arrow(rslt) &
     & bind(c, name='duckdb_destroy_arrow')
       import :: duckdb_arrow
-      type(duckdb_arrow) :: result
+      type(duckdb_arrow) :: rslt
     end subroutine duckdb_destroy_arrow
 
     ! =========================================================================
@@ -2723,16 +2724,17 @@ module duckdb
       type(duckdb_connection), value :: connection
       character(len=*) :: query
       character(len=:), allocatable :: sql
-      type(duckdb_result) :: out_result
+      type(duckdb_result), optional :: out_result
       sql = query // c_null_char ! convert to c string
       res = duckdb_query_(connection, sql, out_result)
+      deallocate(sql)
     end function duckdb_query
 
     function duckdb_column_name(res, col) result(name)
       character(len=:), allocatable :: name
       type(c_ptr) :: tmp
       type(duckdb_result) :: res
-      integer :: col
+      integer(kind=int64) :: col
       name = "NULL"
       if (c_associated(res%internal_data)) then
         tmp = duckdb_column_name_(res, int(col, kind=c_int64_t))
@@ -2743,7 +2745,7 @@ module duckdb
     function duckdb_column_type(res, col) result(col_type)
       integer(kind(duckdb_type)) :: col_type
       type(duckdb_result) :: res
-      integer :: col
+      integer(kind=int64) :: col
       col_type = duckdb_type_invalid
       if (c_associated(res%internal_data)) &
         col_type = duckdb_column_type_(res, int(col, kind=c_int64_t))
@@ -2751,7 +2753,7 @@ module duckdb
 
     function duckdb_column_count(res) result(cc)
       type(duckdb_result) :: res
-      integer :: cc
+      integer(kind=int64) :: cc
       cc = 0
       if (c_associated(res%internal_data)) &
         cc = int(duckdb_column_count_(res))
@@ -2759,7 +2761,7 @@ module duckdb
 
     function duckdb_row_count(res) result(rc)
       type(duckdb_result) :: res
-      integer :: rc
+      integer(kind=int64) :: rc
       rc = 0
       if (c_associated(res%internal_data)) &
         rc = int(duckdb_row_count_(res))
@@ -2767,29 +2769,27 @@ module duckdb
 
     function duckdb_rows_changed(res) result(rc)
       type(duckdb_result) :: res
-      integer :: rc
+      integer(kind=int64) :: rc
       rc = 0
       if (c_associated(res%internal_data)) &
         rc = int(duckdb_rows_changed_(res))
     end function duckdb_rows_changed
 
-    ! NOTE: DEPRECIATED
     function duckdb_column_data(res, col) result(data)
       type(c_ptr) :: data
       type(duckdb_result) :: res
-      integer :: col
+      integer(kind=int64) :: col
       data = c_null_ptr
       if (c_associated(res%internal_data)) &
         data = duckdb_column_data_(res, int(col, kind=c_int64_t))
     end function duckdb_column_data
 
-    ! NOTE: DEPRECIATED
     function duckdb_nullmask_data(res, col) result(rst)
       type(c_ptr) :: tmp
       type(duckdb_result) :: res
-      integer :: col
+      integer(kind=int64) :: col
       logical, pointer :: rst
-      tmp= c_null_ptr
+      tmp = c_null_ptr
       rst = .false.
       if (c_associated(res%internal_data)) &
         tmp = duckdb_nullmask_data_(res, int(col, kind=c_int64_t))
@@ -2813,23 +2813,23 @@ module duckdb
 
     function duckdb_result_get_chunk(res, idx) result(chunk)
       type(duckdb_result) :: res
-      integer :: idx
+      integer(kind=int64) :: idx
       type(duckdb_data_chunk) :: chunk
       chunk = duckdb_result_get_chunk_(res, int(idx, kind=c_int64_t))
     end function duckdb_result_get_chunk
 
     function duckdb_result_chunk_count(res) result(cc)
       type(duckdb_result):: res
-      integer :: cc
+      integer(kind=int64) :: cc
       cc = 0
       if (c_associated(res%internal_data)) then
-        cc = int(duckdb_result_chunk_count_(res))
+        cc = int(duckdb_result_chunk_count_(res), kind=int64)
       end if
     end function duckdb_result_chunk_count
 
     function duckdb_value_boolean(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer, value :: col, row
+      integer(kind=int64), value :: col, row
       logical :: r
       r = .false.
       if (c_associated(res%internal_data)) &
@@ -2839,7 +2839,7 @@ module duckdb
 
     function duckdb_value_int8(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       integer(kind=int8) :: r
       r = 0
       if (c_associated(res%internal_data)) &
@@ -2849,7 +2849,7 @@ module duckdb
 
     function duckdb_value_int16(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       integer(kind=int16) :: r
       r = 0
       if (c_associated(res%internal_data)) &
@@ -2859,7 +2859,7 @@ module duckdb
 
     function duckdb_value_int32(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       integer(kind=int32) :: r
       r = 0
       if (c_associated(res%internal_data)) &
@@ -2869,7 +2869,7 @@ module duckdb
 
     function duckdb_value_int64(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       integer(kind=int64) :: r
       r = 0
       if (c_associated(res%internal_data)) &
@@ -2879,7 +2879,7 @@ module duckdb
 
     function duckdb_value_hugeint(res, col, row)  result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       type(duckdb_hugeint) :: r
       r = duckdb_hugeint()
       if (c_associated(res%internal_data)) &
@@ -2889,7 +2889,7 @@ module duckdb
 
     function duckdb_value_decimal(res, col, row)  result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       type(duckdb_decimal) :: r
       if (c_associated(res%internal_data)) &
         r = duckdb_value_decimal_(res, int(col, kind=c_int64_t), &
@@ -2898,7 +2898,7 @@ module duckdb
 
     function duckdb_value_float(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       real(kind=real32) :: r
       if (c_associated(res%internal_data)) &
         r = real(duckdb_value_float_(res, int(col, kind=c_int64_t), &
@@ -2907,7 +2907,7 @@ module duckdb
 
     function duckdb_value_double(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       real(kind=real64) :: r
       if (c_associated(res%internal_data)) &
         r = real(duckdb_value_double_(res, int(col, kind=c_int64_t), &
@@ -2916,7 +2916,7 @@ module duckdb
 
     function duckdb_value_date(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       type(duckdb_date) :: r
       if (c_associated(res%internal_data)) &
         r = duckdb_value_date_(res, int(col, kind=c_int64_t), &
@@ -2925,7 +2925,7 @@ module duckdb
 
     function duckdb_value_time(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       type(duckdb_time) :: r
       if (c_associated(res%internal_data)) &
         r = duckdb_value_time_(res, int(col, kind=c_int64_t), &
@@ -2934,7 +2934,7 @@ module duckdb
 
     function duckdb_value_timestamp(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       type(duckdb_timestamp) :: r
       if (c_associated(res%internal_data)) &
         r = duckdb_value_timestamp_(res, int(col, kind=c_int64_t), &
@@ -2943,7 +2943,7 @@ module duckdb
 
     function duckdb_value_interval(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       type(duckdb_interval) :: r
       if (c_associated(res%internal_data)) &
         r = duckdb_value_interval_(res, int(col, kind=c_int64_t), &
@@ -2952,7 +2952,7 @@ module duckdb
 
     function duckdb_value_varchar(res, col, row) result(str)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       type(c_ptr) :: tmp
       character(len=:), allocatable :: str
       tmp = c_null_ptr
@@ -2964,7 +2964,7 @@ module duckdb
 
     function duckdb_value_string(res, col, row) result(r)
       type(duckdb_result), intent(in) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       type(duckdb_string) :: r
       if (c_associated(res%internal_data)) &
         r = duckdb_value_string_(res, int(col, kind=c_int64_t), &
@@ -2973,7 +2973,7 @@ module duckdb
 
     function duckdb_value_varchar_internal(res, col, row) result(str)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       type(c_ptr) :: tmp
       character(len=:), allocatable :: str
       tmp = c_null_ptr
@@ -2985,7 +2985,7 @@ module duckdb
 
     function duckdb_value_string_internal(res, col, row) result(str)
       type(duckdb_result), intent(in) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       type(duckdb_string) :: str
       if (c_associated(res%internal_data)) &
         str = duckdb_value_string_internal_(res, int(col, kind=c_int64_t), &
@@ -2994,7 +2994,7 @@ module duckdb
 
     function duckdb_value_blob(res, col, row) result(r)
       type(duckdb_result) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       type(duckdb_blob) :: r
       if (c_associated(res%internal_data)) &
         r = duckdb_value_blob_(res, int(col, kind=c_int64_t), &
@@ -3003,7 +3003,7 @@ module duckdb
 
     function duckdb_value_is_null(res, col, row) result(r)
       type(duckdb_result), intent(in) :: res
-      integer :: col, row
+      integer(kind=int64) :: col, row
       logical :: r
       r = .false.
       if (c_associated(res%internal_data)) &
@@ -3346,56 +3346,56 @@ module duckdb
     ! Logical Type Interface
     ! =========================================================================
 
-    function duckdb_decimal_width(type) result(res)
-      type(duckdb_logical_type) :: type
+    function duckdb_decimal_width(typ) result(res)
+      type(duckdb_logical_type) :: typ
       integer(kind=int8) :: res
-      res = int(duckdb_decimal_width_(type), kind=int8)
+      res = int(duckdb_decimal_width_(typ), kind=int8)
     end function duckdb_decimal_width
 
-    function duckdb_decimal_scale(type) result(res)
-      type(duckdb_logical_type) :: type
+    function duckdb_decimal_scale(typ) result(res)
+      type(duckdb_logical_type) :: typ
       integer(kind=int8) :: res
-      res = int(duckdb_decimal_scale_(type), kind=int8)
+      res = int(duckdb_decimal_scale_(typ), kind=int8)
     end function duckdb_decimal_scale
 
-    function duckdb_enum_dictionary_size(type) result(res)
-      type(duckdb_logical_type) :: type
+    function duckdb_enum_dictionary_size(typ) result(res)
+      type(duckdb_logical_type) :: typ
       integer(kind=int32) :: res
-      res = int(duckdb_enum_dictionary_size_(type), kind=int32)
+      res = int(duckdb_enum_dictionary_size_(typ), kind=int32)
     end function duckdb_enum_dictionary_size
 
-    function duckdb_enum_dictionary_value(type, index) result(res)
-      type(duckdb_logical_type) :: type
+    function duckdb_enum_dictionary_value(typ, index) result(res)
+      type(duckdb_logical_type) :: typ
       integer :: index
       type(c_ptr) :: ptr
       character(len=:), allocatable :: res
       res = ""
-      ptr = duckdb_enum_dictionary_value_(type, int(index, kind=c_int64_t))
+      ptr = duckdb_enum_dictionary_value_(typ, int(index, kind=c_int64_t))
       if (c_associated(ptr)) &
         call c_f_str_ptr(ptr, res)
     end function duckdb_enum_dictionary_value
 
-    function duckdb_struct_type_child_count(type) result(res)
-      type(duckdb_logical_type) :: type
+    function duckdb_struct_type_child_count(typ) result(res)
+      type(duckdb_logical_type) :: typ
       integer :: res
-      res = int(duckdb_struct_type_child_count_(type))
+      res = int(duckdb_struct_type_child_count_(typ))
     end function duckdb_struct_type_child_count
 
-    function duckdb_struct_type_child_name(type, index) result(res)
-      type(duckdb_logical_type) :: type
+    function duckdb_struct_type_child_name(typ, index) result(res)
+      type(duckdb_logical_type) :: typ
       integer :: index
       type(c_ptr) :: tmp
       character(len=:), allocatable :: res
       res = ""
-      tmp = duckdb_struct_type_child_name_(type, int(index, kind=c_int64_t))
+      tmp = duckdb_struct_type_child_name_(typ, int(index, kind=c_int64_t))
       if (c_associated(tmp)) call c_f_str_ptr(tmp, res)
     end function duckdb_struct_type_child_name
 
-    function duckdb_struct_type_child_type(type, index) result(res)
-      type(duckdb_logical_type), value :: type
+    function duckdb_struct_type_child_type(typ, index) result(res)
+      type(duckdb_logical_type), value :: typ
       integer :: index
       type(duckdb_logical_type) :: res
-      res = duckdb_struct_type_child_type_(type, int(index, kind=c_int64_t))
+      res = duckdb_struct_type_child_type_(typ, int(index, kind=c_int64_t))
     end function duckdb_struct_type_child_type
     ! =========================================================================
     ! Data Chunk Interface
@@ -3403,34 +3403,34 @@ module duckdb
 
     function duckdb_create_data_chunk(types, column_count) result(res)
       type(duckdb_logical_type) :: types(*)
-      integer :: column_count
+      integer(kind=int64) :: column_count
       type(duckdb_data_chunk) :: res
       res = duckdb_create_data_chunk_(types, int(column_count, kind=c_int64_t))
     end function duckdb_create_data_chunk
 
     function duckdb_data_chunk_get_column_count(chunk) result(res)
       type(duckdb_data_chunk) :: chunk
-      integer :: res
-      res = int(duckdb_data_chunk_get_column_count_(chunk))
+      integer(kind=int64) :: res
+      res = int(duckdb_data_chunk_get_column_count_(chunk), kind=int64)
     end function duckdb_data_chunk_get_column_count
 
     function duckdb_data_chunk_get_vector(chunk, col_idx) result(res)
       type(duckdb_data_chunk) :: chunk
-      integer :: col_idx
+      integer(kind=int64) :: col_idx
       type(duckdb_vector) :: res
       res = duckdb_data_chunk_get_vector_(chunk, int(col_idx, kind=c_int64_t))
     end function duckdb_data_chunk_get_vector
 
     function duckdb_data_chunk_get_size(chunk) result(res)
       type(duckdb_data_chunk) :: chunk
-      integer :: res
-      res = int(duckdb_data_chunk_get_size_(chunk))
+      integer(kind=int64) :: res
+      res = int(duckdb_data_chunk_get_size_(chunk), kind=int64)
     end function duckdb_data_chunk_get_size
 
-    subroutine duckdb_data_chunk_set_size(chunk, size)
+    subroutine duckdb_data_chunk_set_size(chunk, siz)
       type(duckdb_data_chunk) :: chunk
-      integer :: size
-      call duckdb_data_chunk_set_size_(chunk, int(size, kind=c_int64_t))
+      integer(kind=int64) :: siz
+      call duckdb_data_chunk_set_size_(chunk, int(siz, kind=c_int64_t))
     end subroutine duckdb_data_chunk_set_size
 
     ! =========================================================================
@@ -3489,49 +3489,30 @@ module duckdb
     ! =========================================================================
 
     function duckdb_validity_row_is_valid(validity, row) result(res)
-      ! integer(kind=int64) :: validity
       type(c_ptr) :: validity
-      integer :: row
+      integer(kind=int64) :: row
       logical :: res
-      ! integer(kind=c_int64_t) :: tmp
-      ! tmp = int(validity, kind=c_int64_t)
-      ! res = duckdb_validity_row_is_valid_(tmp, int(row, kind=c_int64_t))
       res = duckdb_validity_row_is_valid_(validity, int(row, kind=c_int64_t))
-      ! validity = int(tmp, kind=int64)
     end function duckdb_validity_row_is_valid
 
     subroutine duckdb_validity_set_row_validity(validity, row, valid)
-      ! integer(kind=int64) :: validity
       type(c_ptr) :: validity
-      integer :: row
+      integer(kind=int64) :: row
       logical :: valid
-      ! integer(kind=c_int64_t) :: tmp
-      ! tmp = int(validity, kind=c_int64_t)
-      ! call duckdb_validity_set_row_validity_(tmp, int(row, kind=c_int64_t), logical(valid, kind=c_bool))
-      call duckdb_validity_set_row_validity_(validity, int(row, kind=c_int64_t), logical(valid, kind=c_bool))
-      ! validity = int(tmp, kind=int64)
+      call duckdb_validity_set_row_validity_(validity, &
+      & int(row, kind=c_int64_t), logical(valid, kind=c_bool))
     end subroutine duckdb_validity_set_row_validity
 
     subroutine duckdb_validity_set_row_invalid(validity, row)
-      ! integer(kind=int64) :: validity
       type(c_ptr) :: validity
-      integer :: row
-      ! integer(kind=c_int64_t) :: tmp
-      ! tmp = int(validity, kind=c_int64_t)
-      ! call duckdb_validity_set_row_invalid_(tmp, int(row, kind=c_int64_t))
+      integer(kind=int64) :: row
       call duckdb_validity_set_row_invalid_(validity, int(row, kind=c_int64_t))
-      ! validity = int(tmp, kind=int64)
     end subroutine duckdb_validity_set_row_invalid
 
     subroutine duckdb_validity_set_row_valid(validity, row)
-      ! integer(kind=int64) :: validity
       type(c_ptr) :: validity
-      integer :: row
-      ! integer(kind=c_int64_t) :: tmp
-      ! tmp = int(validity, kind=c_int64_t)
-      ! call duckdb_validity_set_row_invalid_(tmp, int(row, kind=c_int64_t))
+      integer(kind=int64) :: row
       call duckdb_validity_set_row_invalid_(validity, int(row, kind=c_int64_t))
-      ! validity = int(tmp, kind=int64)
     end subroutine duckdb_validity_set_row_valid
 
     ! =========================================================================
@@ -3686,3 +3667,4 @@ module duckdb
     ! =========================================================================
 
 end module duckdb
+
