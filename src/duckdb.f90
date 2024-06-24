@@ -2821,16 +2821,19 @@ module duckdb
         data = duckdb_column_data_(res, int(col, kind=c_int64_t))
     end function duckdb_column_data
 
+    ! FIXME - howto return rst if not c_associated
     function duckdb_nullmask_data(res, col) result(rst)
       type(c_ptr) :: tmp
       type(duckdb_result) :: res
       integer(kind=int64) :: col
       logical, pointer :: rst
       tmp = c_null_ptr
-      rst = .false.
-      if (c_associated(res%internal_data)) &
+      ! rst = .false.
+      if (c_associated(res%internal_data)) then
         tmp = duckdb_nullmask_data_(res, int(col, kind=c_int64_t))
-      if (c_associated(tmp)) call c_f_pointer(tmp, rst)
+        if (c_associated(tmp)) &
+          call c_f_pointer(tmp, rst)
+      end if
     end function duckdb_nullmask_data
 
     function duckdb_result_error(res) result(err)
