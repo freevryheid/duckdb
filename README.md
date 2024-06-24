@@ -87,12 +87,12 @@ having a specific data type. It is important to define the data type in fortran
 when extracting these vectors. Consider the folllowing dataset that comprises
 3 vectors, all of type int64.
 
-│ column0 │ column1 │ column2 │
-│  int64  │  int64  │  int64  │
-│---------│---------│---------│
-│       1 │       2 │       3 │
-│       4 │       5 │       6 │
-│       7 │       8 │       9 │
+| column0 | column1 |  column2|
+|  int64  |  int64  |   int64 |
+|---------|---------|---------|
+|       1 |       2 |       3 |
+|       4 |       5 |       6 |
+|       7 |       8 |       9 |
 
 The functions below outline one possible way to extract data from vectors.
 These data are returned as a c_ptr, which could be converted into a fortran
