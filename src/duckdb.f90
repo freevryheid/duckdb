@@ -1,8 +1,8 @@
 module duckdb
   use, intrinsic :: iso_fortran_env
   use, intrinsic :: iso_c_binding
-  use util
-  use constants
+  ! use util
+  ! use constants
   implicit none
   private
   public :: duckdb_database
@@ -469,6 +469,12 @@ module duckdb
 
   interface !******************************************************************
 
+    function c_strlen(str) bind(c, name='strlen')
+      import :: c_ptr, c_size_t
+      type(c_ptr), value :: str
+      integer(c_size_t) :: c_strlen
+    end function c_strlen
+
     ! =========================================================================
     ! Open/Connect
     ! =========================================================================
@@ -653,12 +659,13 @@ module duckdb
     ! DUCKDB_API
     ! duckdb_logical_type
     ! duckdb_column_logical_type(duckdb_result *result, idx_t col);
-    function duckdb_column_logical_type(res) &
+    function duckdb_column_logical_type_(res, idx) &
     & bind(c, name='duckdb_column_logical_type') result(t)
-      import :: duckdb_result, duckdb_logical_type
+      import :: duckdb_result, duckdb_logical_type, c_int64_t
       type(duckdb_result) :: res
+      integer(kind=c_int64_t), value :: idx
       type(duckdb_logical_type) :: t
-    end function duckdb_column_logical_type
+    end function duckdb_column_logical_type_
 
     ! DUCKDB_API
     ! idx_t
@@ -1856,7 +1863,7 @@ module duckdb
     function duckdb_data_chunk_get_vector_(chunk, col_idx) &
     & bind(c, name='duckdb_data_chunk_get_vector') result(res)
       import :: duckdb_data_chunk, duckdb_vector, c_int64_t
-      type(duckdb_data_chunk), value :: chunk
+      type(duckdb_data_chunk), value, intent(in) :: chunk
       integer(kind=c_int64_t), value :: col_idx
       type(duckdb_vector) :: res
     end function duckdb_data_chunk_get_vector_
@@ -1874,11 +1881,11 @@ module duckdb
     ! DUCKDB_API
     ! void
     ! duckdb_data_chunk_set_size(duckdb_data_chunk chunk, idx_t size);
-    subroutine duckdb_data_chunk_set_size_(chunk, size) &
+    subroutine duckdb_data_chunk_set_size_(chunk, siz) &
     & bind(c, name='duckdb_data_chunk_set_size')
       import :: duckdb_data_chunk, c_int64_t
       type(duckdb_data_chunk), value :: chunk
-      integer(kind=c_int64_t), value :: size
+      integer(kind=c_int64_t), value :: siz
     end subroutine duckdb_data_chunk_set_size_
 
     ! =========================================================================
@@ -2645,6 +2652,28 @@ module duckdb
 
   contains
 
+    pure function copy(a)
+      character, intent(in)  :: a(:)
+      character(len=size(a)) :: copy
+      integer :: i
+      do i = 1, size(a)
+        copy(i:i) = a(i)
+      end do
+    end function copy
+
+    subroutine c_f_str_ptr(c_str, f_str)
+        type(c_ptr) :: c_str
+        character(len=:), allocatable :: f_str
+        character(kind=c_char), pointer :: ptrs(:)
+        integer(kind=c_size_t) :: sz
+        if (.not. c_associated(c_str)) return
+        sz = c_strlen(c_str)
+        if (sz < 0) return
+        call c_f_pointer(c_str, ptrs, [ sz ])
+        allocate (character(len=sz) :: f_str)
+        f_str = copy(ptrs)
+    end subroutine c_f_str_ptr
+
     ! =========================================================================
     ! Open/Connect
     ! =========================================================================
@@ -2750,6 +2779,14 @@ module duckdb
       if (c_associated(res%internal_data)) &
         col_type = duckdb_column_type_(res, int(col, kind=c_int64_t))
     end function duckdb_column_type
+
+    function duckdb_column_logical_type(res, idx) result(t)
+      type(duckdb_result) :: res
+      integer(kind=int64) :: idx
+      type(duckdb_logical_type) :: t
+      if (c_associated(res%internal_data)) &
+        t = duckdb_column_logical_type_(res, int(idx, kind=c_int64_t))
+    end function duckdb_column_logical_type
 
     function duckdb_column_count(res) result(cc)
       type(duckdb_result) :: res
@@ -3415,7 +3452,7 @@ module duckdb
     end function duckdb_data_chunk_get_column_count
 
     function duckdb_data_chunk_get_vector(chunk, col_idx) result(res)
-      type(duckdb_data_chunk) :: chunk
+      type(duckdb_data_chunk), intent(in) :: chunk
       integer(kind=int64) :: col_idx
       type(duckdb_vector) :: res
       res = duckdb_data_chunk_get_vector_(chunk, int(col_idx, kind=c_int64_t))
