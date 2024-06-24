@@ -2,10 +2,10 @@
 fortran bindings to duckdb c api
 
 ## Introduction
-[DuckDB](https://duckdb.org/), at the timne of this writing, is at
+[DuckDB](https://duckdb.org/), at the time of this writing, is at
 version 1.0.0 (stable release). The fortran module in this repository wraps the
 [C-API](https://duckdb.org/docs/api/c/overview). While it is still under
-develpment, most of the api functions have been wrapped, allowing access to
+development, most of the api functions have been wrapped, allowing access to
 DuckDB databases, querying and data extraction.
 
 DuckDB provides column-based data storage in contrast to other databases
@@ -23,8 +23,7 @@ select * from 'data.csv.gz'
 
 DuckDB databases can be :in-memory: or file-based. The wrapper provides
 functions to initialize the database and connection as shown below. In-memory
-databases are used if no path is provided in the [duckdb_open]
-(https://github.com/freevryheid/duckdb/blob/5badd01d53001373d36dd50a731773a4be9ffa29/src/duckdb.f90#L2681)
+databases are used if no path is provided in the [duckdb_open](https://github.com/freevryheid/duckdb/blob/5badd01d53001373d36dd50a731773a4be9ffa29/src/duckdb.f90#L2681)
 function, which is optional.
 
 ```fortran
@@ -88,14 +87,12 @@ having a specific data type. It is important to define the data type in fortran
 when extracting these vectors. Consider the folllowing dataset that comprises
 3 vectors, all of type int64.
 
-┌─────────┬─────────┬─────────┐
 │ column0 │ column1 │ column2 │
 │  int64  │  int64  │  int64  │
-├─────────┼─────────┼─────────┤
+│---------│---------│---------│
 │       1 │       2 │       3 │
 │       4 │       5 │       6 │
 │       7 │       8 │       9 │
-└─────────┴─────────┴─────────┘
 
 The functions below outline one possible way to extract data from vectors.
 These data are returned as a c_ptr, which could be converted into a fortran
@@ -160,8 +157,7 @@ call duckdb_disconnect(con)
 call duckdb_close(db)
 ```
 
-An example of extracting data from a csv file is provided in the [example]
-(https://github.com/freevryheid/duckdb/tree/main/example) folder.
+An example of extracting data from a csv file is provided in the [example](https://github.com/freevryheid/duckdb/tree/main/example) folder.
 
 ### Implementation status
 
